@@ -7,11 +7,14 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 
+import { MailService } from '../mail/mail.service';
+
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
+        private mailService: MailService,
     ) { }
 
     async register(registerDto: RegisterDto): Promise<User> {
@@ -24,8 +27,8 @@ export class AuthService {
         const passwordHash = await bcrypt.hash(registerDto.password, salt);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // MOCK SEND EMAIL
-        console.log(`[MOCK EMAIL] Verification Link: http://localhost:3000/auth/verify?token=${verificationToken}`);
+        // Send verification email
+        await this.mailService.sendVerificationEmail(registerDto.email, verificationToken);
 
         return this.usersService.create({
             email: registerDto.email,
@@ -80,6 +83,18 @@ export class AuthService {
         return this.getTokens(user);
     }
 
+    async refreshTokensWithDecode(refreshToken: string) {
+        let payload: any;
+        try {
+            payload = this.jwtService.verify(refreshToken, { ignoreExpiration: false });
+        } catch (e) {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+
+        const userId = payload.sub;
+        return this.refreshTokens(userId, refreshToken);
+    }
+
     async changePassword(userId: string, changePasswordDto: any) {
         const user = await this.usersService.findOneById(userId);
         if (!user) throw new UnauthorizedException('User not found');
@@ -92,6 +107,50 @@ export class AuthService {
 
         await this.usersService.update(userId, { passwordHash });
         return { message: 'Password changed successfully' };
+    }
+
+    async forgotPassword(email: string) {
+        const user = await this.usersService.findOneByEmail(email);
+        if (!user) {
+            // Don't reveal if user exists or not for security reasons
+            return { message: 'If this email exists, a password reset link has been sent.' };
+        }
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour from now
+
+        await this.usersService.update(user.id, {
+            resetPasswordToken: resetToken,
+            resetPasswordExpires,
+        });
+
+        await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+
+        return { message: 'If this email exists, a password reset link has been sent.' };
+    }
+
+    async resetPassword(resetDto: any) {
+        const user = await this.usersService.findOneByResetToken(resetDto.token);
+
+        if (!user) {
+            throw new UnauthorizedException('Invalid or expired reset token');
+        }
+
+        // Manual expiration check if not handled by DB query
+        if (user.resetPasswordExpires && new Date() > user.resetPasswordExpires) {
+            throw new UnauthorizedException('Invalid or expired reset token');
+        }
+
+        const salt = await bcrypt.genSalt();
+        const passwordHash = await bcrypt.hash(resetDto.newPassword, salt);
+
+        await this.usersService.update(user.id, {
+            passwordHash,
+            resetPasswordToken: null,
+            resetPasswordExpires: null,
+        });
+
+        return { message: 'Password has been reset successfully' };
     }
 
     private async getTokens(user: User) {

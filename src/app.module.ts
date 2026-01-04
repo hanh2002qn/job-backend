@@ -18,6 +18,8 @@ import { MatchingModule } from './modules/matching/matching.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExportModule } from './modules/export/export.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { MailModule } from './modules/mail/mail.module';
+import { getTypeOrmConfig } from './config/typeorm.config';
 
 @Module({
   imports: [
@@ -30,17 +32,7 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
     }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get<boolean>('DB_SYNC', true), // Disable in production
-        autoLoadEntities: true,
-      }),
+      useFactory: getTypeOrmConfig,
       inject: [ConfigService],
     }),
     UsersModule,
@@ -56,6 +48,7 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
     AnalyticsModule,
     ExportModule,
     SubscriptionModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

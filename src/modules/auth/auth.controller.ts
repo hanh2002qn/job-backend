@@ -5,6 +5,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('auth')
@@ -49,14 +51,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Refresh access token' })
     @HttpCode(HttpStatus.OK)
     async refreshTokens(@Body() refreshDto: RefreshTokenDto) {
-        // In a real app, we decode the token to get userId. 
-        // For simplicity here, we assume the token is valid and just need to decode it.
-        // BUT, without `JwtService` injected here or a strategy, it's hard. 
-        // Let's defer to the service, passing a dummy ID or extracting it if possible.
-        // Actually, let's just use a dedicated endpoint that requires *just* the token.
-        // I will implement a simpler version in Service that decodes it.
-        // Since I can't decode here, I'll update the Service to take just the token and decode it.
-        return { message: "Refresh Token flow requires JWT decoding logic update. Skipping for MVP." };
+        return this.authService.refreshTokensWithDecode(refreshDto.refreshToken);
     }
 
     @Post('change-password')
@@ -66,5 +61,19 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     async changePassword(@Request() req, @Body() changeDto: ChangePasswordDto) {
         return this.authService.changePassword(req.user.id, changeDto);
+    }
+
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Request password reset' })
+    @HttpCode(HttpStatus.OK)
+    async forgotPassword(@Body() forgotDto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(forgotDto.email);
+    }
+
+    @Post('reset-password')
+    @ApiOperation({ summary: 'Reset password using token' })
+    @HttpCode(HttpStatus.OK)
+    async resetPassword(@Body() resetDto: ResetPasswordDto) {
+        return this.authService.resetPassword(resetDto);
     }
 }
