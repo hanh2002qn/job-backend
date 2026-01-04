@@ -1,0 +1,50 @@
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, OneToMany } from 'typeorm';
+import { Profile } from '../../profiles/entities/profile.entity';
+import { JobTracker } from '../../tracker/entities/job-tracker.entity';
+import { CV } from '../../cv/entities/cv.entity';
+import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
+
+export enum UserRole {
+    USER = 'user',
+    ADMIN = 'admin',
+}
+
+@Entity('users')
+export class User {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column({ unique: true })
+    email: string;
+
+    @Column()
+    passwordHash: string;
+
+    @Column({ default: false })
+    isVerified: boolean;
+
+    @Column({
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.USER,
+    })
+    role: UserRole;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+
+    @OneToOne(() => Profile, (profile) => profile.user)
+    profile: Profile;
+
+    @OneToMany(() => JobTracker, (tracker) => tracker.user)
+    trackers: JobTracker[];
+
+    @OneToMany(() => CV, (cv) => cv.user)
+    cvs: CV[];
+
+    @OneToMany(() => CoverLetter, (cl) => cl.user)
+    coverLetters: CoverLetter[];
+}
