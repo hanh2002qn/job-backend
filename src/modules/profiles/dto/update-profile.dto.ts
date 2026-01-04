@@ -16,4 +16,24 @@ export class UpdateProfileDto {
     @IsArray()
     @IsOptional()
     skills?: string[];
+
+    @ApiProperty({ required: false, example: 'https://linkedin.com/in/johndoe' })
+    @IsOptional()
+    linkedin?: string;
+
+    @ApiProperty({ required: false, example: 'https://johndoe.com' })
+    @IsOptional()
+    portfolio?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    fullName?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    phone?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    address?: string;
 }

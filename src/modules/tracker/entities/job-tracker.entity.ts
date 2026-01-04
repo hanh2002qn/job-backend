@@ -37,7 +37,20 @@ export class JobTracker {
     status: ApplicationStatus;
 
     @Column({ nullable: true })
-    appliedCV: string; // URL or ID of the CV used
+    appliedAt: Date;
+
+    @Column({ nullable: true })
+    cvId: string;
+
+    @ManyToOne('CV', { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'cvId' })
+    cv: any; // Using any to avoid circular dependency for now, or import CV
+
+    @Column({ type: 'text', nullable: true })
+    notes: string;
+
+    @Column({ nullable: true })
+    nextActionDate: Date; // For reminders
 
     @CreateDateColumn()
     createdAt: Date;

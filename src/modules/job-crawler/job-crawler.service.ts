@@ -1,38 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { JobsService } from '../jobs/jobs.service';
+import { JobCrawlerStrategy } from './interfaces/job-crawler.interface';
+import { TopCvCrawler } from './strategies/topcv.crawler';
+import { LinkedInCrawler } from './strategies/linkedin.crawler';
 
 @Injectable()
 export class JobCrawlerService {
     private readonly logger = new Logger(JobCrawlerService.name);
+    private readonly strategies: JobCrawlerStrategy[];
 
-    constructor(private readonly jobsService: JobsService) { }
+    constructor(
+        private readonly topCvCrawler: TopCvCrawler,
+        private readonly linkedInCrawler: LinkedInCrawler,
+    ) {
+        this.strategies = [this.topCvCrawler, this.linkedInCrawler];
+    }
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleCron() {
         this.logger.log('Starting job crawl...');
-        // Implementation for crawling Logic
-        // For now, we will mock adding a job if not exists
 
-        // Example Mock Data
-        const mockJobs = [
-            {
-                externalId: 'mock-1',
-                title: 'Senior NestJS Developer',
-                company: 'Tech Corp',
-                location: 'Ho Chi Minh',
-                salary: '2000-3000 USD',
-                description: 'We are looking for a NestJS expert...',
-                source: 'linkedin',
-                skills: ['NestJS', 'TypeScript', 'PostgreSQL'],
-            }
-        ];
-
-        for (const jobData of mockJobs) {
-            const existing = await this.jobsService.findByExternalId(jobData.externalId);
-            if (!existing) {
-                await this.jobsService.create(jobData);
-                this.logger.log(`Imported job: ${jobData.title}`);
+        for (const strategy of this.strategies) {
+            try {
+                this.logger.log(`Executing strategy: ${strategy.name}`);
+                await strategy.crawl();
+            } catch (error) {
+                this.logger.error(`Error executing strategy ${strategy.name}`, error);
             }
         }
 

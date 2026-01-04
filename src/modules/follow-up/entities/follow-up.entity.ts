@@ -6,6 +6,7 @@ export enum FollowUpType {
     AFTER_APPLY = 'after_apply',
     AFTER_INTERVIEW = 'after_interview',
     CHECK_IN = 'check_in',
+    OFFER = 'offer',
 }
 
 export enum FollowUpStatus {

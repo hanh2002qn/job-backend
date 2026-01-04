@@ -16,4 +16,17 @@ export class JobSearchDto {
     @IsOptional()
     @IsString()
     level?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    minSalary?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    maxSalary?: number;
+
+    @ApiPropertyOptional() // Remote, Hybrid, Onsite
+    @IsOptional()
+    @IsString()
+    jobType?: string;
 }

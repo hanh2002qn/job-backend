@@ -12,7 +12,7 @@ export class ProfilesService {
     ) { }
 
     async findByUserId(userId: string): Promise<Profile> {
-        let profile = await this.profilesRepository.findOne({ where: { userId } });
+        let profile = await this.profilesRepository.findOne({ where: { userId }, relations: ['user'] });
         if (!profile) {
             // Auto-create profile if not exists
             profile = this.profilesRepository.create({ userId });

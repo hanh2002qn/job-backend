@@ -20,8 +20,14 @@ export class User {
     @Column()
     passwordHash: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    refreshTokenHash: string | null;
+
     @Column({ default: false })
     isVerified: boolean;
+
+    @Column({ type: 'varchar', nullable: true })
+    verificationToken: string | null;
 
     @Column({
         type: 'enum',

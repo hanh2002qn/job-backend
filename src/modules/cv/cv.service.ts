@@ -27,14 +27,43 @@ export class CvService {
         }
 
         // MOCK AI GENERATION LOGIC
-        // Real implementation would call OpenAI/Claude here
-        // based on profile + job description
+        // 1. Keyword Matching & Scoring
+        const jobSkills = job.skills || [];
+        const profileSkills = profile.skills || [];
+        const matchedSkills = jobSkills.filter(skill =>
+            profileSkills.some(ps => ps.toLowerCase().includes(skill.toLowerCase()))
+        );
+
+        let score = 0;
+        if (jobSkills.length > 0) {
+            score = Math.round((matchedSkills.length / jobSkills.length) * 100);
+        } else {
+            score = 70; // Default if no skills defined
+        }
+
+        // 2. Generate Bullet Points (Mocking AI)
+        const enhancedExperience = (profile.experience || []).map((exp: any) => ({
+            ...exp,
+            achievements: [
+                `Successfully utilized ${matchedSkills[0] || 'core skills'} to improve performance by 20%.`,
+                `Collaborated with cross-functional teams to deliver ${job.title} related projects.`,
+                `Optimized workflows ensuring 100% compliance with ${job.company} standards.`
+            ]
+        }));
+
         const mockCvContent = {
-            personalInfo: { email: 'mock@user.com' },
-            summary: `I am a great fit for ${job.title} at ${job.company}.`,
-            experience: profile.experience,
+            personalInfo: {
+                fullName: profile.fullName || 'Candidate',
+                email: profile.user?.email || 'mock@user.com',
+                phone: profile.phone,
+                linkedin: profile.linkedin,
+                portfolio: profile.portfolio,
+            },
+            summary: `Highly motivated professional with expertise in ${matchedSkills.join(', ')}. Eager to contribute to ${job.company} as a ${job.title}.`,
+            experience: enhancedExperience,
             education: profile.education,
-            matchedSkills: job.skills,
+            skills: profileSkills,
+            matchedKeywords: matchedSkills,
         };
 
         const cv = this.cvRepository.create({
@@ -42,8 +71,8 @@ export class CvService {
             jobId: job.id,
             name: `CV for ${job.title}`,
             content: mockCvContent,
-            template: generateDto.template || 'standard',
-            score: 85, // Mock score
+            template: generateDto.template || 'ATS-friendly',
+            score: score,
         });
 
         return this.cvRepository.save(cv);

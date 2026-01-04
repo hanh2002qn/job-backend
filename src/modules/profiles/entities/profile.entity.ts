@@ -13,6 +13,15 @@ export class Profile {
     @JoinColumn({ name: 'userId' })
     user: User;
 
+    @Column({ nullable: true })
+    fullName: string;
+
+    @Column({ nullable: true })
+    phone: string;
+
+    @Column({ nullable: true })
+    address: string;
+
     @Column({ type: 'jsonb', default: [] })
     education: Record<string, any>[];
 
@@ -21,6 +30,12 @@ export class Profile {
 
     @Column({ type: 'simple-array', default: [] })
     skills: string[];
+
+    @Column({ nullable: true })
+    linkedin: string;
+
+    @Column({ nullable: true })
+    portfolio: string;
 
     @UpdateDateColumn()
     updatedAt: Date;

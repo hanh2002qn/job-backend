@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TrackerService } from './tracker.service';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
-import { UpdateTrackerStatusDto } from './dto/update-tracker-status.dto';
+import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ApplicationStatus } from './entities/job-tracker.entity';
 
 @ApiTags('tracker')
 @ApiBearerAuth()
@@ -19,18 +20,19 @@ export class TrackerController {
     }
 
     @Get()
-    @ApiOperation({ summary: 'Get all tracked jobs' })
-    findAll(@Request() req) {
-        return this.trackerService.findAll(req.user.id);
+    @ApiOperation({ summary: 'Get all tracked jobs with optional status filter' })
+    @ApiQuery({ name: 'status', enum: ApplicationStatus, required: false })
+    findAll(@Request() req, @Query('status') status?: ApplicationStatus) {
+        return this.trackerService.findAll(req.user.id, { status });
     }
 
-    @Patch(':id/status')
-    @ApiOperation({ summary: 'Update application status' })
-    updateStatus(
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update tracker entry (status, notes, cv, etc.)' })
+    update(
         @Request() req,
         @Param('id') id: string,
-        @Body() updateDto: UpdateTrackerStatusDto,
+        @Body() updateDto: UpdateTrackerDto,
     ) {
-        return this.trackerService.updateStatus(id, req.user.id, updateDto.status);
+        return this.trackerService.update(id, req.user.id, updateDto);
     }
 }

@@ -12,4 +12,8 @@ export class GenerateFollowUpDto {
     @IsOptional()
     @IsEnum(FollowUpType)
     type?: FollowUpType;
+
+    @ApiProperty({ required: false, description: 'Tone of the email (professional, casual, enthusiastic)', example: 'professional' })
+    @IsOptional()
+    tone?: string;
 }

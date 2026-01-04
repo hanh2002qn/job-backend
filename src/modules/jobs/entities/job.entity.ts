@@ -18,7 +18,22 @@ export class Job {
     location: string;
 
     @Column({ nullable: true })
-    salary: string;
+    salaryMin: number;
+
+    @Column({ nullable: true })
+    salaryMax: number;
+
+    @Column({ default: 'VND' })
+    currency: string;
+
+    @Column({ nullable: true })
+    jobType: string; // Remote, Onsite, Hybrid, Full-time...
+
+    @Column({ nullable: true })
+    experienceLevel: string; // Junior, Senior...
+
+    @Column({ nullable: true })
+    salary: string; // Original salary string
 
     @Column({ type: 'text' })
     description: string;

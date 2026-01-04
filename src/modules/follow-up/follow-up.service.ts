@@ -22,18 +22,34 @@ export class FollowUpService {
             throw new NotFoundException('Job not found');
         }
 
+        const profile = await this.profilesService.findByUserId(userId);
+        const name = profile.fullName || 'Candidate';
         const type = generateDto.type || FollowUpType.AFTER_APPLY;
+        const tone = generateDto.tone || 'professional';
 
         // MOCK AI GENERATION
         let subject = '';
         let body = '';
 
-        if (type === FollowUpType.AFTER_APPLY) {
-            subject = `Following up on my application for ${job.title}`;
-            body = `Dear Hiring Manager,\n\nI recently applied for the ${job.title} position...`;
-        } else if (type === FollowUpType.AFTER_INTERVIEW) {
-            subject = `Thank you for the interview - ${job.title}`;
-            body = `Dear [Interviewer Name],\n\nThank you for the opportunity to interview today...`;
+        const greeting = tone === 'casual' ? 'Hi' : 'Dear';
+        const closing = tone === 'casual' ? 'Best,' : 'Sincerely,';
+
+        switch (type) {
+            case FollowUpType.AFTER_APPLY:
+                subject = `Following up on my application for ${job.title} - ${name}`;
+                body = `${greeting} Hiring Manager,\n\nI hope this email finds you well.\n\nI recently applied for the ${job.title} position at ${job.company} and wanted to briefly reiterate my strong interest in the role. With my background in ${profile.skills?.[0] || 'the field'}, I am confident in my ability to contribute to your team.\n\nPlease let me know if you need any further information regarding my application.\n\n${closing}\n${name}\n${profile.phone || ''}`;
+                break;
+            case FollowUpType.AFTER_INTERVIEW:
+                subject = `Thank you for the interview - ${job.title} - ${name}`;
+                body = `${greeting} [Interviewer Name],\n\nThank you so much for the opportunity to interview for the ${job.title} role today. I enjoyed learning more about ${job.company} and discussing how my skills in ${profile.skills?.slice(0, 2).join(', ') || 'this area'} can help the team.\n\nI look forward to hearing from you regarding the next steps.\n\n${closing}\n${name}`;
+                break;
+            case FollowUpType.OFFER:
+                subject = `Regarding the Offer for ${job.title}`;
+                body = `${greeting} Hiring Team,\n\nThank you for offering me the position of ${job.title}. I am excited about the opportunity to join ${job.company}.\n\nBefore I sign, I would like to discuss... [AI Suggestion: Insert details]\n\n${closing}\n${name}`;
+                break;
+            default:
+                subject = `Inquiry regarding ${job.title}`;
+                body = `${greeting} Hiring Manager,\n\nI am writing to inquire about the status of my application for the ${job.title} position.\n\n${closing}\n${name}`;
         }
 
         const followUp = this.followUpRepository.create({

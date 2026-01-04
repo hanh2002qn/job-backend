@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { CvService } from './cv.service';
 import { GenerateCvDto } from './dto/generate-cv.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../../common/guards/subscription.guard';
 
 @ApiTags('cv')
 @ApiBearerAuth()
@@ -13,6 +14,7 @@ export class CvController {
     constructor(private readonly cvService: CvService) { }
 
     @Throttle({ default: { limit: 3, ttl: 60000 } })
+    @UseGuards(SubscriptionGuard)
     @Post('generate')
     @ApiOperation({ summary: 'Generate a CV for a specific job' })
     generate(@Request() req, @Body() generateDto: GenerateCvDto) {

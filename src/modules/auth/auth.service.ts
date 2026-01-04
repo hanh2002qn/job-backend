@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -21,11 +22,29 @@ export class AuthService {
 
         const salt = await bcrypt.genSalt();
         const passwordHash = await bcrypt.hash(registerDto.password, salt);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+
+        // MOCK SEND EMAIL
+        console.log(`[MOCK EMAIL] Verification Link: http://localhost:3000/auth/verify?token=${verificationToken}`);
 
         return this.usersService.create({
             email: registerDto.email,
             passwordHash,
+            verificationToken,
         });
+    }
+
+    async verifyEmail(token: string) {
+        const user = await this.usersService.findOneByVerificationToken(token);
+        if (!user) {
+            throw new NotFoundException('Invalid verification token');
+        }
+        if (user.isVerified) {
+            return { message: 'Email already verified' };
+        }
+
+        await this.usersService.update(user.id, { isVerified: true, verificationToken: null });
+        return { message: 'Email verified successfully' };
     }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -42,9 +61,51 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
+        return this.getTokens(user);
+    }
+
+    async logout(userId: string) {
+        return this.usersService.update(userId, { refreshTokenHash: null });
+    }
+
+    async refreshTokens(userId: string, refreshToken: string) {
+        const user = await this.usersService.findOneById(userId);
+        if (!user || !user.refreshTokenHash)
+            throw new UnauthorizedException('Access Denied');
+
+        const refreshTokenMatches = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+        if (!refreshTokenMatches)
+            throw new UnauthorizedException('Access Denied');
+
+        return this.getTokens(user);
+    }
+
+    async changePassword(userId: string, changePasswordDto: any) {
+        const user = await this.usersService.findOneById(userId);
+        if (!user) throw new UnauthorizedException('User not found');
+
+        const passwordMatches = await bcrypt.compare(changePasswordDto.oldPassword, user.passwordHash);
+        if (!passwordMatches) throw new UnauthorizedException('Old password incorrect');
+
+        const salt = await bcrypt.genSalt();
+        const passwordHash = await bcrypt.hash(changePasswordDto.newPassword, salt);
+
+        await this.usersService.update(userId, { passwordHash });
+        return { message: 'Password changed successfully' };
+    }
+
+    private async getTokens(user: User) {
         const payload = { email: user.email, sub: user.id, role: user.role };
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+        const salt = await bcrypt.genSalt();
+        const refreshTokenHash = await bcrypt.hash(refreshToken, salt);
+        await this.usersService.update(user.id, { refreshTokenHash });
+
         return {
-            accessToken: this.jwtService.sign(payload),
+            accessToken,
+            refreshToken,
             user,
         };
     }
