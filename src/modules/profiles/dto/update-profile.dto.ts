@@ -1,4 +1,4 @@
-import { IsArray, IsOptional } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -19,21 +19,49 @@ export class UpdateProfileDto {
 
     @ApiProperty({ required: false, example: 'https://linkedin.com/in/johndoe' })
     @IsOptional()
+    @IsString()
     linkedin?: string;
 
     @ApiProperty({ required: false, example: 'https://johndoe.com' })
     @IsOptional()
+    @IsString()
     portfolio?: string;
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsString()
     fullName?: string;
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsString()
     phone?: string;
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsString()
     address?: string;
+
+    @ApiProperty({ description: 'Job preferences: Industries', example: ['IT', 'Design'], required: false })
+    @IsArray()
+    @IsOptional()
+    @IsString({ each: true })
+    preferredIndustries?: string[];
+
+    @ApiProperty({ description: 'Job preferences: Job Types', example: ['Full-time', 'Remote'], required: false })
+    @IsArray()
+    @IsOptional()
+    @IsString({ each: true })
+    preferredJobTypes?: string[];
+
+    @ApiProperty({ description: 'Job preferences: Locations', example: ['Hà Nội', 'Hồ Chí Minh'], required: false })
+    @IsArray()
+    @IsOptional()
+    @IsString({ each: true })
+    preferredLocations?: string[];
+
+    @ApiProperty({ description: 'Minimum salary expectation', example: 10000000, required: false })
+    @IsNumber()
+    @IsOptional()
+    minSalaryExpectation?: number;
 }

@@ -37,6 +37,19 @@ export class Profile {
     @Column({ nullable: true })
     portfolio: string;
 
+    // Job Preferences
+    @Column({ type: 'simple-array', default: [] })
+    preferredIndustries: string[];
+
+    @Column({ type: 'simple-array', default: [] })
+    preferredJobTypes: string[]; // e.g., ['Full-time', 'Remote']
+
+    @Column({ type: 'simple-array', default: [] })
+    preferredLocations: string[];
+
+    @Column({ type: 'int', nullable: true })
+    minSalaryExpectation: number;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

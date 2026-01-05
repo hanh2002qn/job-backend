@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CV } from './entities/cv.entity';
 import { GenerateCvDto } from './dto/generate-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class CvService {
@@ -13,9 +14,24 @@ export class CvService {
         private cvRepository: Repository<CV>,
         private jobsService: JobsService,
         private profilesService: ProfilesService,
+        private subscriptionService: SubscriptionService,
     ) { }
 
     async generate(userId: string, generateDto: GenerateCvDto): Promise<CV> {
+        // Freemium Check
+        const isPremium = await this.subscriptionService.isPremium(userId);
+        if (!isPremium) {
+            const cvCount = await this.cvRepository.count({ where: { userId } });
+            if (cvCount >= 2) {
+                throw new ForbiddenException('Free users are limited to 2 CVs. Please upgrade to Premium for unlimited CVs.');
+            }
+        }
+
+        // Template Check
+        if (generateDto.template?.startsWith('premium-') && !isPremium) {
+            throw new ForbiddenException('This template is only available for Premium users.');
+        }
+
         const job = await this.jobsService.findOne(generateDto.jobId);
         if (!job) {
             throw new NotFoundException('Job not found');

@@ -64,6 +64,9 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
+        if (!user.isVerified) {
+            throw new UnauthorizedException('Please verify your email before logging in');
+        }
         return this.getTokens(user);
     }
 

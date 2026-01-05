@@ -39,4 +39,13 @@ export class SubscriptionService {
     async getSubscription(userId: string) {
         return this.subscriptionRepository.findOne({ where: { userId } });
     }
+
+    async isPremium(userId: string): Promise<boolean> {
+        const sub = await this.getSubscription(userId);
+        if (!sub) return false;
+
+        // Check if plan is premium and not expired
+        const now = new Date();
+        return sub.plan === SubscriptionPlan.PREMIUM && (!sub.expiresAt || sub.expiresAt > now);
+    }
 }

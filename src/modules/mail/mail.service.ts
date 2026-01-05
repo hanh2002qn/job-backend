@@ -90,4 +90,75 @@ export class MailService {
             this.logger.error('Error sending password reset email', error);
         }
     }
+
+    async sendReminderEmail(to: string, jobTitle: string, company: string, actionDate: Date) {
+        const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
+        if (!from) return;
+
+        const dateStr = actionDate.toLocaleString('vi-VN');
+
+        const msg = {
+            to,
+            from,
+            subject: `Nhắc nhở công việc: ${jobTitle} tại ${company} - AI Job`,
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Bạn có lịch hẹn sắp tới!</h2>
+              <p>Vị trí: <strong>${jobTitle}</strong></p>
+              <p>Công ty: <strong>${company}</strong></p>
+              <p>Thời gian: <strong>${dateStr}</strong></p>
+              <p>Đừng quên chuẩn bị kỹ lưỡng cho buổi phỏng vấn hoặc hành động này nhé.</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="http://localhost:3000/tracker" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Xem chi tiết</a>
+              </div>
+            </div>
+          `,
+        };
+
+        try {
+            await SendGrid.send(msg);
+            this.logger.log(`Reminder email sent to ${to}`);
+        } catch (error) {
+            this.logger.error('Error sending reminder email', error);
+        }
+    }
+
+    async sendJobAlertEmail(to: string, jobs: any[]) {
+        const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
+        if (!from) return;
+
+        const jobListHtml = jobs.map(job => `
+            <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
+                <h4 style="margin: 0; color: #007bff;">${job.title}</h4>
+                <p style="margin: 5px 0; font-size: 14px;"><strong>${job.company}</strong> - ${job.location}</p>
+                <p style="margin: 5px 0; font-size: 13px; color: #666;">Lương: ${job.salary || 'Thỏa thuận'}</p>
+                <a href="${job.url}" style="font-size: 13px; color: #007bff; text-decoration: none;">Xem chi tiết</a>
+            </div>
+        `).join('');
+
+        const msg = {
+            to,
+            from,
+            subject: `[AI Job] Gợi ý việc làm mới phù hợp với bạn`,
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px;">
+              <h2 style="color: #333;">Việc làm mới dành cho bạn</h2>
+              <p>Chào bạn, chúng tôi vừa tìm thấy một số công việc mới phù hợp với sở thích của bạn:</p>
+              <div style="margin: 20px 0;">
+                ${jobListHtml}
+              </div>
+              <p style="font-size: 12px; color: #999; margin-top: 30px;">
+                Bạn nhận được email này vì đã thiết lập quan tâm ngành nghề trên AI Job.
+              </p>
+            </div>
+          `,
+        };
+
+        try {
+            await SendGrid.send(msg);
+            this.logger.log(`Job alert email sent to ${to}`);
+        } catch (error) {
+            this.logger.error('Error sending job alert email', error);
+        }
+    }
 }

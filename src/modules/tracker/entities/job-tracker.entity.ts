@@ -22,12 +22,21 @@ export class JobTracker {
     @JoinColumn({ name: 'userId' })
     user: User;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', nullable: true })
     jobId: string;
 
-    @ManyToOne(() => Job, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Job, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn({ name: 'jobId' })
     job: Job;
+
+    @Column({ nullable: true })
+    manualTitle: string;
+
+    @Column({ nullable: true })
+    manualCompany: string;
+
+    @Column({ nullable: true })
+    manualUrl: string;
 
     @Column({
         type: 'enum',
@@ -51,6 +60,9 @@ export class JobTracker {
 
     @Column({ nullable: true })
     nextActionDate: Date; // For reminders
+
+    @Column({ default: false })
+    isReminderSent: boolean;
 
     @CreateDateColumn()
     createdAt: Date;

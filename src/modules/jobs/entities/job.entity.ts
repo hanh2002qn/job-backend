@@ -18,6 +18,21 @@ export class Job {
     location: string;
 
     @Column({ nullable: true })
+    logoUrl: string;
+
+    @Column({ nullable: true })
+    companyAddress: string;
+
+    @Column({ nullable: true })
+    companySize: string; // e.g., '100-499 employees'
+
+    @Column({ nullable: true })
+    workingTime: string; // e.g., 'Monday - Friday'
+
+    @Column({ nullable: true })
+    companyType: string; // e.g., 'Product', 'Outsource'
+
+    @Column({ nullable: true })
     salaryMin: number;
 
     @Column({ nullable: true })
@@ -33,13 +48,37 @@ export class Job {
     experienceLevel: string; // Junior, Senior...
 
     @Column({ nullable: true })
+    level: string; // Staff, Manager, Director...
+
+    @Column({ nullable: true })
+    category: string; // Industry/Category
+
+    @Column({ nullable: true })
+    quantity: number; // Number of hires
+
+    @Column({ nullable: true })
+    gender: string; // Male/Female/Any
+
+    @Column({ nullable: true })
+    deadline: Date; // Application deadline
+
+    @Column({ nullable: true })
     salary: string; // Original salary string
 
-    @Column({ type: 'text' })
-    description: string;
+    @Column({ type: 'text', nullable: true })
+    description: string; // Mô tả công việc
+
+    @Column({ type: 'text', nullable: true })
+    requirements: string; // Yêu cầu ứng viên
+
+    @Column({ type: 'text', nullable: true })
+    benefits: string; // Quyền lợi
 
     @Column({ type: 'simple-array', default: [] })
     skills: string[]; // Extracted skills for matching
+
+    @Column({ type: 'jsonb', nullable: true })
+    originalData: any; // Store full raw JSON from crawler if needed
 
     @Column({ default: false })
     expired: boolean;
@@ -50,8 +89,14 @@ export class Job {
     @Column({ nullable: true })
     url: string; // Ops: Link to original job
 
+    @Column({ nullable: true })
+    postedAt: Date; // Date job was posted on source
+
     @CreateDateColumn()
     createdAt: Date;
+
+    @Column({ default: false })
+    isAlertSent: boolean;
 
     @UpdateDateColumn()
     updatedAt: Date;

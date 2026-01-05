@@ -11,6 +11,36 @@ export class TopCvCrawler implements JobCrawlerStrategy {
 
     constructor(private readonly jobsService: JobsService) { }
 
+    async crawlSpecificUrl(url: string) {
+        try {
+            this.logger.log(`Crawling specific TopCV URL: ${url}`);
+            const detailData = await this.fetchTopCVDetail(url);
+
+            // For testing, just log or return details
+            // In real usage, you'd save it
+            console.log('Crawled Data:', detailData);
+
+            // Also try to save to DB to verify Entity
+            const externalId = `topcv-${url.match(/\/(\d+)(\?|$)/)?.[1] || Date.now()}`;
+            const jobData = this.normalizeJobData({
+                externalId,
+                title: 'DEBUG TITLE', // Title is usually on list page, here we mock or extract from detail if possible
+                company: 'DEBUG COMPANY',
+                location: 'DEBUG LOCATION',
+                salaryRaw: '15 - 30 triệu', // Mocking for now as it's from list page usually
+                source: 'topcv',
+                url,
+                ...detailData
+            });
+
+            await this.jobsService.create(jobData);
+            this.logger.log('Saved specific job to DB');
+
+        } catch (error) {
+            this.logger.error('Failed to crawl specific URL', error);
+        }
+    }
+
     async crawl(): Promise<void> {
         this.logger.log('Crawling TopCV...');
         const baseUrl = 'https://www.topcv.vn/viec-lam-it';
@@ -101,37 +131,71 @@ export class TopCvCrawler implements JobCrawlerStrategy {
             }
         });
 
-        const fullDescription = `
-            <h3>Mô tả công việc</h3>
-            ${description}
-            <h3>Yêu cầu ứng viên</h3>
-            ${requirements}
-            <h3>Quyền lợi</h3>
-            ${benefits}
-        `;
-
         const findGeneralInfo = (labelKey: string) => {
             let value = '';
-            $('.box-general-item').each((_, el) => {
-                const label = $(el).find('.box-general-item__title').text().trim();
-                if (label.includes(labelKey)) {
-                    value = $(el).find('.box-general-item__value').text().trim();
-                }
+            $('.box-general-group-info').each((_, el) => {
+                // Try new layout first
+                const items = $(el).find('.box-main');
+                items.each((_, item) => {
+                    const label = $(item).find('.box-main-title').text();
+                    if (label.includes(labelKey)) {
+                        value = $(item).find('.box-main-text').text().trim();
+                    }
+                });
             });
+
+            if (!value) {
+                // Fallback to old layout
+                $('.box-general-item').each((_, el) => {
+                    const label = $(el).find('.box-general-item__title').text().trim();
+                    if (label.includes(labelKey)) {
+                        value = $(el).find('.box-general-item__value').text().trim();
+                    }
+                });
+            }
             return value;
         };
 
         const jobType = findGeneralInfo('Hình thức làm việc');
-        const experienceLevel = findGeneralInfo('Cấp bậc');
+        const level = findGeneralInfo('Cấp bậc');
+        const gender = findGeneralInfo('Giới tính');
+        const quantityRaw = findGeneralInfo('Số lượng tuyển');
+        const quantity = quantityRaw ? parseInt(quantityRaw.match(/\d+/)?.[0] || '0') : 0;
+        const experienceLevel = findGeneralInfo('Kinh nghiệm');
+
+        // Deadline
+        let deadline: Date | null = null;
+        const deadlineText = $('.job-detail__info--deadline').text().replace('Hạn nộp hồ sơ:', '').trim();
+        if (deadlineText) {
+            // Basic parsing assumption for dd/mm/yyyy
+            const parts = deadlineText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (parts) {
+                deadline = new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
+            }
+        }
+
+        // Logo & Company Info
+        const logoUrl = $('.company-logo img').attr('src') || $('.box-company-logo img').attr('src');
+        const companyAddress = $('.company-address').text().trim() || $('.box-company-address').text().trim();
+        const companySize = $('.company-size').text().trim();
 
         return {
-            description: fullDescription,
+            description,
+            requirements,
+            benefits,
             jobType,
             experienceLevel,
+            level,
+            gender,
+            quantity,
+            deadline,
+            logoUrl,
+            companyAddress,
+            companySize,
         };
     }
 
-    private normalizeJobData(raw: any): NormalizedJobData {
+    private normalizeJobData(raw: any): any {
         let min = 0;
         let max = 0;
         let currency = 'VND';
@@ -176,12 +240,23 @@ export class TopCvCrawler implements JobCrawlerStrategy {
             salaryMax: max,
             currency,
             salary: raw.salaryRaw,
-            description: raw.description,
+            description: raw.description, // HTML content
+            requirements: raw.requirements,
+            benefits: raw.benefits,
             jobType: raw.jobType || 'Full-time',
             experienceLevel: raw.experienceLevel || 'Not specified',
+            level: raw.level,
+            gender: raw.gender,
+            quantity: raw.quantity,
+            deadline: raw.deadline,
+            logoUrl: raw.logoUrl,
+            companyAddress: raw.companyAddress,
+            companySize: raw.companySize,
             source: raw.source,
             url: raw.url,
             skills: [],
+            postedAt: new Date(), // Appx
+            originalData: raw, // Save full data just in case
         };
     }
 }

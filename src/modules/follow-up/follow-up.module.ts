@@ -5,12 +5,14 @@ import { FollowUpController } from './follow-up.controller';
 import { FollowUp } from './entities/follow-up.entity';
 import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([FollowUp]),
     JobsModule,
     ProfilesModule,
+    SubscriptionModule,
   ],
   controllers: [FollowUpController],
   providers: [FollowUpService],

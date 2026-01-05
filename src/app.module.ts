@@ -19,6 +19,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExportModule } from './modules/export/export.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
+import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
 @Module({
@@ -28,7 +29,7 @@ import { getTypeOrmConfig } from './config/typeorm.config';
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 10,
+      limit: 1000,
     }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -49,6 +50,7 @@ import { getTypeOrmConfig } from './config/typeorm.config';
     ExportModule,
     SubscriptionModule,
     MailModule,
+    JobAlertModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FollowUp, FollowUpStatus, FollowUpType } from './entities/follow-up.entity';
@@ -6,6 +6,7 @@ import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
 import { SendFollowUpDto } from './dto/send-follow-up.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class FollowUpService {
@@ -14,9 +15,18 @@ export class FollowUpService {
         private followUpRepository: Repository<FollowUp>,
         private jobsService: JobsService,
         private profilesService: ProfilesService,
+        private subscriptionService: SubscriptionService,
     ) { }
 
     async generate(userId: string, generateDto: GenerateFollowUpDto): Promise<FollowUp> {
+        // Freemium Check
+        const isPremium = await this.subscriptionService.isPremium(userId);
+        if (!isPremium) {
+            const followUpCount = await this.followUpRepository.count({ where: { userId } });
+            if (followUpCount >= 1) {
+                throw new ForbiddenException('Free users are limited to 1 AI Follow-up draft. Please upgrade to Premium for unlimited AI follow-ups.');
+            }
+        }
         const job = await this.jobsService.findOne(generateDto.jobId);
         if (!job) {
             throw new NotFoundException('Job not found');

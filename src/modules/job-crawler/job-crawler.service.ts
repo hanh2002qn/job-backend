@@ -16,7 +16,7 @@ export class JobCrawlerService {
         this.strategies = [this.topCvCrawler, this.linkedInCrawler];
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    // @Cron(CronExpression.EVERY_HOUR)
     async handleCron() {
         this.logger.log('Starting job crawl...');
 
@@ -30,5 +30,10 @@ export class JobCrawlerService {
         }
 
         this.logger.log('Job crawl finished.');
+    }
+    async crawlSpecificUrl(url: string) {
+        if (url.includes('topcv')) {
+            await this.topCvCrawler.crawlSpecificUrl(url); // We need to expose this in TopCvCrawler
+        }
     }
 }
