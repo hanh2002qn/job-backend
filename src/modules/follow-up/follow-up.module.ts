@@ -18,4 +18,4 @@ import { SubscriptionModule } from '../subscription/subscription.module';
   providers: [FollowUpService],
   exports: [FollowUpService],
 })
-export class FollowUpModule { }
+export class FollowUpModule {}

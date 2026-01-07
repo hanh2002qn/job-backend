@@ -7,11 +7,8 @@ import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    JobsModule,
-  ],
+  imports: [ScheduleModule.forRoot(), JobsModule],
   controllers: [JobCrawlerController],
   providers: [JobCrawlerService, TopCvCrawler, LinkedInCrawler],
 })
-export class JobCrawlerModule { }
+export class JobCrawlerModule {}

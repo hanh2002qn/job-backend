@@ -11,22 +11,22 @@ import { UserRole } from '../users/entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class JobCrawlerController {
-    constructor(private readonly crawlerService: JobCrawlerService) { }
+  constructor(private readonly crawlerService: JobCrawlerService) {}
 
-    @Post('trigger')
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'Trigger job crawler manually (Admin only)' })
-    async triggerCrawl() {
-        // Trigger in background
-        this.crawlerService.handleCron();
-        return { message: 'Crawler triggered in background' };
-    }
+  @Post('trigger')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Trigger job crawler manually (Admin only)' })
+  async triggerCrawl() {
+    // Trigger in background
+    this.crawlerService.handleCron();
+    return { message: 'Crawler triggered in background' };
+  }
 
-    @Post('test')
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'Test crawler with specific URL' })
-    async testCrawl(@Body() body: { url: string }) {
-        await this.crawlerService.crawlSpecificUrl(body.url);
-        return { message: 'Test crawl executed' };
-    }
+  @Post('test')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Test crawler with specific URL' })
+  async testCrawl(@Body() body: { url: string }) {
+    await this.crawlerService.crawlSpecificUrl(body.url);
+    return { message: 'Test crawl executed' };
+  }
 }

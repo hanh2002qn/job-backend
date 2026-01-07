@@ -18,4 +18,4 @@ import { SubscriptionModule } from '../subscription/subscription.module';
   providers: [CvService],
   exports: [CvService],
 })
-export class CvModule { }
+export class CvModule {}

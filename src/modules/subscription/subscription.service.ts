@@ -6,46 +6,52 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 
 @Injectable()
 export class SubscriptionService {
-    constructor(
-        @InjectRepository(Subscription)
-        private subscriptionRepository: Repository<Subscription>,
-    ) { }
+  constructor(
+    @InjectRepository(Subscription)
+    private subscriptionRepository: Repository<Subscription>,
+  ) {}
 
-    async createCheckoutSession(userId: string, createDto: CreateCheckoutSessionDto) {
-        // MOCK STRIPE CHECKOUT SESSION
-        // In reality, call Stripe API here
-        return {
-            sessionId: 'mock_session_id_123',
-            url: `https://mock-stripe-checkout.com/pay?plan=${createDto.plan}&user=${userId}`,
-        };
+  async createCheckoutSession(
+    userId: string,
+    createDto: CreateCheckoutSessionDto,
+  ) {
+    // MOCK STRIPE CHECKOUT SESSION
+    // In reality, call Stripe API here
+    return {
+      sessionId: 'mock_session_id_123',
+      url: `https://mock-stripe-checkout.com/pay?plan=${createDto.plan}&user=${userId}`,
+    };
+  }
+
+  async handleWebhook(body: any) {
+    // MOCK STRIPE WEBHOOK HANDLER
+    // Check signature, event type, etc.
+    const { type, data } = body;
+
+    if (type === 'checkout.session.completed') {
+      const userId = data.object.metadata.userId; // Mock metadata
+
+      // Update or create subscription
+      // Implementation omitted for brevity in mock
+      console.log(`[MOCK WEBHOOK] Subscription activated for user ${userId}`);
     }
 
-    async handleWebhook(body: any) {
-        // MOCK STRIPE WEBHOOK HANDLER
-        // Check signature, event type, etc.
-        const { type, data } = body;
+    return { received: true };
+  }
 
-        if (type === 'checkout.session.completed') {
-            const userId = data.object.metadata.userId; // Mock metadata
+  async getSubscription(userId: string) {
+    return this.subscriptionRepository.findOne({ where: { userId } });
+  }
 
-            // Update or create subscription
-            // Implementation omitted for brevity in mock
-            console.log(`[MOCK WEBHOOK] Subscription activated for user ${userId}`);
-        }
+  async isPremium(userId: string): Promise<boolean> {
+    const sub = await this.getSubscription(userId);
+    if (!sub) return false;
 
-        return { received: true };
-    }
-
-    async getSubscription(userId: string) {
-        return this.subscriptionRepository.findOne({ where: { userId } });
-    }
-
-    async isPremium(userId: string): Promise<boolean> {
-        const sub = await this.getSubscription(userId);
-        if (!sub) return false;
-
-        // Check if plan is premium and not expired
-        const now = new Date();
-        return sub.plan === SubscriptionPlan.PREMIUM && (!sub.expiresAt || sub.expiresAt > now);
-    }
+    // Check if plan is premium and not expired
+    const now = new Date();
+    return (
+      sub.plan === SubscriptionPlan.PREMIUM &&
+      (!sub.expiresAt || sub.expiresAt > now)
+    );
+  }
 }

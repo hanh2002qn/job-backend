@@ -8,30 +8,33 @@ import { ProfilesService } from '../profiles/profiles.service';
 
 @Injectable()
 export class CoverLetterService {
-    constructor(
-        @InjectRepository(CoverLetter)
-        private coverLettersRepository: Repository<CoverLetter>,
-        private jobsService: JobsService,
-        private profilesService: ProfilesService,
-    ) { }
+  constructor(
+    @InjectRepository(CoverLetter)
+    private coverLettersRepository: Repository<CoverLetter>,
+    private jobsService: JobsService,
+    private profilesService: ProfilesService,
+  ) {}
 
-    async generate(userId: string, generateDto: GenerateCoverLetterDto): Promise<CoverLetter> {
-        const job = await this.jobsService.findOne(generateDto.jobId);
-        if (!job) {
-            throw new NotFoundException('Job not found');
-        }
+  async generate(
+    userId: string,
+    generateDto: GenerateCoverLetterDto,
+  ): Promise<CoverLetter> {
+    const job = await this.jobsService.findOne(generateDto.jobId);
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
 
-        const profile = await this.profilesService.findByUserId(userId);
-        if (!profile) {
-            throw new NotFoundException('Profile not found');
-        }
+    const profile = await this.profilesService.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
 
-        // MOCK AI GENERATION
-        const tone = generateDto.tone || 'professional';
-        const candidateName = profile.fullName || 'Candidate';
-        const candidateAddress = profile.address || 'Candidate Address';
+    // MOCK AI GENERATION
+    const tone = generateDto.tone || 'professional';
+    const candidateName = profile.fullName || 'Candidate';
+    const candidateAddress = profile.address || 'Candidate Address';
 
-        const mockContent = `
+    const mockContent = `
 ${candidateName}
 ${candidateAddress}
 ${profile.user?.email || 'email@example.com'}
@@ -57,21 +60,21 @@ Sincerely,
 ${candidateName}
     `.trim();
 
-        const coverLetter = this.coverLettersRepository.create({
-            userId,
-            jobId: job.id,
-            content: mockContent,
-            tone,
-        });
+    const coverLetter = this.coverLettersRepository.create({
+      userId,
+      jobId: job.id,
+      content: mockContent,
+      tone,
+    });
 
-        return this.coverLettersRepository.save(coverLetter);
-    }
+    return this.coverLettersRepository.save(coverLetter);
+  }
 
-    async findAll(userId: string): Promise<CoverLetter[]> {
-        return this.coverLettersRepository.find({
-            where: { userId },
-            relations: ['job'],
-            order: { createdAt: 'DESC' },
-        });
-    }
+  async findAll(userId: string): Promise<CoverLetter[]> {
+    return this.coverLettersRepository.find({
+      where: { userId },
+      relations: ['job'],
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

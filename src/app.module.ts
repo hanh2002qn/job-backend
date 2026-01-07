@@ -27,10 +27,12 @@ import { getTypeOrmConfig } from './config/typeorm.config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 1000,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 1000,
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: getTypeOrmConfig,
@@ -58,7 +60,7 @@ import { getTypeOrmConfig } from './config/typeorm.config';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
-    }
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}

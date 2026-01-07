@@ -18,4 +18,4 @@ import { CvModule } from '../cv/cv.module';
   providers: [CoverLetterService],
   exports: [CoverLetterService],
 })
-export class CoverLetterModule { }
+export class CoverLetterModule {}

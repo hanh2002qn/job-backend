@@ -8,17 +8,19 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('matching')
 export class MatchingController {
-    constructor(private readonly matchingService: MatchingService) { }
+  constructor(private readonly matchingService: MatchingService) {}
 
-    @Get('jobs')
-    @ApiOperation({ summary: 'Get jobs matched to user profile' })
-    async getMatchedJobs(@Request() req) {
-        return this.matchingService.matchJobs(req.user.id);
-    }
+  @Get('jobs')
+  @ApiOperation({ summary: 'Get jobs matched to user profile' })
+  async getMatchedJobs(@Request() req) {
+    return this.matchingService.matchJobs(req.user.id);
+  }
 
-    @Get('job/:jobId')
-    @ApiOperation({ summary: 'Get detailed matching analysis for a specific job' })
-    async getJobDetail(@Request() req, @Param('jobId') jobId: string) {
-        return this.matchingService.matchSpecificJob(req.user.id, jobId);
-    }
+  @Get('job/:jobId')
+  @ApiOperation({
+    summary: 'Get detailed matching analysis for a specific job',
+  })
+  async getJobDetail(@Request() req, @Param('jobId') jobId: string) {
+    return this.matchingService.matchSpecificJob(req.user.id, jobId);
+  }
 }

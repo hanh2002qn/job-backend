@@ -6,11 +6,8 @@ import { Profile } from '../profiles/entities/profile.entity';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Job, Profile]),
-        MailModule,
-    ],
-    providers: [JobAlertService],
-    exports: [JobAlertService],
+  imports: [TypeOrmModule.forFeature([Job, Profile]), MailModule],
+  providers: [JobAlertService],
+  exports: [JobAlertService],
 })
-export class JobAlertModule { }
+export class JobAlertModule {}

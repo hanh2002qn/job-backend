@@ -8,14 +8,13 @@ import { UsersService } from './users.service';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UsersController {
-    constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
-    @Get('me')
-    @ApiOperation({ summary: 'Get current user profile' })
-    async getProfile(@Request() req) {
-        // req.user is populated by JwtStrategy
-        const { passwordHash, ...result } = req.user;
-        return result;
-    }
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  async getProfile(@Request() req) {
+    // req.user is populated by JwtStrategy
+    const { passwordHash, ...result } = req.user;
+    return result;
+  }
 }
-

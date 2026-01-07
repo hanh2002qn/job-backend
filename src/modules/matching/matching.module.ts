@@ -9,4 +9,4 @@ import { ProfilesModule } from '../profiles/profiles.module';
   controllers: [MatchingController],
   providers: [MatchingService],
 })
-export class MatchingModule { }
+export class MatchingModule {}

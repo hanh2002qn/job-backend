@@ -11,11 +11,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Global Validation Pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   app.useGlobalInterceptors(new LoggingInterceptor());
 
@@ -37,4 +39,5 @@ async function bootstrap() {
   Logger.log(`Application running on: http://localhost:${port}/api`);
   Logger.log(`Swagger documentation running on: http://localhost:${port}/docs`);
 }
-bootstrap();
+
+void bootstrap();

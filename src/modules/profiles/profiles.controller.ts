@@ -9,17 +9,22 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('profiles')
 export class ProfilesController {
-    constructor(private readonly profilesService: ProfilesService) { }
+  constructor(private readonly profilesService: ProfilesService) {}
 
-    @Get('me')
-    @ApiOperation({ summary: 'Get current user profile (skills, experience, etc.)' })
-    async getMyProfile(@Request() req) {
-        return this.profilesService.findByUserId(req.user.id);
-    }
+  @Get('me')
+  @ApiOperation({
+    summary: 'Get current user profile (skills, experience, etc.)',
+  })
+  async getMyProfile(@Request() req) {
+    return this.profilesService.findByUserId(req.user.id);
+  }
 
-    @Put('me')
-    @ApiOperation({ summary: 'Update current user profile' })
-    async updateMyProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
-        return this.profilesService.updateByUserId(req.user.id, updateProfileDto);
-    }
+  @Put('me')
+  @ApiOperation({ summary: 'Update current user profile' })
+  async updateMyProfile(
+    @Request() req,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.profilesService.updateByUserId(req.user.id, updateProfileDto);
+  }
 }

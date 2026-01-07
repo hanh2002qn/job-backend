@@ -12,9 +12,9 @@ import { FollowUp } from '../follow-up/entities/follow-up.entity';
     TypeOrmModule.forFeature([FollowUp]),
     TrackerModule,
     CvModule,
-    SubscriptionModule
+    SubscriptionModule,
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
 })
-export class AnalyticsModule { }
+export class AnalyticsModule {}

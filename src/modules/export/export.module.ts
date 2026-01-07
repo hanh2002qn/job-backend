@@ -8,4 +8,4 @@ import { CvModule } from '../cv/cv.module';
   controllers: [ExportController],
   providers: [ExportService],
 })
-export class ExportModule { }
+export class ExportModule {}

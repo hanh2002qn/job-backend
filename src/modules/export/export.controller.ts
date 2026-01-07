@@ -9,11 +9,11 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('export')
 export class ExportController {
-    constructor(private readonly exportService: ExportService) { }
+  constructor(private readonly exportService: ExportService) {}
 
-    @Post('cv')
-    @ApiOperation({ summary: 'Export CV to PDF/DOCX' })
-    exportCv(@Request() req, @Body() exportDto: ExportCvDto) {
-        return this.exportService.exportCv(req.user.id, exportDto);
-    }
+  @Post('cv')
+  @ApiOperation({ summary: 'Export CV to PDF/DOCX' })
+  exportCv(@Request() req, @Body() exportDto: ExportCvDto) {
+    return this.exportService.exportCv(req.user.id, exportDto);
+  }
 }

@@ -6,12 +6,9 @@ import { JobTracker } from './entities/job-tracker.entity';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([JobTracker]),
-    SubscriptionModule,
-  ],
+  imports: [TypeOrmModule.forFeature([JobTracker]), SubscriptionModule],
   controllers: [TrackerController],
   providers: [TrackerService],
   exports: [TrackerService],
 })
-export class TrackerModule { }
+export class TrackerModule {}

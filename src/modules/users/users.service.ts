@@ -5,33 +5,37 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-    constructor(
-        @InjectRepository(User)
-        private usersRepository: Repository<User>,
-    ) { }
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-    async create(userData: Partial<User>): Promise<User> {
-        const newUser = this.usersRepository.create(userData);
-        return this.usersRepository.save(newUser);
-    }
+  async create(userData: Partial<User>): Promise<User> {
+    const newUser = this.usersRepository.create(userData);
+    return this.usersRepository.save(newUser);
+  }
 
-    async findOneByEmail(email: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { email } });
-    }
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
 
-    async findOneById(id: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { id } });
-    }
+  async findOneById(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id } });
+  }
 
-    async findOneByVerificationToken(token: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { verificationToken: token } });
-    }
+  async findOneByVerificationToken(token: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { verificationToken: token },
+    });
+  }
 
-    async findOneByResetToken(token: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { resetPasswordToken: token } });
-    }
+  async findOneByResetToken(token: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { resetPasswordToken: token },
+    });
+  }
 
-    async update(id: string, updateData: Partial<User>) {
-        return this.usersRepository.update(id, updateData);
-    }
+  async update(id: string, updateData: Partial<User>) {
+    return this.usersRepository.update(id, updateData);
+  }
 }
