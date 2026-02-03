@@ -1,15 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  FollowUp,
-  FollowUpStatus,
-  FollowUpType,
-} from './entities/follow-up.entity';
+import { FollowUp, FollowUpStatus, FollowUpType } from './entities/follow-up.entity';
 import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
 import { SendFollowUpDto } from './dto/send-follow-up.dto';
 import { JobsService } from '../jobs/jobs.service';
@@ -26,10 +18,7 @@ export class FollowUpService {
     private subscriptionService: SubscriptionService,
   ) {}
 
-  async generate(
-    userId: string,
-    generateDto: GenerateFollowUpDto,
-  ): Promise<FollowUp> {
+  async generate(userId: string, generateDto: GenerateFollowUpDto): Promise<FollowUp> {
     // Freemium Check
     const isPremium = await this.subscriptionService.isPremium(userId);
     if (!isPremium) {
@@ -48,6 +37,11 @@ export class FollowUpService {
     }
 
     const profile = await this.profilesService.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException(
+        'Profile not found. Please update your profile before generating a follow-up.',
+      );
+    }
     const name = profile.fullName || 'Candidate';
     const type = generateDto.type || FollowUpType.AFTER_APPLY;
     const tone = generateDto.tone || 'professional';
@@ -88,10 +82,7 @@ export class FollowUpService {
     return this.followUpRepository.save(followUp);
   }
 
-  async sendOrSchedule(
-    userId: string,
-    sendDto: SendFollowUpDto,
-  ): Promise<FollowUp> {
+  async sendOrSchedule(userId: string, sendDto: SendFollowUpDto): Promise<FollowUp> {
     const followUp = await this.followUpRepository.findOne({
       where: { id: sendDto.followUpId, userId },
     });
@@ -106,6 +97,7 @@ export class FollowUpService {
       // Mock Send Immediately
       followUp.status = FollowUpStatus.SENT;
       followUp.scheduledAt = new Date();
+      // eslint-disable-next-line no-console
       console.log(
         `[MOCK EMAIL SENT] To: Company of Job ${followUp.jobId}, Content: ${followUp.content}`,
       );

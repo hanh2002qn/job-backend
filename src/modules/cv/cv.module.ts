@@ -8,12 +8,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([CV]),
-    JobsModule,
-    ProfilesModule,
-    SubscriptionModule,
-  ],
+  imports: [TypeOrmModule.forFeature([CV]), JobsModule, ProfilesModule, SubscriptionModule],
   controllers: [CvController],
   providers: [CvService],
   exports: [CvService],

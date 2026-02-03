@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProfilesService } from '../profiles/profiles.service';
 import { JobsService } from '../jobs/jobs.service';
+import { Job } from '../jobs/entities/job.entity';
+import { Profile } from '../profiles/entities/profile.entity';
+import { ExperienceRecord } from '../profiles/interfaces/profile.interface';
 
 @Injectable()
 export class MatchingService {
@@ -18,7 +21,7 @@ export class MatchingService {
     const jobs = await this.jobsService.findAll({});
     const userSkills = profile.skills?.map((s) => s.toLowerCase().trim()) || [];
 
-    const matchedJobs = jobs.map((job) => {
+    const matchedJobs = jobs.data.map((job) => {
       const result = this.calculateMatch(job, profile, userSkills);
       return {
         ...job,
@@ -35,6 +38,9 @@ export class MatchingService {
     const profile = await this.profilesService.findByUserId(userId);
     const job = await this.jobsService.findOne(jobId);
 
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
     if (!job) throw new NotFoundException('Job not found');
 
     const userSkills = profile.skills?.map((s) => s.toLowerCase().trim()) || [];
@@ -50,15 +56,12 @@ export class MatchingService {
       job,
       ...result,
       recommendations,
-      experienceMatch: this.isExperienceMatch(
-        job.experienceLevel,
-        profile.experience,
-      ),
+      experienceMatch: this.isExperienceMatch(job.experienceLevel, profile.experience),
     };
   }
 
-  private calculateMatch(job: any, profile: any, userSkills: string[]) {
-    const jobSkills = job.skills?.map((s) => s.toLowerCase().trim()) || [];
+  private calculateMatch(job: Job, profile: Profile, userSkills: string[]) {
+    const jobSkills = job.skills || [];
 
     if (jobSkills.length === 0) {
       return {
@@ -74,14 +77,11 @@ export class MatchingService {
     );
 
     const missingSkills = jobSkills.filter(
-      (skill) =>
-        !userSkills.some((us) => us.includes(skill) || skill.includes(us)),
+      (skill) => !userSkills.some((us) => us.includes(skill) || skill.includes(us)),
     );
 
     // Scoring Logic (0-100)
-    let skillScore = Math.round(
-      (matchedSkills.length / jobSkills.length) * 100,
-    );
+    const skillScore = Math.round((matchedSkills.length / jobSkills.length) * 100);
 
     // Factor in Location (+10 points)
     let bonus = 0;
@@ -112,19 +112,18 @@ export class MatchingService {
     };
   }
 
-  private isExperienceMatch(requiredLevel: string, userExp: any[]) {
+  private isExperienceMatch(requiredLevel: string | undefined, userExp: ExperienceRecord[]) {
     if (!requiredLevel) return true;
 
     // Simple heuristic: count years of experience
     const totalYears = (userExp || []).reduce((sum, exp) => {
       // Mock logic: assume each exp is 1 year if not specified
-      return sum + (exp.years || 1);
+      const years = exp.years || 1;
+      return sum + years;
     }, 0);
 
-    if (requiredLevel.toLowerCase().includes('senior') && totalYears < 5)
-      return false;
-    if (requiredLevel.toLowerCase().includes('middle') && totalYears < 2)
-      return false;
+    if (requiredLevel.toLowerCase().includes('senior') && totalYears < 5) return false;
+    if (requiredLevel.toLowerCase().includes('middle') && totalYears < 2) return false;
 
     return true;
   }

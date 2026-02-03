@@ -1,19 +1,9 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request as ExpressRequest } from 'express';
 import { SubscriptionService } from '../../modules/subscription/subscription.service';
 import { SubscriptionPlan } from '../../modules/subscription/entities/subscription.entity';
 import { CvService } from '../../modules/cv/cv.service';
-import { User } from '../../modules/users/entities/user.entity';
-
-interface AuthenticatedRequest extends ExpressRequest {
-  user?: User;
-}
+import { AuthenticatedRequest } from '../interfaces';
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -29,9 +19,7 @@ export class SubscriptionGuard implements CanActivate {
     if (!user) return false;
 
     // 1. Get Subscription
-    const subscription = await this.subscriptionService.getSubscription(
-      user.id,
-    );
+    const subscription = await this.subscriptionService.getSubscription(user.id);
     const plan = subscription?.plan || SubscriptionPlan.FREE;
 
     // If Premium, allow everything

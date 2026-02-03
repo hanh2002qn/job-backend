@@ -54,12 +54,10 @@ export class JobAlertService {
     }
 
     // 4. Send emails
-    for (const [userId, alert] of userAlerts.entries()) {
+    for (const [_userId, alert] of userAlerts.entries()) {
       try {
         await this.mailService.sendJobAlertEmail(alert.email, alert.jobs);
-        this.logger.log(
-          `Sent job alert to ${alert.email} with ${alert.jobs.length} jobs`,
-        );
+        this.logger.log(`Sent job alert to ${alert.email} with ${alert.jobs.length} jobs`);
       } catch (error) {
         this.logger.error(`Failed to send job alert to ${alert.email}`, error);
       }

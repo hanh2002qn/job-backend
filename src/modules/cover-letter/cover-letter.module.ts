@@ -8,12 +8,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { CvModule } from '../cv/cv.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([CoverLetter]),
-    JobsModule,
-    ProfilesModule,
-    CvModule,
-  ],
+  imports: [TypeOrmModule.forFeature([CoverLetter]), JobsModule, ProfilesModule, CvModule],
   controllers: [CoverLetterController],
   providers: [CoverLetterService],
   exports: [CoverLetterService],

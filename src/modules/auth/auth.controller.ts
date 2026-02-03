@@ -5,17 +5,10 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  Request,
   Get,
   Query,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -24,6 +17,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -59,8 +54,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Logout user' })
   @HttpCode(HttpStatus.OK)
-  async logout(@Request() req) {
-    return this.authService.logout(req.user.id);
+  async logout(@CurrentUser() user: User) {
+    return this.authService.logout(user.id);
   }
 
   @Post('refresh')
@@ -75,8 +70,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password' })
   @HttpCode(HttpStatus.OK)
-  async changePassword(@Request() req, @Body() changeDto: ChangePasswordDto) {
-    return this.authService.changePassword(req.user.id, changeDto);
+  async changePassword(@CurrentUser() user: User, @Body() changeDto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, changeDto);
   }
 
   @Post('forgot-password')

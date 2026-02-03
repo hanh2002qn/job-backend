@@ -8,12 +8,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FollowUp]),
-    JobsModule,
-    ProfilesModule,
-    SubscriptionModule,
-  ],
+  imports: [TypeOrmModule.forFeature([FollowUp]), JobsModule, ProfilesModule, SubscriptionModule],
   controllers: [FollowUpController],
   providers: [FollowUpService],
   exports: [FollowUpService],

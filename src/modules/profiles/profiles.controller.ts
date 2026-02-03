@@ -1,8 +1,10 @@
-import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('profiles')
 @ApiBearerAuth()
@@ -15,16 +17,13 @@ export class ProfilesController {
   @ApiOperation({
     summary: 'Get current user profile (skills, experience, etc.)',
   })
-  async getMyProfile(@Request() req) {
-    return this.profilesService.findByUserId(req.user.id);
+  async getMyProfile(@CurrentUser() user: User) {
+    return this.profilesService.findByUserId(user.id);
   }
 
   @Put('me')
   @ApiOperation({ summary: 'Update current user profile' })
-  async updateMyProfile(
-    @Request() req,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ) {
-    return this.profilesService.updateByUserId(req.user.id, updateProfileDto);
+  async updateMyProfile(@CurrentUser() user: User, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.profilesService.updateByUserId(user.id, updateProfileDto);
   }
 }

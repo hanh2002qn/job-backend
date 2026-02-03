@@ -1,9 +1,12 @@
+/* eslint-disable no-console */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { UsersService } from '../modules/users/users.service';
 import { UserRole } from '../modules/users/entities/user.entity';
 import { ProfilesService } from '../modules/profiles/profiles.service';
+import { UpdateProfileDto } from '../modules/profiles/dto/update-profile.dto';
 import * as bcrypt from 'bcrypt';
+import { faker } from '@faker-js/faker';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -25,6 +28,21 @@ async function bootstrap() {
     },
   ];
 
+  // Generate 10 fake users
+  for (let i = 0; i < 10; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    defaultUsers.push({
+      email: faker.internet.email({ firstName, lastName }).toLowerCase(),
+      password: 'Password123',
+      role: UserRole.USER,
+      fullName: `${firstName} ${lastName}`,
+    });
+  }
+
+  const salt = await bcrypt.genSalt();
+  const commonPasswordHash = await bcrypt.hash('Password123', salt);
+
   for (const userData of defaultUsers) {
     const existingUser = await usersService.findOneByEmail(userData.email);
     if (existingUser) {
@@ -32,8 +50,10 @@ async function bootstrap() {
       continue;
     }
 
-    const salt = await bcrypt.genSalt();
-    const passwordHash = await bcrypt.hash(userData.password, salt);
+    const passwordHash =
+      userData.password === 'Password123'
+        ? commonPasswordHash
+        : await bcrypt.hash(userData.password, salt);
 
     const user = await usersService.create({
       email: userData.email,
@@ -42,16 +62,22 @@ async function bootstrap() {
       role: userData.role,
     });
 
-    // Create profile
-    await profilesService.updateByUserId(user.id, {
+    // Create/Update profile
+    const profileData: UpdateProfileDto = {
       fullName: userData.fullName,
-    });
+      phone: faker.phone.number(),
+      address: faker.location.streetAddress(),
+      skills: faker.helpers.arrayElements(
+        ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Python', 'Docker'],
+        { min: 2, max: 4 },
+      ),
+    };
+    await profilesService.updateByUserId(user.id, profileData);
 
-    console.log(
-      `Created ${userData.role} account: ${userData.email} / ${userData.password}`,
-    );
+    console.log(`Created ${userData.role} account: ${userData.email} / ${userData.password}`);
   }
 
   await app.close();
 }
-bootstrap();
+
+void bootstrap();

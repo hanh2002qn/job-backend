@@ -20,10 +20,14 @@ import { ExportModule } from './modules/export/export.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { getTypeOrmConfig } from './config/typeorm.config';
+
+import { S3Service } from './common/services/s3.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -57,6 +61,7 @@ import { getTypeOrmConfig } from './config/typeorm.config';
   controllers: [AppController],
   providers: [
     AppService,
+    S3Service,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

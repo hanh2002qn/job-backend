@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
+import type { CvContent } from '../interfaces/cv.interface';
 
 @Entity('cvs')
 export class CV {
@@ -32,7 +33,7 @@ export class CV {
   name: string; // e.g., "CV for Google"
 
   @Column({ type: 'jsonb' })
-  content: Record<string, any>; // Structured CV data
+  content: CvContent; // Structured CV data
 
   @Column({ nullable: true })
   template: string; // e.g., "modern", "classic"

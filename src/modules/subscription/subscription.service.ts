@@ -1,20 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscription, SubscriptionPlan } from './entities/subscription.entity';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
+import { StripeWebhookEvent } from './interfaces/stripe-webhook.interface';
 
 @Injectable()
 export class SubscriptionService {
+  private readonly logger = new Logger(SubscriptionService.name);
+
   constructor(
     @InjectRepository(Subscription)
     private subscriptionRepository: Repository<Subscription>,
   ) {}
 
-  async createCheckoutSession(
-    userId: string,
-    createDto: CreateCheckoutSessionDto,
-  ) {
+  createCheckoutSession(userId: string, createDto: CreateCheckoutSessionDto) {
     // MOCK STRIPE CHECKOUT SESSION
     // In reality, call Stripe API here
     return {
@@ -23,17 +23,17 @@ export class SubscriptionService {
     };
   }
 
-  async handleWebhook(body: any) {
+  handleWebhook(body: StripeWebhookEvent) {
     // MOCK STRIPE WEBHOOK HANDLER
     // Check signature, event type, etc.
     const { type, data } = body;
 
     if (type === 'checkout.session.completed') {
-      const userId = data.object.metadata.userId; // Mock metadata
+      const userId = data.object.metadata?.userId;
 
       // Update or create subscription
       // Implementation omitted for brevity in mock
-      console.log(`[MOCK WEBHOOK] Subscription activated for user ${userId}`);
+      this.logger.log(`[MOCK WEBHOOK] Subscription activated for user ${userId}`);
     }
 
     return { received: true };
@@ -49,9 +49,6 @@ export class SubscriptionService {
 
     // Check if plan is premium and not expired
     const now = new Date();
-    return (
-      sub.plan === SubscriptionPlan.PREMIUM &&
-      (!sub.expiresAt || sub.expiresAt > now)
-    );
+    return sub.plan === SubscriptionPlan.PREMIUM && (!sub.expiresAt || sub.expiresAt > now);
   }
 }

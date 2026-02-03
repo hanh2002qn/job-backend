@@ -16,7 +16,7 @@ export class JobCrawlerService {
     this.strategies = [this.topCvCrawler, this.linkedInCrawler];
   }
 
-  // @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
     this.logger.log('Starting job crawl...');
 

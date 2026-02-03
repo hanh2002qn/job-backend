@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -35,7 +35,10 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateData: Partial<User>) {
-    return this.usersRepository.update(id, updateData);
+  async update(id: string, updateData: DeepPartial<User>) {
+    return this.usersRepository.update(
+      id,
+      updateData as Parameters<typeof this.usersRepository.update>[1],
+    );
   }
 }

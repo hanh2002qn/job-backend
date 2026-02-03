@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Job } from './entities/job.entity';
 import { JobSearchDto } from './dto/job-search.dto';
 
@@ -16,9 +16,17 @@ export class JobsService {
     return this.jobsRepository.save(newJob);
   }
 
-  async findAll(searchDto: JobSearchDto): Promise<Job[]> {
-    const { keyword, location, minSalary, maxSalary, jobType, level } =
-      searchDto;
+  async findAll(searchDto: JobSearchDto) {
+    const {
+      keyword,
+      location,
+      minSalary,
+      maxSalary,
+      jobType,
+      level,
+      page = 1,
+      limit = 10,
+    } = searchDto;
     const query = this.jobsRepository.createQueryBuilder('job');
 
     if (keyword) {
@@ -48,10 +56,6 @@ export class JobsService {
       query.andWhere('job.salaryMin >= :minSalary', { minSalary });
     }
 
-    // if maxSalary is provided, we want jobs where the max range is at least somewhat relevant or within budget
-    // Simplified logic: Show jobs where salaryMax <= provided max (within budget) OR undefined
-    // Actually, usually filters work as 'Show jobs paying AT LEAST X' (min) or '... UP TO Y' (max)
-    // Let's implement literally:
     if (maxSalary) {
       query.andWhere('job.salaryMax <= :maxSalary', { maxSalary });
     }
@@ -59,11 +63,28 @@ export class JobsService {
     query.andWhere('job.expired = :expired', { expired: false });
     query.orderBy('job.createdAt', 'DESC');
 
-    return query.getMany();
+    const skip = (page - 1) * limit;
+    query.skip(skip).take(limit);
+
+    const [items, total] = await query.getManyAndCount();
+
+    return {
+      data: items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Job | null> {
     return this.jobsRepository.findOne({ where: { id } });
+  }
+
+  async update(id: string, jobData: Partial<Job>): Promise<void> {
+    await this.jobsRepository.update(id, jobData);
   }
 
   // Helper for crawler

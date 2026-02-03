@@ -16,9 +16,9 @@ export class JobCrawlerController {
   @Post('trigger')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Trigger job crawler manually (Admin only)' })
-  async triggerCrawl() {
+  triggerCrawl() {
     // Trigger in background
-    this.crawlerService.handleCron();
+    void this.crawlerService.handleCron();
     return { message: 'Crawler triggered in background' };
   }
 

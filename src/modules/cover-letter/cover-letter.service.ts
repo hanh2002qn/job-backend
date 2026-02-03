@@ -15,10 +15,7 @@ export class CoverLetterService {
     private profilesService: ProfilesService,
   ) {}
 
-  async generate(
-    userId: string,
-    generateDto: GenerateCoverLetterDto,
-  ): Promise<CoverLetter> {
+  async generate(userId: string, generateDto: GenerateCoverLetterDto): Promise<CoverLetter> {
     const job = await this.jobsService.findOne(generateDto.jobId);
     if (!job) {
       throw new NotFoundException('Job not found');

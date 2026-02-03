@@ -8,12 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FollowUp } from '../follow-up/entities/follow-up.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FollowUp]),
-    TrackerModule,
-    CvModule,
-    SubscriptionModule,
-  ],
+  imports: [TypeOrmModule.forFeature([FollowUp]), TrackerModule, CvModule, SubscriptionModule],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
 })

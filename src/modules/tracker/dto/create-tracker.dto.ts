@@ -1,10 +1,4 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsUUID, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApplicationStatus } from '../entities/job-tracker.entity';
 

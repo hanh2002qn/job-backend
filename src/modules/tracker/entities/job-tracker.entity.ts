@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
+import { CV } from '../../cv/entities/cv.entity';
 
 export enum ApplicationStatus {
   SAVED = 'saved',
@@ -59,9 +60,9 @@ export class JobTracker {
   @Column({ nullable: true })
   cvId: string;
 
-  @ManyToOne('CV', { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => CV, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'cvId' })
-  cv: any; // Using any to avoid circular dependency for now, or import CV
+  cv: CV;
 
   @Column({ type: 'text', nullable: true })
   notes: string;

@@ -1,5 +1,6 @@
 import { IsArray, IsOptional, IsString, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { EducationRecord, ExperienceRecord } from '../interfaces/profile.interface';
 
 export class UpdateProfileDto {
   @ApiProperty({
@@ -8,7 +9,7 @@ export class UpdateProfileDto {
   })
   @IsArray()
   @IsOptional()
-  education?: Record<string, any>[];
+  education?: EducationRecord[];
 
   @ApiProperty({
     description: 'List of experience records',
@@ -16,7 +17,7 @@ export class UpdateProfileDto {
   })
   @IsArray()
   @IsOptional()
-  experience?: Record<string, any>[];
+  experience?: ExperienceRecord[];
 
   @ApiProperty({ description: 'List of skills', example: ['Node.js', 'React'] })
   @IsArray()

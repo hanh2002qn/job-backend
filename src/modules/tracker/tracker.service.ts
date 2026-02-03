@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
@@ -92,23 +87,21 @@ export class TrackerService {
     }
 
     if (filters?.company) {
-      query.andWhere(
-        '(job.company ILIKE :company OR tracker.manualCompany ILIKE :company)',
-        { company: `%${filters.company}%` },
-      );
+      query.andWhere('(job.company ILIKE :company OR tracker.manualCompany ILIKE :company)', {
+        company: `%${filters.company}%`,
+      });
     }
 
     if (filters?.title) {
-      query.andWhere(
-        '(job.title ILIKE :title OR tracker.manualTitle ILIKE :title)',
-        { title: `%${filters.title}%` },
-      );
+      query.andWhere('(job.title ILIKE :title OR tracker.manualTitle ILIKE :title)', {
+        title: `%${filters.title}%`,
+      });
     }
 
     const sortBy = filters?.sortBy || 'updatedAt';
     const order = filters?.order || 'DESC';
 
-    const sortMap = {
+    const sortMap: Record<string, string> = {
       updatedAt: 'tracker.updatedAt',
       createdAt: 'tracker.createdAt',
       deadline: 'job.deadline',
@@ -132,8 +125,7 @@ export class TrackerService {
     // If nextActionDate is being updated, reset isReminderSent
     if (
       updateDto.nextActionDate &&
-      new Date(updateDto.nextActionDate).getTime() !==
-        tracker.nextActionDate?.getTime()
+      new Date(updateDto.nextActionDate).getTime() !== tracker.nextActionDate?.getTime()
     ) {
       tracker.isReminderSent = false;
     }
@@ -163,10 +155,10 @@ export class TrackerService {
       .addSelect('COUNT(tracker.id)', 'count')
       .where('tracker.userId = :userId', { userId })
       .groupBy('tracker.status')
-      .getRawMany();
+      .getRawMany<{ status: ApplicationStatus; count: string }>();
 
     // Convert to clearer object format
-    const result = {
+    const result: Record<string, number> = {
       total: 0,
       saved: 0,
       applied: 0,

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { OriginalJobData } from '../../job-crawler/interfaces/job-crawler.interface';
 
 @Entity('jobs')
 export class Job {
@@ -59,6 +60,21 @@ export class Job {
   @Column({ nullable: true })
   category: string; // Industry/Category
 
+  @Column({ type: 'simple-array', default: [] })
+  categories: string[];
+
+  @Column({ nullable: true })
+  education: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ default: false })
+  isBranded: boolean;
+
+  @Column({ type: 'simple-array', default: [] })
+  tags: string[];
+
   @Column({ nullable: true })
   quantity: number; // Number of hires
 
@@ -66,7 +82,16 @@ export class Job {
   gender: string; // Male/Female/Any
 
   @Column({ nullable: true })
-  deadline: Date; // Application deadline
+  deadline: Date | null; // Application deadline
+
+  @Column({ nullable: true })
+  allowance: string;
+
+  @Column({ nullable: true })
+  equipment: string;
+
+  @Column({ nullable: true })
+  industry: string;
 
   @Column({ nullable: true })
   salary: string; // Original salary string
@@ -83,23 +108,26 @@ export class Job {
   @Column({ type: 'simple-array', default: [] })
   skills: string[]; // Extracted skills for matching
 
-  @Column({ type: 'jsonb', nullable: true })
-  originalData: any; // Store full raw JSON from crawler if needed
+  @Column({ type: 'jsonb', nullable: true, select: false })
+  originalData: OriginalJobData; // Store full raw JSON from crawler if needed
 
   @Column({ default: false })
   expired: boolean;
 
   @Column({ nullable: true })
-  externalId: string; // ID from the source system
+  externalId: string | null; // ID from the source system
 
   @Column({ nullable: true })
   url: string; // Ops: Link to original job
 
   @Column({ nullable: true })
-  postedAt: Date; // Date job was posted on source
+  postedAt: Date | null; // Date job was posted on source
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: false })
+  isVerified: boolean;
 
   @Column({ default: false })
   isAlertSent: boolean;

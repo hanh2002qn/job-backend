@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { TrackerService } from '../tracker/tracker.service';
 import { CvService } from '../cv/cv.service';
-import { ApplicationStatus } from '../tracker/entities/job-tracker.entity';
+import { ApplicationStatus, JobTracker } from '../tracker/entities/job-tracker.entity';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FollowUp } from '../follow-up/entities/follow-up.entity';
+import { FollowUp, FollowUpStatus } from '../follow-up/entities/follow-up.entity';
 
 @Injectable()
 export class AnalyticsService {
@@ -30,21 +30,11 @@ export class AnalyticsService {
       return this.getDemoOverview(isPremium);
     }
 
-    const saved = trackedJobs.filter(
-      (t) => t.status === ApplicationStatus.SAVED,
-    ).length;
-    const applied = trackedJobs.filter(
-      (t) => t.status === ApplicationStatus.APPLIED,
-    ).length;
-    const interview = trackedJobs.filter(
-      (t) => t.status === ApplicationStatus.INTERVIEW,
-    ).length;
-    const offer = trackedJobs.filter(
-      (t) => t.status === ApplicationStatus.OFFER,
-    ).length;
-    const rejected = trackedJobs.filter(
-      (t) => t.status === ApplicationStatus.REJECTED,
-    ).length;
+    const saved = trackedJobs.filter((t) => t.status === ApplicationStatus.SAVED).length;
+    const applied = trackedJobs.filter((t) => t.status === ApplicationStatus.APPLIED).length;
+    const interview = trackedJobs.filter((t) => t.status === ApplicationStatus.INTERVIEW).length;
+    const offer = trackedJobs.filter((t) => t.status === ApplicationStatus.OFFER).length;
+    const rejected = trackedJobs.filter((t) => t.status === ApplicationStatus.REJECTED).length;
 
     const totalApplications = applied + interview + offer + rejected;
 
@@ -56,24 +46,23 @@ export class AnalyticsService {
       offer,
       rejected,
       successRate:
-        totalApplications > 0
-          ? ((offer / totalApplications) * 100).toFixed(1) + '%'
-          : '0%',
+        totalApplications > 0 ? ((offer / totalApplications) * 100).toFixed(1) + '%' : '0%',
     };
 
     // 2. CV Effectiveness
     const avgCvScore =
       cvs.length > 0
-        ? Math.round(
-            cvs.reduce((acc, cv) => acc + (cv.score || 0), 0) / cvs.length,
-          )
+        ? Math.round(cvs.reduce((acc, cv) => acc + (cv.score || 0), 0) / cvs.length)
         : 0;
 
-    const templateUsage = cvs.reduce((acc, cv) => {
-      const name = cv.template || 'Default';
-      acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {});
+    const templateUsage = cvs.reduce(
+      (acc, cv) => {
+        const name = cv.template || 'Default';
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // 3. Timeline (Last 7 days)
     const timeline = this.getTimelineData(trackedJobs);
@@ -81,11 +70,9 @@ export class AnalyticsService {
     // 4. Follow-up Stats
     const followUpStats = {
       total: followUps.length,
-      sent: followUps.filter((f) => f.status === 'sent').length,
-      scheduled: followUps.filter((f) => f.status === 'scheduled').length,
-      responseRate: isPremium
-        ? this.calculateResponseRate(followUps)
-        : 'Premium Only',
+      sent: followUps.filter((f) => f.status === FollowUpStatus.SENT).length,
+      scheduled: followUps.filter((f) => f.status === FollowUpStatus.SCHEDULED).length,
+      responseRate: isPremium ? this.calculateResponseRate(followUps) : 'Premium Only',
     };
 
     return {
@@ -119,8 +106,7 @@ export class AnalyticsService {
     return {
       isPremium,
       isDemo: true,
-      demoMessage:
-        'Đây là dữ liệu mẫu. Hãy bắt đầu tìm việc để xem phân tích thực tế!',
+      demoMessage: 'Đây là dữ liệu mẫu. Hãy bắt đầu tìm việc để xem phân tích thực tế!',
       summary: {
         totalTracked: 12,
         totalSaved: 5,
@@ -169,9 +155,9 @@ export class AnalyticsService {
     };
   }
 
-  private calculateResponseRate(followUps: any[]): string {
+  private calculateResponseRate(followUps: FollowUp[]): string {
     // Mock calculation - in real app, track actual responses
-    const sent = followUps.filter((f) => f.status === 'sent').length;
+    const sent = followUps.filter((f) => f.status === FollowUpStatus.SENT).length;
     if (sent === 0) return '0%';
     // Assume 20-30% response rate for demo
     return `${Math.round(sent * 0.25)}%`;
@@ -183,19 +169,15 @@ export class AnalyticsService {
     return d.toISOString().split('T')[0];
   }
 
-  private getTimelineData(trackers: any[]) {
-    const last7Days = [...Array(7)]
-      .map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
-      })
-      .reverse();
+  private getTimelineData(trackers: JobTracker[]) {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
+    }).reverse();
 
     const data = last7Days.map((date) => {
-      const count = trackers.filter(
-        (t) => t.createdAt.toISOString().split('T')[0] === date,
-      ).length;
+      const count = trackers.filter((t) => t.createdAt.toISOString().split('T')[0] === date).length;
       return { date, count };
     });
 

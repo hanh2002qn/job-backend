@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CV } from './entities/cv.entity';
@@ -35,9 +31,7 @@ export class CvService {
 
     // Template Check
     if (generateDto.template?.startsWith('premium-') && !isPremium) {
-      throw new ForbiddenException(
-        'This template is only available for Premium users.',
-      );
+      throw new ForbiddenException('This template is only available for Premium users.');
     }
 
     const job = await this.jobsService.findOne(generateDto.jobId);
@@ -47,9 +41,7 @@ export class CvService {
 
     const profile = await this.profilesService.findByUserId(userId);
     if (!profile) {
-      throw new NotFoundException(
-        'Profile not found. Please complete your profile first.',
-      );
+      throw new NotFoundException('Profile not found. Please complete your profile first.');
     }
 
     // MOCK AI GENERATION LOGIC
@@ -57,9 +49,7 @@ export class CvService {
     const jobSkills = job.skills || [];
     const profileSkills = profile.skills || [];
     const matchedSkills = jobSkills.filter((skill) =>
-      profileSkills.some((ps) =>
-        ps.toLowerCase().includes(skill.toLowerCase()),
-      ),
+      profileSkills.some((ps) => ps.toLowerCase().includes(skill.toLowerCase())),
     );
 
     let score = 0;
@@ -70,7 +60,7 @@ export class CvService {
     }
 
     // 2. Generate Bullet Points (Mocking AI)
-    const enhancedExperience = (profile.experience || []).map((exp: any) => ({
+    const enhancedExperience = (profile.experience || []).map((exp) => ({
       ...exp,
       achievements: [
         `Successfully utilized ${matchedSkills[0] || 'core skills'} to improve performance by 20%.`,

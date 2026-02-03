@@ -2,15 +2,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   JobCrawlerStrategy,
   NormalizedJobData,
+  RawLinkedInJob,
 } from '../interfaces/job-crawler.interface';
 import { JobsService } from '../../jobs/jobs.service';
+import { JobNormalizationService } from '../services/job-normalization.service';
 
 @Injectable()
 export class LinkedInCrawler implements JobCrawlerStrategy {
   name = 'LinkedIn';
   private readonly logger = new Logger(LinkedInCrawler.name);
 
-  constructor(private readonly jobsService: JobsService) {}
+  constructor(
+    private readonly jobsService: JobsService,
+    private readonly normalizationService: JobNormalizationService,
+  ) {}
 
   async crawl(): Promise<void> {
     this.logger.log('Crawling LinkedIn (Mock)...');
@@ -34,45 +39,28 @@ export class LinkedInCrawler implements JobCrawlerStrategy {
       if (!existing) {
         const normalized = this.normalizeJobData(raw);
         await this.jobsService.create(normalized);
-        this.logger.log(
-          `Imported job: ${normalized.title} from ${normalized.source}`,
-        );
+        this.logger.log(`Imported job: ${normalized.title} from ${normalized.source}`);
       }
     }
   }
 
-  private normalizeJobData(raw: any): NormalizedJobData {
-    let min = 0;
-    let max = 0;
-    let currency = 'VND';
-    let level = 'Entry';
-    let type = 'Full-time';
-
-    if (raw.salaryRaw.includes('USD')) {
-      currency = 'USD';
-      const parts = raw.salaryRaw.match(/\d+/g);
-      if (parts) {
-        min = parseInt(parts[0]);
-        max = parseInt(parts[1] || parts[0]);
-      }
-    }
-
-    if (raw.title.toLowerCase().includes('senior')) level = 'Senior';
+  private normalizeJobData(raw: RawLinkedInJob): NormalizedJobData {
+    const salaryParsed = this.normalizationService.parseSalary(raw.salaryRaw);
 
     return {
       externalId: raw.externalId,
       title: raw.title,
       company: raw.company,
       location: raw.location,
-      salaryMin: min,
-      salaryMax: max,
-      currency,
-      experienceLevel: level,
-      jobType: type,
-      salary: raw.salaryRaw,
+      salaryMin: salaryParsed.min,
+      salaryMax: salaryParsed.max,
+      currency: salaryParsed.currency,
+      salary: raw.salaryRaw || '',
+      description: this.normalizationService.sanitizeHtml(raw.description),
+      jobType: this.normalizationService.normalizeJobType('Full-time'),
+      experienceLevel: this.normalizationService.normalizeExperienceLevel(raw.title),
       source: raw.source,
       url: raw.url,
-      description: raw.description,
       skills: ['Mock Skill'],
     };
   }

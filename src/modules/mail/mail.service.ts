@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as SendGrid from '@sendgrid/mail';
+import { JobAlertJob } from '../profiles/interfaces/profile.interface';
+
+interface SendGridError {
+  response?: {
+    body?: unknown;
+  };
+}
 
 @Injectable()
 export class MailService {
@@ -48,8 +55,9 @@ export class MailService {
       this.logger.log(`Verification email sent to ${to}`);
     } catch (error) {
       this.logger.error('Error sending verification email', error);
-      if (error.response) {
-        this.logger.error(error.response.body);
+      const sgError = error as SendGridError;
+      if (sgError.response) {
+        this.logger.error(sgError.response.body);
       }
       // Don't throw error to prevent blocking registration flow,
       // but you might want to handle this differently in production
@@ -91,12 +99,7 @@ export class MailService {
     }
   }
 
-  async sendReminderEmail(
-    to: string,
-    jobTitle: string,
-    company: string,
-    actionDate: Date,
-  ) {
+  async sendReminderEmail(to: string, jobTitle: string, company: string, actionDate: Date) {
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
     if (!from) return;
 
@@ -128,7 +131,7 @@ export class MailService {
     }
   }
 
-  async sendJobAlertEmail(to: string, jobs: any[]) {
+  async sendJobAlertEmail(to: string, jobs: JobAlertJob[]) {
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
     if (!from) return;
 

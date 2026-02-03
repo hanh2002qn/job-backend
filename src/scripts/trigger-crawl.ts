@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { JobCrawlerService } from '../modules/job-crawler/job-crawler.service';
@@ -15,4 +16,5 @@ async function bootstrap() {
 
   await app.close();
 }
-bootstrap();
+
+void bootstrap();

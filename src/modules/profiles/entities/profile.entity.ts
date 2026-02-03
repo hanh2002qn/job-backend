@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { EducationRecord, ExperienceRecord } from '../interfaces/profile.interface';
 
 @Entity('profiles')
 export class Profile {
@@ -30,10 +31,10 @@ export class Profile {
   address: string;
 
   @Column({ type: 'jsonb', default: [] })
-  education: Record<string, any>[];
+  education: EducationRecord[];
 
   @Column({ type: 'jsonb', default: [] })
-  experience: Record<string, any>[];
+  experience: ExperienceRecord[];
 
   @Column({ type: 'simple-array', default: [] })
   skills: string[];
