@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job } from './entities/job.entity';
-import { JobSearchDto } from './dto/job-search.dto';
+import { JobSearchDto, JobSortBy } from './dto/job-search.dto';
+import { SortOrder } from '../../common/dto/base-search.dto';
 import { CacheService } from '../../common/redis/cache.service';
 import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 
@@ -33,10 +34,17 @@ export class JobsService {
         const {
           keyword,
           location,
+          city,
+          experienceLevel,
+          level,
+          source,
+          industry,
+          category,
           minSalary,
           maxSalary,
           jobType,
-          level,
+          sortBy = JobSortBy.POSTED_AT,
+          sortOrder = SortOrder.DESC,
           page = 1,
           limit = 10,
         } = searchDto;
@@ -44,7 +52,7 @@ export class JobsService {
 
         if (keyword) {
           query.andWhere(
-            '(job.title ILIKE :keyword OR job.description ILIKE :keyword OR job.skills ILIKE :keyword)',
+            '(job.title ILIKE :keyword OR job.description ILIKE :keyword OR job.skills ILIKE :keyword OR job.company ILIKE :keyword)',
             { keyword: `%${keyword}%` },
           );
         }
@@ -55,14 +63,34 @@ export class JobsService {
           });
         }
 
+        if (city) {
+          query.andWhere('job.city = :city', { city });
+        }
+
+        if (experienceLevel) {
+          query.andWhere('job.experienceLevel = :experienceLevel', { experienceLevel });
+        }
+
         if (level) {
-          query.andWhere('job.experienceLevel ILIKE :level', {
+          query.andWhere('job.level ILIKE :level', {
             level: `%${level}%`,
           });
         }
 
+        if (source) {
+          query.andWhere('job.source = :source', { source });
+        }
+
+        if (industry) {
+          query.andWhere('job.industry = :industry', { industry });
+        }
+
+        if (category) {
+          query.andWhere('job.category ILIKE :category', { category: `%${category}%` });
+        }
+
         if (jobType) {
-          query.andWhere('job.jobType ILIKE :jobType', { jobType: `%${jobType}%` });
+          query.andWhere('job.jobType = :jobType', { jobType });
         }
 
         if (minSalary) {
@@ -74,7 +102,10 @@ export class JobsService {
         }
 
         query.andWhere('job.expired = :expired', { expired: false });
-        query.orderBy('job.createdAt', 'DESC');
+
+        // Sorting logic
+        const sortField = `job.${sortBy}`;
+        query.orderBy(sortField, sortOrder);
 
         const skip = (page - 1) * limit;
         query.skip(skip).take(limit);
@@ -106,6 +137,14 @@ export class JobsService {
 
   async update(id: string, jobData: Partial<Job>): Promise<void> {
     await this.jobsRepository.update(id, jobData);
+
+    // Invalidate caches
+    void this.cacheService.del(this.cacheService.buildKey(CACHE_KEYS.JOB_DETAIL, id));
+    void this.cacheService.delByPattern(`${CACHE_KEYS.JOBS_LIST}:*`);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.jobsRepository.delete(id);
 
     // Invalidate caches
     void this.cacheService.del(this.cacheService.buildKey(CACHE_KEYS.JOB_DETAIL, id));

@@ -26,7 +26,7 @@ export class WorkerSchedulerService implements OnModuleInit {
     private readonly trackerService: TrackerService,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     this.logger.log('Worker Scheduler Service initialized');
 
     this.logger.log('Scheduled jobs:');

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -21,6 +22,7 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { ExtensionModule } from './modules/extension/extension.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { RedisModule } from './common/redis/redis.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
@@ -32,12 +34,29 @@ import { S3Service } from './common/services/s3.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 1000,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: 60000,
+            limit: 100,
+          },
+          {
+            name: 'login',
+            ttl: 60000,
+            limit: 5,
+          },
+        ],
+        storage: new ThrottlerStorageRedisService({
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: config.get<number>('REDIS_PORT', 6379),
+          password: config.get<string>('REDIS_PASSWORD'),
+        }),
+      }),
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: getTypeOrmConfig,
@@ -59,6 +78,7 @@ import { S3Service } from './common/services/s3.service';
     MailModule,
     JobAlertModule,
     ExtensionModule,
+    AdminModule,
     RedisModule,
   ],
   controllers: [AppController],
