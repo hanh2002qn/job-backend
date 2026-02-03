@@ -427,7 +427,7 @@ export class TopCvCrawler implements JobCrawlerStrategy {
       .text()
       .trim();
 
-    const cleanHtml = (html: string | null) => {
+    const cleanHtml = (html: string | null | undefined) => {
       if (!html) return '';
       return DOMPurify.sanitize(html, {
         USE_PROFILES: { html: true },
@@ -443,9 +443,9 @@ export class TopCvCrawler implements JobCrawlerStrategy {
       description: cleanHtml(description || jsonLdData?.description),
       requirements: cleanHtml(requirements),
       benefits: cleanHtml(benefits),
-      jobType: jobType || jsonLdData?.employmentType,
+      jobType: jobType || jsonLdData?.employmentType || 'N/A',
       experienceLevel:
-        refinedExperience || jsonLdData?.experienceRequirements?.occupationalCategory,
+        refinedExperience || jsonLdData?.experienceRequirements?.occupationalCategory || 'N/A',
       education: refinedEducation,
       level,
       gender,
@@ -487,14 +487,14 @@ export class TopCvCrawler implements JobCrawlerStrategy {
       benefits: this.normalizationService.sanitizeHtml(raw.benefits),
       jobType: this.normalizationService.normalizeJobType(raw.jobType),
       experienceLevel: this.normalizationService.normalizeExperienceLevel(raw.experienceLevel),
-      education: raw.education,
+      education: this.normalizationService.normalizeEducation(raw.education),
       level: raw.level,
-      gender: raw.gender,
+      gender: this.normalizationService.normalizeGender(raw.gender),
       quantity: raw.quantity,
       deadline: raw.deadline,
       allowance: raw.allowance,
       equipment: raw.equipment,
-      industry: raw.industry,
+      industry: this.normalizationService.normalizeIndustry(raw.industry),
       logoUrl: raw.logoUrl,
       companyAddress: raw.companyAddress,
       companySize: raw.companySize,

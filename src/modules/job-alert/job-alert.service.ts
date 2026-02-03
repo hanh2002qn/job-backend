@@ -4,7 +4,6 @@ import { Repository, In } from 'typeorm';
 import { Job } from '../jobs/entities/job.entity';
 import { Profile } from '../profiles/entities/profile.entity';
 import { MailService } from '../mail/mail.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class JobAlertService {
@@ -18,7 +17,9 @@ export class JobAlertService {
     private readonly mailService: MailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_HOUR)
+  /**
+   * Check and send job alerts - called by worker scheduler
+   */
   async handleJobAlerts() {
     this.logger.log('Checking for new jobs to send alerts...');
 

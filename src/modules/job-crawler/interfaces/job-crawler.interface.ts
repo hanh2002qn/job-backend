@@ -1,4 +1,12 @@
-import { JobLevel, JobType } from '../../jobs/enums/job.enums';
+import {
+  City,
+  Currency,
+  Education,
+  Gender,
+  Industry,
+  JobLevel,
+  JobType,
+} from '../../jobs/enums/job.enums';
 
 export interface RawLinkedInJob {
   externalId: string;
@@ -59,32 +67,34 @@ export interface NormalizedJobData {
   location: string;
   salaryMin: number;
   salaryMax: number;
-  currency: string;
+  currency: Currency;
   salary: string;
   description: string;
   requirements?: string;
   benefits?: string;
-  jobType: JobType | string;
-  experienceLevel: JobLevel | string;
+  jobType: JobType;
+  experienceLevel: JobLevel;
   level?: string;
-  education?: string;
-  city?: string;
+  education?: Education;
+  city?: City;
   source: string;
   url: string;
   skills: string[];
   postedAt?: Date;
-  deadline?: Date;
+  deadline?: Date | null;
   logoUrl?: string;
   companyAddress?: string;
   companySize?: string;
   workingTime?: string;
   quantity?: number;
-  gender?: string;
-  industry?: string;
+  gender?: Gender;
+  industry?: Industry;
   tags?: string[];
   categories?: string[];
   isBranded?: boolean;
   isVerified?: boolean;
+  allowance?: string;
+  equipment?: string;
   originalData?: OriginalJobData;
 }
 

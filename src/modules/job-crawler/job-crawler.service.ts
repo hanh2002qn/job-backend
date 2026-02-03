@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { JobCrawlerStrategy } from './interfaces/job-crawler.interface';
 import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
@@ -16,7 +15,9 @@ export class JobCrawlerService {
     this.strategies = [this.topCvCrawler, this.linkedInCrawler];
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  /**
+   * Run job crawl - called by worker scheduler
+   */
   async handleCron() {
     this.logger.log('Starting job crawl...');
 

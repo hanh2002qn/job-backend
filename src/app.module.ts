@@ -20,14 +20,15 @@ import { ExportModule } from './modules/export/export.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
-import { ScheduleModule } from '@nestjs/schedule';
+import { ExtensionModule } from './modules/extension/extension.module';
+import { RedisModule } from './common/redis/redis.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
 import { S3Service } from './common/services/s3.service';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
+    // Note: ScheduleModule removed - all cron/schedule jobs now run in worker app only
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -57,6 +58,8 @@ import { S3Service } from './common/services/s3.service';
     SubscriptionModule,
     MailModule,
     JobAlertModule,
+    ExtensionModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

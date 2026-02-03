@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import type { OriginalJobData } from '../../job-crawler/interfaces/job-crawler.interface';
+import { City, Currency, Education, Gender, Industry, JobLevel, JobType } from '../enums/job.enums';
 
 @Entity('jobs')
 export class Job {
@@ -45,14 +46,14 @@ export class Job {
   @Column({ nullable: true })
   salaryMax: number;
 
-  @Column({ default: 'VND' })
-  currency: string;
+  @Column({ type: 'varchar', default: Currency.VND })
+  currency: Currency;
 
-  @Column({ nullable: true })
-  jobType: string; // Remote, Onsite, Hybrid, Full-time...
+  @Column({ type: 'varchar', nullable: true })
+  jobType: JobType; // Remote, Onsite, Hybrid, Full-time...
 
-  @Column({ nullable: true })
-  experienceLevel: string; // Junior, Senior...
+  @Column({ type: 'varchar', nullable: true })
+  experienceLevel: JobLevel; // Junior, Senior...
 
   @Column({ nullable: true })
   level: string; // Staff, Manager, Director...
@@ -63,11 +64,11 @@ export class Job {
   @Column({ type: 'simple-array', default: [] })
   categories: string[];
 
-  @Column({ nullable: true })
-  education: string;
+  @Column({ type: 'varchar', nullable: true })
+  education: Education;
 
-  @Column({ nullable: true })
-  city: string;
+  @Column({ type: 'varchar', nullable: true })
+  city: City;
 
   @Column({ default: false })
   isBranded: boolean;
@@ -78,10 +79,10 @@ export class Job {
   @Column({ nullable: true })
   quantity: number; // Number of hires
 
-  @Column({ nullable: true })
-  gender: string; // Male/Female/Any
+  @Column({ type: 'varchar', nullable: true })
+  gender: Gender; // Male/Female/Any
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deadline: Date | null; // Application deadline
 
   @Column({ nullable: true })
@@ -90,8 +91,8 @@ export class Job {
   @Column({ nullable: true })
   equipment: string;
 
-  @Column({ nullable: true })
-  industry: string;
+  @Column({ type: 'varchar', nullable: true })
+  industry: Industry;
 
   @Column({ nullable: true })
   salary: string; // Original salary string
@@ -114,13 +115,13 @@ export class Job {
   @Column({ default: false })
   expired: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   externalId: string | null; // ID from the source system
 
   @Column({ nullable: true })
   url: string; // Ops: Link to original job
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   postedAt: Date | null; // Date job was posted on source
 
   @CreateDateColumn()

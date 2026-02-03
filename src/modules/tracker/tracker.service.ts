@@ -5,7 +5,6 @@ import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { MailService } from '../mail/mail.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
@@ -19,7 +18,9 @@ export class TrackerService {
     private subscriptionService: SubscriptionService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  /**
+   * Handle reminders - called by worker scheduler
+   */
   async handleReminders() {
     this.logger.log('Checking for job trackers reminders...');
     const dueItems = await this.checkReminders();

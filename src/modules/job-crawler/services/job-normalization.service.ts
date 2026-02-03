@@ -1,6 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import DOMPurify from 'isomorphic-dompurify';
-import { Currency, JobLevel, JobType } from '../../jobs/enums/job.enums';
+import {
+  City,
+  Currency,
+  Education,
+  Gender,
+  Industry,
+  JobLevel,
+  JobType,
+} from '../../jobs/enums/job.enums';
 
 @Injectable()
 export class JobNormalizationService {
@@ -183,8 +191,8 @@ export class JobNormalizationService {
   /**
    * Normalize location (City level)
    */
-  normalizeCity(location: string | undefined): string {
-    if (!location) return 'Toàn quốc';
+  normalizeCity(location: string | undefined): City {
+    if (!location) return City.NATIONWIDE;
     const loc = location.toLowerCase();
 
     if (
@@ -194,26 +202,109 @@ export class JobNormalizationService {
       loc.includes('district 1') ||
       loc.includes('quận 1')
     )
-      return 'Hồ Chí Minh';
+      return City.HO_CHI_MINH;
     if (
       loc.includes('hà nội') ||
       loc.includes('hn') ||
       loc.includes('ba đình') ||
       loc.includes('cầu giấy')
     )
-      return 'Hà Nội';
-    if (loc.includes('đà nẵng') || loc.includes('dn')) return 'Đà Nẵng';
-    if (loc.includes('cần thơ')) return 'Cần Thơ';
-    if (loc.includes('hải phòng')) return 'Hải Phòng';
-    if (loc.includes('bình dương')) return 'Bình Dương';
-    if (loc.includes('đồng nai')) return 'Đồng Nai';
-    if (loc.includes('long an')) return 'Long An';
+      return City.HA_NOI;
+    if (loc.includes('đà nẵng') || loc.includes('dn')) return City.DA_NANG;
+    if (loc.includes('cần thơ')) return City.CAN_THO;
+    if (loc.includes('hải phòng')) return City.HAI_PHONG;
+    if (loc.includes('bình dương')) return City.BINH_DUONG;
+    if (loc.includes('đồng nai')) return City.DONG_NAI;
 
-    // If it's a long address, try to extract the last part assuming it's the city
-    if (location.includes(',')) {
-      return location.split(',').pop()?.trim() || location;
-    }
+    return City.OTHER;
+  }
 
-    return location;
+  /**
+   * Normalize education level
+   */
+  normalizeEducation(education: string | undefined): Education {
+    if (!education) return Education.NOT_REQUIRED;
+    const e = education.toLowerCase();
+
+    if (e.includes('tiến sĩ') || e.includes('phd') || e.includes('doctor')) return Education.PHD;
+    if (e.includes('thạc sĩ') || e.includes('master')) return Education.MASTER;
+    if (
+      e.includes('đại học') ||
+      e.includes('cử nhân') ||
+      e.includes('university') ||
+      e.includes('bachelor')
+    )
+      return Education.UNIVERSITY;
+    if (e.includes('cao đẳng') || e.includes('college')) return Education.COLLEGE;
+    if (e.includes('trung cấp') || e.includes('vocational')) return Education.VOCATIONAL;
+    if (e.includes('thpt') || e.includes('high school') || e.includes('12/12'))
+      return Education.HIGH_SCHOOL;
+    if (e.includes('không yêu cầu') || e.includes('not required') || e.includes('không bắt buộc'))
+      return Education.NOT_REQUIRED;
+
+    return Education.OTHER;
+  }
+
+  /**
+   * Normalize gender requirement
+   */
+  normalizeGender(gender: string | undefined): Gender {
+    if (!gender) return Gender.ANY;
+    const g = gender.toLowerCase();
+
+    if (g.includes('nam') || g.includes('male')) return Gender.MALE;
+    if (g.includes('nữ') || g.includes('female')) return Gender.FEMALE;
+
+    return Gender.ANY;
+  }
+
+  /**
+   * Normalize industry/field
+   */
+  normalizeIndustry(industry: string | undefined): Industry {
+    if (!industry) return Industry.OTHER;
+    const i = industry.toLowerCase();
+
+    if (
+      i.includes('it') ||
+      i.includes('phần mềm') ||
+      i.includes('software') ||
+      i.includes('công nghệ') ||
+      i.includes('technology')
+    )
+      return Industry.IT_SOFTWARE;
+    if (
+      i.includes('tài chính') ||
+      i.includes('ngân hàng') ||
+      i.includes('finance') ||
+      i.includes('banking')
+    )
+      return Industry.FINANCE_BANKING;
+    if (
+      i.includes('kinh doanh') ||
+      i.includes('marketing') ||
+      i.includes('sales') ||
+      i.includes('bán hàng')
+    )
+      return Industry.SALES_MARKETING;
+    if (i.includes('sản xuất') || i.includes('manufacturing') || i.includes('nhà máy'))
+      return Industry.MANUFACTURING;
+    if (i.includes('giáo dục') || i.includes('education') || i.includes('đào tạo'))
+      return Industry.EDUCATION;
+    if (i.includes('y tế') || i.includes('healthcare') || i.includes('bệnh viện'))
+      return Industry.HEALTHCARE;
+    if (i.includes('bán lẻ') || i.includes('retail') || i.includes('cửa hàng'))
+      return Industry.RETAIL;
+    if (
+      i.includes('logistics') ||
+      i.includes('vận tải') ||
+      i.includes('shipping') ||
+      i.includes('giao nhận')
+    )
+      return Industry.LOGISTICS;
+    if (i.includes('xây dựng') || i.includes('construction') || i.includes('bất động sản'))
+      return Industry.CONSTRUCTION;
+
+    return Industry.OTHER;
   }
 }
