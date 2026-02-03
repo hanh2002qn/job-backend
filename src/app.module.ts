@@ -23,6 +23,9 @@ import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { ExtensionModule } from './modules/extension/extension.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AIModule } from './modules/ai/ai.module';
+import { MockInterviewModule } from './modules/mock-interview/mock-interview.module';
+import { SkillRoadmapModule } from './modules/skill-roadmap/skill-roadmap.module';
 import { RedisModule } from './common/redis/redis.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
@@ -79,6 +82,9 @@ import { S3Service } from './common/services/s3.service';
     JobAlertModule,
     ExtensionModule,
     AdminModule,
+    AIModule,
+    MockInterviewModule,
+    SkillRoadmapModule,
     RedisModule,
   ],
   controllers: [AppController],

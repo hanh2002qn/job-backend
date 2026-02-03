@@ -8,6 +8,8 @@ import {
 } from './dto/extension-event.dto';
 import { JobTracker, ApplicationStatus } from '../tracker/entities/job-tracker.entity';
 import { Job } from '../jobs/entities/job.entity';
+import { ExtractJobDto } from './dto/extract-job.dto';
+import { GeminiService } from '../ai/gemini.service';
 
 @Injectable()
 export class ExtensionService {
@@ -18,7 +20,52 @@ export class ExtensionService {
     private trackerRepository: Repository<JobTracker>,
     @InjectRepository(Job)
     private jobRepository: Repository<Job>,
+    private geminiService: GeminiService,
   ) {}
+
+  /**
+   * Use AI to extract structured job data from raw content
+   */
+  async extractJob(dto: ExtractJobDto) {
+    const prompt = `
+      You are an expert recruitment assistant.
+      Task: Extract structured job information from the following raw page content.
+      
+      URL: ${dto.url}
+      Platform: ${dto.platform || 'Unknown'}
+      
+      RAW CONTENT:
+      ${dto.rawContent.substring(0, 10000)} // Limit content length for Gemini
+      
+      Return ONLY a JSON object with this structure:
+      {
+        "title": "Job Title",
+        "company": "Company Name",
+        "location": "Job Location",
+        "salary": "Salary range or 'Not specified'",
+        "description": "Short summary of the role",
+        "skills": ["skill1", "skill2"],
+        "requirements": ["req1", "req2"]
+      }
+    `;
+
+    try {
+      const extractedData = await this.geminiService.generateJson<{
+        title: string;
+        company: string;
+        location: string;
+        salary: string;
+        description: string;
+        skills: string[];
+        requirements: string[];
+      }>(prompt);
+
+      return extractedData;
+    } catch (error) {
+      this.logger.error('Failed to extract job data with AI', error);
+      throw new Error('AI extraction failed');
+    }
+  }
 
   /**
    * Handle events coming from browser extension

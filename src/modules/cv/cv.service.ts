@@ -6,6 +6,8 @@ import { GenerateCvDto } from './dto/generate-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { GeminiService } from '../ai/gemini.service';
+import type { CvContent } from './interfaces/cv.interface';
 
 @Injectable()
 export class CvService {
@@ -15,6 +17,7 @@ export class CvService {
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
+    private geminiService: GeminiService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateCvDto): Promise<CV> {
@@ -44,41 +47,64 @@ export class CvService {
       throw new NotFoundException('Profile not found. Please complete your profile first.');
     }
 
-    // MOCK AI GENERATION LOGIC
-    // 1. Keyword Matching & Scoring
     const jobSkills = job.skills || [];
     const profileSkills = profile.skills || [];
     const matchedSkills = jobSkills.filter((skill) =>
       profileSkills.some((ps) => ps.toLowerCase().includes(skill.toLowerCase())),
     );
 
-    let score = 0;
-    if (jobSkills.length > 0) {
-      score = Math.round((matchedSkills.length / jobSkills.length) * 100);
-    } else {
-      score = 70; // Default if no skills defined
-    }
+    // AI Generation for high-quality content
+    const prompt = `
+      You are an expert career coach and CV writer.
+      Task: Create high-impact CV content tailored for the following job.
+      
+      USER PROFILE:
+      Skills: ${profile.skills?.join(', ')}
+      Education: ${JSON.stringify(profile.education)}
+      Experience: ${JSON.stringify(profile.experience)}
+      
+      TARGET JOB:
+      Title: ${job.title}
+      Company: ${job.company}
+      Description: ${job.description}
+      
+      Generate a professional "summary" and optimized "experience" bullet points (achievements) for each role in the user's experience.
+      Return the response as JSON only with this structure:
+      {
+        "summary": "...",
+        "experience": [
+          {
+            "company": "...",
+            "achievements": ["...", "..."]
+          }
+        ],
+        "score": 85
+      }
+    `;
 
-    // 2. Generate Bullet Points (Mocking AI)
-    const enhancedExperience = (profile.experience || []).map((exp) => ({
-      ...exp,
-      achievements: [
-        `Successfully utilized ${matchedSkills[0] || 'core skills'} to improve performance by 20%.`,
-        `Collaborated with cross-functional teams to deliver ${job.title} related projects.`,
-        `Optimized workflows ensuring 100% compliance with ${job.company} standards.`,
-      ],
-    }));
+    const aiResult = await this.geminiService.generateJson<{
+      summary: string;
+      experience: { company: string; achievements: string[] }[];
+      score: number;
+    }>(prompt);
 
-    const mockCvContent = {
+    // Merge AI content with profile structure
+    const content: CvContent = {
       personalInfo: {
-        fullName: profile.fullName || 'Candidate',
-        email: profile.user?.email || 'mock@user.com',
+        fullName: profile.fullName,
+        email: profile.user?.email || '',
         phone: profile.phone,
         linkedin: profile.linkedin,
         portfolio: profile.portfolio,
       },
-      summary: `Highly motivated professional with expertise in ${matchedSkills.join(', ')}. Eager to contribute to ${job.company} as a ${job.title}.`,
-      experience: enhancedExperience,
+      summary: aiResult.summary,
+      experience: (profile.experience || []).map((exp) => {
+        const aiExp = (aiResult.experience || []).find((ae) => ae.company === exp.company);
+        return {
+          ...exp,
+          achievements: aiExp ? aiExp.achievements : [],
+        };
+      }),
       education: profile.education,
       skills: profileSkills,
       matchedKeywords: matchedSkills,
@@ -88,12 +114,27 @@ export class CvService {
       userId,
       jobId: job.id,
       name: `CV for ${job.title}`,
-      content: mockCvContent,
+      content,
       template: generateDto.template || 'ATS-friendly',
-      score: score,
+      score: aiResult.score,
     });
 
     return this.cvRepository.save(cv);
+  }
+
+  async tailor(userId: string, cvId: string, jobId: string) {
+    const existingCv = await this.cvRepository.findOne({ where: { id: cvId, userId } });
+    if (!existingCv) throw new NotFoundException('CV not found');
+
+    const job = await this.jobsService.findOne(jobId);
+    if (!job) throw new NotFoundException('Target job not found');
+
+    const generateDto: GenerateCvDto = {
+      jobId,
+      template: existingCv.template,
+    };
+
+    return this.generate(userId, generateDto);
   }
 
   async findAll(userId: string): Promise<CV[]> {
@@ -102,5 +143,14 @@ export class CvService {
       relations: ['job'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findOne(userId: string, id: string): Promise<CV> {
+    const cv = await this.cvRepository.findOne({
+      where: { id, userId },
+      relations: ['job'],
+    });
+    if (!cv) throw new NotFoundException('CV not found');
+    return cv;
   }
 }

@@ -6,6 +6,10 @@ import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { MailService } from '../mail/mail.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { GeminiService } from '../ai/gemini.service';
+import { JobsService } from '../jobs/jobs.service';
+import { InterviewSchedule } from './entities/interview-schedule.entity';
+import { CreateInterviewDto } from './dto/create-interview.dto';
 
 @Injectable()
 export class TrackerService {
@@ -14,9 +18,98 @@ export class TrackerService {
   constructor(
     @InjectRepository(JobTracker)
     private trackerRepository: Repository<JobTracker>,
+    @InjectRepository(InterviewSchedule)
+    private interviewRepository: Repository<InterviewSchedule>,
     private mailService: MailService,
     private subscriptionService: SubscriptionService,
+    private geminiService: GeminiService,
+    private jobsService: JobsService,
   ) {}
+
+  /**
+   * Add an interview schedule to a tracker entry
+   */
+  async addInterview(userId: string, trackerId: string, dto: CreateInterviewDto) {
+    const tracker = await this.trackerRepository.findOne({
+      where: { id: trackerId, userId },
+      relations: ['job'],
+    });
+
+    if (!tracker) throw new NotFoundException('Tracker entry not found');
+
+    const interview = this.interviewRepository.create({
+      trackerId,
+      ...dto,
+    });
+
+    const savedInterview = await this.interviewRepository.save(interview);
+
+    // Update tracker status to INTERVIEW if not already
+    if (tracker.status !== ApplicationStatus.INTERVIEW) {
+      await this.trackerRepository.update(trackerId, {
+        status: ApplicationStatus.INTERVIEW,
+      });
+    }
+
+    return savedInterview;
+  }
+
+  /**
+   * Get AI-generated preparation tips for an interview
+   */
+  async getInterviewPrepTips(userId: string, interviewId: string) {
+    const interview = await this.interviewRepository.findOne({
+      where: { id: interviewId },
+      relations: ['tracker', 'tracker.job'],
+    });
+
+    if (!interview || interview.tracker.userId !== userId) {
+      throw new NotFoundException('Interview not found');
+    }
+
+    // If tips already exist, return them
+    if (interview.prepTips) return interview.prepTips;
+
+    const job = interview.tracker.job;
+    const jobDescription = job ? job.description : interview.tracker.notes;
+
+    const prompt = `
+      You are an expert recruitment coach.
+      Task: Provide preparation tips for an upcoming interview.
+      
+      Interview Round: ${interview.roundName}
+      Type: ${interview.type}
+      Job Title: ${job?.title || interview.tracker.manualTitle}
+      Job Description: ${jobDescription}
+      
+      Return a structured JSON:
+      {
+        "overview": "Brief overview of what to expect",
+        "keyTopics": ["topic 1", "topic 2"],
+        "sampleQuestions": ["question 1", "question 2"],
+        "recommendedPreparation": ["tip 1", "tip 2"],
+        "advice": "General professional advice"
+      }
+    `;
+
+    const prepTips = await this.geminiService.generateJson<Record<string, unknown>>(prompt);
+
+    interview.prepTips = prepTips;
+    await this.interviewRepository.save(interview);
+
+    return prepTips;
+  }
+
+  /**
+   * Get all interviews for a user (Calendar view)
+   */
+  async findAllInterviews(userId: string) {
+    return this.interviewRepository.find({
+      where: { tracker: { userId } },
+      relations: ['tracker', 'tracker.job'],
+      order: { scheduledAt: 'ASC' },
+    });
+  }
 
   /**
    * Handle reminders - called by worker scheduler

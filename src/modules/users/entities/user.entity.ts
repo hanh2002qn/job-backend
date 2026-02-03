@@ -11,6 +11,7 @@ import { Profile } from '../../profiles/entities/profile.entity';
 import { JobTracker } from '../../tracker/entities/job-tracker.entity';
 import { CV } from '../../cv/entities/cv.entity';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
+import { SkillRoadmap } from '../../skill-roadmap/entities/skill-roadmap.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -67,4 +68,7 @@ export class User {
 
   @OneToMany(() => CoverLetter, (cl) => cl.user)
   coverLetters: CoverLetter[];
+
+  @OneToMany(() => SkillRoadmap, (roadmap) => roadmap.user)
+  skillRoadmaps: SkillRoadmap[];
 }

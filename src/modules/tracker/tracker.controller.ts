@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TrackerService } from './tracker.service';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
+import { CreateInterviewDto } from './dto/create-interview.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApplicationStatus } from './entities/job-tracker.entity';
@@ -55,10 +56,32 @@ export class TrackerController {
     });
   }
 
+  @Get('interviews/calendar')
+  @ApiOperation({ summary: 'Get all scheduled interviews' })
+  getCalendar(@CurrentUser() user: User) {
+    return this.trackerService.findAllInterviews(user.id);
+  }
+
+  @Get('interviews/:id/prep-tips')
+  @ApiOperation({ summary: 'Get AI preparation tips for an interview' })
+  getPrepTips(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.trackerService.getInterviewPrepTips(user.id, id);
+  }
+
   @Get('stats')
   @ApiOperation({ summary: 'Get application statistics' })
   getStats(@CurrentUser() user: User) {
     return this.trackerService.getStats(user.id);
+  }
+
+  @Post(':id/interviews')
+  @ApiOperation({ summary: 'Schedule an interview for a tracked job' })
+  addInterview(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: CreateInterviewDto,
+  ) {
+    return this.trackerService.addInterview(user.id, id, dto);
   }
 
   @Patch(':id')

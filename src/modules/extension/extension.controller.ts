@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ExtensionService } from './extension.service';
 import { ExtensionEventDto, JobStatusResponseDto } from './dto/extension-event.dto';
+import { ExtractJobDto } from './dto/extract-job.dto';
 import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
@@ -34,6 +35,14 @@ export class ExtensionController {
   ): Promise<JobStatusResponseDto> {
     const userId = req.user.sub;
     return this.extensionService.getJobStatus(userId, jobUrl);
+  }
+
+  @Post('extract')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Extract job details from raw content using AI' })
+  async extractJob(@Body() dto: ExtractJobDto) {
+    return this.extensionService.extractJob(dto);
   }
 
   @Get('ping')

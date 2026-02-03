@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CvService } from './cv.service';
 import { GenerateCvDto } from './dto/generate-cv.dto';
+import { TailorCvDto } from './dto/tailor-cv.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../../common/guards/subscription.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -27,5 +28,17 @@ export class CvController {
   @ApiOperation({ summary: 'List my generated CVs' })
   findAll(@CurrentUser() user: User) {
     return this.cvService.findAll(user.id);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get CV detail' })
+  findOne(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.cvService.findOne(user.id, id);
+  }
+
+  @Post(':id/tailor')
+  @ApiOperation({ summary: 'Re-tailor an existing CV for a new job' })
+  tailor(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TailorCvDto) {
+    return this.cvService.tailor(user.id, id, dto.jobId);
   }
 }

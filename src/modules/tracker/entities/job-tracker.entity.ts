@@ -6,10 +6,12 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
 import { CV } from '../../cv/entities/cv.entity';
+import { InterviewSchedule } from './interview-schedule.entity';
 
 export enum ApplicationStatus {
   SAVED = 'saved',
@@ -78,4 +80,7 @@ export class JobTracker {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => InterviewSchedule, (interview) => interview.tracker)
+  interviews: InterviewSchedule[];
 }
