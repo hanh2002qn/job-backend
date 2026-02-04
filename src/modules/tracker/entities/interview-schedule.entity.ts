@@ -53,7 +53,7 @@ export class InterviewSchedule {
   prepTips: Record<string, unknown> | null; // AI generated tips
 
   // Google Calendar sync fields
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   googleEventId: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
