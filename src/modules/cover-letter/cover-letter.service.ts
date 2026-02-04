@@ -5,6 +5,8 @@ import { CoverLetter } from './entities/cover-letter.entity';
 import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { GeminiService } from '../ai/gemini.service';
+import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 
 @Injectable()
 export class CoverLetterService {
@@ -13,6 +15,7 @@ export class CoverLetterService {
     private coverLettersRepository: Repository<CoverLetter>,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
+    private geminiService: GeminiService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateCoverLetterDto): Promise<CoverLetter> {
@@ -26,42 +29,41 @@ export class CoverLetterService {
       throw new NotFoundException('Profile not found');
     }
 
-    // MOCK AI GENERATION
     const tone = generateDto.tone || 'professional';
+    const language = generateDto.language || 'en';
     const candidateName = profile.fullName || 'Candidate';
-    const candidateAddress = profile.address || 'Candidate Address';
 
-    const mockContent = `
-${candidateName}
-${candidateAddress}
-${profile.user?.email || 'email@example.com'}
-${profile.phone || 'Phone Number'}
+    const prompt = `
+      You are an expert professional writer.
+      Task: Write a compelling cover letter for a job application.
+      
+      Candidate:
+      Name: ${candidateName}
+      Skills: ${profile.skills?.join(', ')}
+      Experience: ${JSON.stringify(profile.experience || [])}
+      
+      Job:
+      Title: ${job.title}
+      Company: ${job.company}
+      Description: ${job.description}
+      
+      Requirements:
+      Tone: ${tone}
+      Language: ${language === 'vi' ? 'Vietnamese' : 'English'}
+      
+      Output only the body of the cover letter (no placeholders like [Your Name]).
+      Start with "Dear Hiring Manager," or similar professional greeting appropriate for the language.
+      Keep it concise (300-400 words).
+    `;
 
-${new Date().toLocaleDateString()}
-
-Hiring Manager
-${job.company}
-
-Dear Hiring Manager,
-
-I am writing to express my enthusiastic interest in the ${job.title} position at ${job.company}, as advertised on ${job.source}.
-
-With my solid background in ${profile.skills?.slice(0, 3).join(', ') || 'software development'}, I am confident in my ability to contribute effectively to your team. I have ${profile.experience?.length || 0} years of relevant experience, specifically in delivering high-quality results.
-
-I was particularly drawn to this role because of ${job.company}'s reputation for innovation. I am eager to bring my expertise in ${profile.skills ? profile.skills[0] : 'core skills'} to help your team achieve its goals.
-
-Thank you for considering my application. I look forward to the possibility of discussing how my skills align with your needs.
-
-Sincerely,
-
-${candidateName}
-    `.trim();
+    const content = await this.geminiService.generateContent(prompt);
 
     const coverLetter = this.coverLettersRepository.create({
       userId,
       jobId: job.id,
-      content: mockContent,
+      content,
       tone,
+      language,
     });
 
     return this.coverLettersRepository.save(coverLetter);
@@ -73,5 +75,29 @@ ${candidateName}
       relations: ['job'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findOne(userId: string, id: string): Promise<CoverLetter> {
+    const coverLetter = await this.coverLettersRepository.findOne({
+      where: { id, userId },
+      relations: ['job'],
+    });
+    if (!coverLetter) throw new NotFoundException('Cover letter not found');
+    return coverLetter;
+  }
+
+  async update(userId: string, id: string, updateDto: UpdateCoverLetterDto): Promise<CoverLetter> {
+    const coverLetter = await this.findOne(userId, id);
+
+    if (updateDto.content) coverLetter.content = updateDto.content;
+    if (updateDto.tone) coverLetter.tone = updateDto.tone;
+    if (updateDto.language) coverLetter.language = updateDto.language;
+
+    return this.coverLettersRepository.save(coverLetter);
+  }
+
+  async remove(userId: string, id: string): Promise<void> {
+    const coverLetter = await this.findOne(userId, id);
+    await this.coverLettersRepository.remove(coverLetter);
   }
 }

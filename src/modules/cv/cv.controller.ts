@@ -1,9 +1,11 @@
-import { Controller, Post, Get, Body, UseGuards, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CvService } from './cv.service';
 import { GenerateCvDto } from './dto/generate-cv.dto';
 import { TailorCvDto } from './dto/tailor-cv.dto';
+import { UpdateCvDto } from './dto/update-cv.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../../common/guards/subscription.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -40,5 +42,47 @@ export class CvController {
   @ApiOperation({ summary: 'Re-tailor an existing CV for a new job' })
   tailor(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TailorCvDto) {
     return this.cvService.tailor(user.id, id, dto.jobId);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update CV content and name' })
+  update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateCvDto) {
+    return this.cvService.update(user.id, id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a CV' })
+  remove(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.cvService.remove(user.id, id);
+  }
+
+  @Get(':id/versions')
+  @ApiOperation({ summary: 'Get version history of a CV' })
+  getVersions(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.cvService.getVersions(user.id, id);
+  }
+
+  @Post(':id/versions/:versionId/restore')
+  @ApiOperation({ summary: 'Restore a previous version' })
+  restoreVersion(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+  ) {
+    return this.cvService.restoreVersion(user.id, id, versionId);
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download CV as PDF' })
+  async download(@CurrentUser() user: User, @Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.cvService.downloadPdf(user.id, id);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="cv-${id}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.send(buffer);
   }
 }

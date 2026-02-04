@@ -5,9 +5,24 @@ import {
   OneToOne,
   JoinColumn,
   UpdateDateColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { EducationRecord, ExperienceRecord } from '../interfaces/profile.interface';
+
+export interface VisibilitySettings {
+  showEmail: boolean;
+  showPhone: boolean;
+  showSalary: boolean;
+  showSocials: boolean;
+}
+
+const DEFAULT_VISIBILITY: VisibilitySettings = {
+  showEmail: false,
+  showPhone: false,
+  showSalary: false,
+  showSocials: true,
+};
 
 @Entity('profiles')
 export class Profile {
@@ -57,6 +72,30 @@ export class Profile {
 
   @Column({ type: 'int', nullable: true })
   minSalaryExpectation: number;
+
+  // CV Upload fields
+  @Column({ type: 'varchar', nullable: true })
+  cvUrl: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  cvFileName: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  cvS3Key: string | null;
+
+  // Profile Completeness Score (0-100)
+  @Column({ type: 'int', default: 0 })
+  completenessScore: number;
+
+  // Visibility Settings
+  @Column({ type: 'boolean', default: true })
+  isPublic: boolean;
+
+  @Column({ type: 'jsonb', default: DEFAULT_VISIBILITY })
+  visibilitySettings: VisibilitySettings;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;

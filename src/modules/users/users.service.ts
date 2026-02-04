@@ -4,6 +4,14 @@ import { Repository, DeepPartial } from 'typeorm';
 import { User } from './entities/user.entity';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
+export interface OAuthUserData {
+  email: string;
+  googleId?: string;
+  githubId?: string;
+  avatarUrl?: string;
+  fullName?: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -62,5 +70,51 @@ export class UsersService {
       id,
       updateData as Parameters<typeof this.usersRepository.update>[1],
     );
+  }
+
+  // OAuth methods
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { googleId } });
+  }
+
+  async findByGithubId(githubId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { githubId } });
+  }
+
+  async findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<User> {
+    // 1. Try to find by OAuth provider ID
+    if (oauthData.googleId) {
+      const existingByGoogle = await this.findByGoogleId(oauthData.googleId);
+      if (existingByGoogle) return existingByGoogle;
+    }
+
+    if (oauthData.githubId) {
+      const existingByGithub = await this.findByGithubId(oauthData.githubId);
+      if (existingByGithub) return existingByGithub;
+    }
+
+    // 2. Try to find by email and link the account
+    const existingByEmail = await this.findOneByEmail(oauthData.email);
+    if (existingByEmail) {
+      // Link OAuth account to existing user
+      if (oauthData.googleId) existingByEmail.googleId = oauthData.googleId;
+      if (oauthData.githubId) existingByEmail.githubId = oauthData.githubId;
+      if (oauthData.avatarUrl && !existingByEmail.avatarUrl) {
+        existingByEmail.avatarUrl = oauthData.avatarUrl;
+      }
+      return this.usersRepository.save(existingByEmail);
+    }
+
+    // 3. Create new user
+    const newUser = this.usersRepository.create({
+      email: oauthData.email,
+      googleId: oauthData.googleId,
+      githubId: oauthData.githubId,
+      avatarUrl: oauthData.avatarUrl,
+      isVerified: true, // OAuth users are auto-verified
+      passwordHash: null, // OAuth users don't have password
+    });
+
+    return this.usersRepository.save(newUser);
   }
 }

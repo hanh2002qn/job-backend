@@ -66,7 +66,7 @@ export class AuthService {
 
   async validateUser(email: string, pass: string): Promise<Omit<User, 'passwordHash'> | null> {
     const user = await this.usersService.findOneByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
+    if (user && user.passwordHash && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash: _passwordHash, ...result } = user;
       return result;
     }
@@ -115,6 +115,11 @@ export class AuthService {
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersService.findOneById(userId);
     if (!user) throw new UnauthorizedException('User not found');
+
+    // OAuth users may not have a password
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Cannot change password for OAuth-only accounts');
+    }
 
     const passwordMatches = await bcrypt.compare(changePasswordDto.oldPassword, user.passwordHash);
     if (!passwordMatches) throw new UnauthorizedException('Old password incorrect');
@@ -188,5 +193,13 @@ export class AuthService {
       refreshToken,
       user,
     };
+  }
+
+  // OAuth login handler
+  async handleOAuthLogin(user: User) {
+    if (!user) {
+      throw new UnauthorizedException('OAuth login failed');
+    }
+    return this.getTokens(user);
   }
 }

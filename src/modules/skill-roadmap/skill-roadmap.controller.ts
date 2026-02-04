@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req, Patch, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { SkillRoadmapService } from './skill-roadmap.service';
@@ -22,6 +22,22 @@ export class SkillRoadmapController {
   @ApiOperation({ summary: 'Get the latest generated roadmap' })
   getLatest(@Req() req: AuthenticatedRequest) {
     return this.roadmapService.getLatest(req.user.id);
+  }
+
+  @Patch(':id/progress')
+  @ApiOperation({ summary: 'Update progress of a roadmap topic' })
+  updateProgress(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { phaseIndex: number; topicIndex: number; isCompleted: boolean },
+  ) {
+    return this.roadmapService.updateProgress(
+      req.user.id,
+      id,
+      body.phaseIndex,
+      body.topicIndex,
+      body.isCompleted,
+    );
   }
 
   @Get('history')

@@ -52,6 +52,17 @@ export class InterviewSchedule {
   @Column({ type: 'jsonb', nullable: true })
   prepTips: Record<string, unknown> | null; // AI generated tips
 
+  // Google Calendar sync fields
+  @Column({ nullable: true })
+  googleEventId: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  calendarSyncedAt: Date | null;
+
+  // Interview duration in minutes (for calendar event)
+  @Column({ type: 'int', default: 60 })
+  durationMinutes: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

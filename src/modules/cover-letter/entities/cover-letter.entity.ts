@@ -34,6 +34,9 @@ export class CoverLetter {
   @Column({ default: 'professional' })
   tone: string; // professional, friendly, etc.
 
+  @Column({ default: 'en' })
+  language: string; // en, vi
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -23,7 +23,9 @@ export class SubscriptionGuard implements CanActivate {
     const plan = subscription?.plan || SubscriptionPlan.FREE;
 
     // If Premium, allow everything
-    if (plan === SubscriptionPlan.PREMIUM) return true;
+    if (plan === SubscriptionPlan.PREMIUM_MONTHLY || plan === SubscriptionPlan.PREMIUM_YEARLY) {
+      return true;
+    }
 
     // 2. Check Limits for Free Plan
     // Example: Limit CVs to 2

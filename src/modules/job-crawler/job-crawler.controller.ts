@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Body } from '@nestjs/common';
+import { Controller, Post, Get, UseGuards, Body } from '@nestjs/common';
 import { JobCrawlerService } from './job-crawler.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -12,6 +12,13 @@ import { UserRole } from '../users/entities/user.entity';
 @ApiBearerAuth()
 export class JobCrawlerController {
   constructor(private readonly crawlerService: JobCrawlerService) {}
+
+  @Get('health')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get crawler health status (Admin only)' })
+  async getHealth() {
+    return this.crawlerService.getHealth();
+  }
 
   @Post('trigger')
   @Roles(UserRole.ADMIN)

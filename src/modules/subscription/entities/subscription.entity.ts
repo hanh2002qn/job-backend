@@ -11,7 +11,16 @@ import { User } from '../../users/entities/user.entity';
 
 export enum SubscriptionPlan {
   FREE = 'free',
-  PREMIUM = 'premium',
+  PREMIUM_MONTHLY = 'premium_monthly',
+  PREMIUM_YEARLY = 'premium_yearly',
+}
+
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  CANCELED = 'canceled',
+  INCOMPLETE = 'incomplete',
+  PAST_DUE = 'past_due',
+  TRIALING = 'trialing',
 }
 
 @Entity('subscriptions')
@@ -33,6 +42,13 @@ export class Subscription {
   })
   plan: SubscriptionPlan;
 
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
+  status: SubscriptionStatus;
+
   @Column({ nullable: true })
   stripeSubscriptionId: string;
 
@@ -41,6 +57,9 @@ export class Subscription {
 
   @Column({ type: 'timestamp', nullable: true })
   expiresAt: Date;
+
+  @Column({ default: false })
+  cancelAtPeriodEnd: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

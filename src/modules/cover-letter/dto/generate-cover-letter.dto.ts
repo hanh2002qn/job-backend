@@ -14,4 +14,12 @@ export class GenerateCoverLetterDto {
   @IsOptional()
   @IsString()
   tone?: string;
+
+  @ApiProperty({
+    description: 'en | vi',
+    default: 'en',
+  })
+  @IsOptional()
+  @IsString()
+  language?: string;
 }

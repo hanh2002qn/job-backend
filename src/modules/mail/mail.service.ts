@@ -1,53 +1,103 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as SendGrid from '@sendgrid/mail';
+import * as Handlebars from 'handlebars';
+import * as fs from 'fs';
+import * as path from 'path';
 import { JobAlertJob } from '../profiles/interfaces/profile.interface';
-
-interface SendGridError {
-  response?: {
-    body?: unknown;
-  };
-}
+import { EmailPreference } from './entities/email-preference.entity';
+import { UpdateMailPreferencesDto } from './dto/update-mail-preferences.dto';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  private readonly templates: Record<string, Handlebars.TemplateDelegate> = {};
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(EmailPreference)
+    private readonly preferenceRepository: Repository<EmailPreference>,
+  ) {
     const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
     if (!apiKey) {
       this.logger.error('SENDGRID_API_KEY is not defined');
     } else {
       SendGrid.setApiKey(apiKey);
     }
+    this.loadTemplates();
+  }
+
+  private loadTemplates() {
+    const templateDir = path.join(__dirname, 'templates');
+    const templateFiles = ['base', 'verification', 'password-reset', 'job-alert'];
+
+    templateFiles.forEach((file) => {
+      try {
+        const filePath = path.join(templateDir, `${file}.hbs`);
+        if (fs.existsSync(filePath)) {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          this.templates[file] = Handlebars.compile(content);
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to load template ${file}: ${err.message as string}`);
+      }
+    });
+
+    // Register base layout as partial if needed, but here we'll use a wrap approach
+  }
+
+  private render(templateName: string, data: Record<string, any>): string {
+    const template = this.templates[templateName];
+    if (!template) {
+      this.logger.warn(`Template ${templateName} not found, falling back to empty body`);
+      return '';
+    }
+
+    const body = template(data);
+    const base = this.templates['base'];
+
+    if (base) {
+      return base({
+        ...data,
+        body,
+        frontendUrl: this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
+      });
+    }
+
+    return body;
+  }
+
+  async getPreferences(userId: string): Promise<EmailPreference> {
+    let prefs = await this.preferenceRepository.findOne({ where: { userId } });
+    if (!prefs) {
+      prefs = this.preferenceRepository.create({ userId });
+      await this.preferenceRepository.save(prefs);
+    }
+    return prefs;
+  }
+
+  async updatePreferences(userId: string, dto: UpdateMailPreferencesDto): Promise<EmailPreference> {
+    const prefs = await this.getPreferences(userId);
+    Object.assign(prefs, dto);
+    return this.preferenceRepository.save(prefs);
   }
 
   async sendVerificationEmail(to: string, token: string) {
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
-    if (!from) {
-      this.logger.error('SENDGRID_FROM_EMAIL is not configured');
-      return;
-    }
+    if (!from) return;
 
-    // In production, use your frontend URL
-    const url = `http://localhost:3000/auth/verify?token=${token}`;
+    const url = `${this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'}/auth/verify?token=${token}`;
+
+    const html = this.render('verification', { url, subject: 'Verify your email - AI Job' });
 
     const msg = {
       to,
       from,
       subject: 'Verify your email - AI Job',
-      text: `Welcome to AI Job! Please verify your email by clicking the following link: ${url}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Welcome to AI Job!</h2>
-          <p>Please verify your email address to activate your account.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${url}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Verify Email</a>
-          </div>
-          <p>If the button doesn't work, copy and paste this link into your browser:</p>
-          <p><a href="${url}">${url}</a></p>
-        </div>
-      `,
+      text: `Welcome to AI Job! Please verify your email: ${url}`,
+      html,
     };
 
     try {
@@ -55,40 +105,23 @@ export class MailService {
       this.logger.log(`Verification email sent to ${to}`);
     } catch (error) {
       this.logger.error('Error sending verification email', error);
-      const sgError = error as SendGridError;
-      if (sgError.response) {
-        this.logger.error(sgError.response.body);
-      }
-      // Don't throw error to prevent blocking registration flow,
-      // but you might want to handle this differently in production
     }
   }
 
   async sendPasswordResetEmail(to: string, token: string) {
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
-    if (!from) {
-      this.logger.error('SENDGRID_FROM_EMAIL is not configured');
-      return;
-    }
+    if (!from) return;
 
-    // In production, use your frontend URL (e.g., http://localhost:3000/reset-password?token=...)
-    const url = `http://localhost:3000/auth/reset-password?token=${token}`;
+    const url = `${this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'}/auth/reset-password?token=${token}`;
+
+    const html = this.render('password-reset', { url, subject: 'Reset your password - AI Job' });
 
     const msg = {
       to,
       from,
       subject: 'Reset your password - AI Job',
-      text: `You requested a password reset. Click the following link to reset your password: ${url}`,
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2>Reset Password</h2>
-              <p>You requested a password reset. Click the button below to proceed.</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${url}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a>
-              </div>
-              <p>If you didn't request this, please ignore this email.</p>
-            </div>
-          `,
+      text: `Click the following link to reset your password: ${url}`,
+      html,
     };
 
     try {
@@ -99,28 +132,39 @@ export class MailService {
     }
   }
 
-  async sendReminderEmail(to: string, jobTitle: string, company: string, actionDate: Date) {
+  async sendReminderEmail(
+    userId: string,
+    to: string,
+    jobTitle: string,
+    company: string,
+    actionDate: Date,
+  ) {
+    const prefs = await this.getPreferences(userId);
+    if (!prefs.applicationReminders) return;
+
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
     if (!from) return;
 
     const dateStr = actionDate.toLocaleString('vi-VN');
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
     const msg = {
       to,
       from,
       subject: `Nhắc nhở công việc: ${jobTitle} tại ${company} - AI Job`,
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2>Bạn có lịch hẹn sắp tới!</h2>
-              <p>Vị trí: <strong>${jobTitle}</strong></p>
-              <p>Công ty: <strong>${company}</strong></p>
-              <p>Thời gian: <strong>${dateStr}</strong></p>
-              <p>Đừng quên chuẩn bị kỹ lưỡng cho buổi phỏng vấn hoặc hành động này nhé.</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="http://localhost:3000/tracker" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Xem chi tiết</a>
-              </div>
-            </div>
-          `,
+      html: this.render('base', {
+        subject: `Bạn có lịch hẹn sắp tới!`,
+        body: `
+          <h2>Bạn có lịch hẹn sắp tới!</h2>
+          <p>Vị trí: <strong>${jobTitle}</strong></p>
+          <p>Công ty: <strong>${company}</strong></p>
+          <p>Thời gian: <strong>${dateStr}</strong></p>
+          <p>Đừng quên chuẩn bị kỹ lưỡng cho buổi phỏng vấn hoặc hành động này nhé.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${frontendUrl}/tracker" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Xem chi tiết</a>
+          </div>
+        `,
+      }),
     };
 
     try {
@@ -131,39 +175,24 @@ export class MailService {
     }
   }
 
-  async sendJobAlertEmail(to: string, jobs: JobAlertJob[]) {
+  async sendJobAlertEmail(userId: string, to: string, jobs: JobAlertJob[]) {
+    const prefs = await this.getPreferences(userId);
+    if (!prefs.jobAlerts) return;
+
     const from = this.configService.get<string>('SENDGRID_FROM_EMAIL');
     if (!from) return;
 
-    const jobListHtml = jobs
-      .map(
-        (job) => `
-            <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-                <h4 style="margin: 0; color: #007bff;">${job.title}</h4>
-                <p style="margin: 5px 0; font-size: 14px;"><strong>${job.company}</strong> - ${job.location}</p>
-                <p style="margin: 5px 0; font-size: 13px; color: #666;">Lương: ${job.salary || 'Thỏa thuận'}</p>
-                <a href="${job.url}" style="font-size: 13px; color: #007bff; text-decoration: none;">Xem chi tiết</a>
-            </div>
-        `,
-      )
-      .join('');
+    const html = this.render('job-alert', {
+      jobs,
+      subject: `[AI Job] Gợi ý việc làm mới phù hợp với bạn`,
+      frontendUrl: this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
+    });
 
     const msg = {
       to,
       from,
       subject: `[AI Job] Gợi ý việc làm mới phù hợp với bạn`,
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px;">
-              <h2 style="color: #333;">Việc làm mới dành cho bạn</h2>
-              <p>Chào bạn, chúng tôi vừa tìm thấy một số công việc mới phù hợp với sở thích của bạn:</p>
-              <div style="margin: 20px 0;">
-                ${jobListHtml}
-              </div>
-              <p style="font-size: 12px; color: #999; margin-top: 30px;">
-                Bạn nhận được email này vì đã thiết lập quan tâm ngành nghề trên AI Job.
-              </p>
-            </div>
-          `,
+      html,
     };
 
     try {

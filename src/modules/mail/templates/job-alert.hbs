@@ -1,0 +1,28 @@
+<h2>New Job Matches for You!</h2>
+<p>Hello,</p>
+<p>We found some new job opportunities that match your profile and interests:</p>
+
+<div style='margin-top: 30px;'>
+  {{#each jobs}}
+    <div style='border-bottom: 1px solid #e2e8f0; padding: 20px 0; margin-bottom: 10px;'>
+      <h3 style='margin: 0; color: #6366f1; font-size: 18px;'>{{title}}</h3>
+      <p style='margin: 5px 0; font-weight: 600;'>{{company}}
+        —
+        <span style='font-weight: 400; color: #64748b;'>{{location}}</span></p>
+      <p style='margin: 5px 0; font-size: 14px; color: #1e293b;'>Salary:
+        {{#if salary}}{{salary}}{{else}}Competitive{{/if}}</p>
+      <a
+        href='{{url}}'
+        style='font-size: 14px; font-weight: 600; color: #6366f1; text-decoration: none;'
+      >View Details →</a>
+    </div>
+  {{/each}}
+</div>
+
+<div style='text-align: center; margin-top: 30px;'>
+  <a href='{{frontendUrl}}/jobs' class='button'>See All Matches</a>
+</div>
+
+<p style='font-size: 13px; color: #94a3b8; text-align: center; margin-top: 40px;'>
+  You receive these alerts daily. You can change the frequency or opt-out in your settings.
+</p>

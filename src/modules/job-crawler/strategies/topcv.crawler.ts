@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JobCrawlerStrategy, RawTopCVJob } from '../interfaces/job-crawler.interface';
+import { JobCrawlerStrategy, RawTopCVJob, CrawlResult } from '../interfaces/job-crawler.interface';
 import { JobsService } from '../../jobs/jobs.service';
 import { JobNormalizationService } from '../services/job-normalization.service';
+import { DeduplicationService } from '../services/deduplication.service';
+import { RateLimiterService } from '../services/rate-limiter.service';
 import * as cheerio from 'cheerio';
 import DOMPurify from 'isomorphic-dompurify';
 import { chromium } from 'playwright-extra';
@@ -66,6 +68,8 @@ export class TopCvCrawler implements JobCrawlerStrategy {
   constructor(
     private readonly jobsService: JobsService,
     private readonly normalizationService: JobNormalizationService,
+    private readonly deduplicationService: DeduplicationService,
+    private readonly rateLimiter: RateLimiterService,
   ) {}
 
   async crawlSpecificUrl(url: string) {
@@ -99,9 +103,18 @@ export class TopCvCrawler implements JobCrawlerStrategy {
     }
   }
 
-  async crawl(limit: number = 9999): Promise<void> {
+  async crawl(limit: number = 9999): Promise<CrawlResult> {
     this.logger.log(`Starting Headless TopCV Crawl (Limit: ${limit} pages)...`);
     const browser = await chromium.launch({ headless: true });
+
+    const result: CrawlResult = {
+      jobsFound: 0,
+      jobsCreated: 0,
+      jobsUpdated: 0,
+      jobsSkipped: 0,
+      duplicatesSkipped: 0,
+      errors: 0,
+    };
 
     try {
       const context = await browser.newContext();
@@ -115,6 +128,7 @@ export class TopCvCrawler implements JobCrawlerStrategy {
         const url = `${baseUrl}&page=${currentPage}`;
         this.logger.log(`Fetching page ${currentPage}/${totalPages}: ${url}`);
 
+        await this.rateLimiter.throttle('topcv');
         await page.goto(url, { waitUntil: 'domcontentloaded' });
 
         // Extract total pages on the first page
@@ -131,14 +145,16 @@ export class TopCvCrawler implements JobCrawlerStrategy {
           els.map((el) => (el as HTMLAnchorElement).href),
         );
 
+        result.jobsFound += jobItemUrls.length;
         this.logger.log(`Found ${jobItemUrls.length} jobs on page ${currentPage}.`);
 
         for (const jobUrl of jobItemUrls) {
           const idMatch = jobUrl.match(/[/-]j?(\d+)(\.html|\?|$)/);
           const externalId = idMatch ? `topcv-${idMatch[1]}` : `topcv-${jobUrl}`;
 
-          const existing = await this.jobsService.findByExternalId(externalId);
           try {
+            await this.rateLimiter.throttle('topcv');
+
             // We reuse the page object for detail crawling
             const detailData = await this.fetchTopCVDetail(page, jobUrl);
 
@@ -150,40 +166,71 @@ export class TopCvCrawler implements JobCrawlerStrategy {
             });
 
             if (
-              jobData &&
-              jobData.title &&
-              jobData.title !== 'N/A' &&
-              jobData.company &&
-              jobData.company !== 'N/A'
+              !jobData ||
+              !jobData.title ||
+              jobData.title === 'N/A' ||
+              !jobData.company ||
+              jobData.company === 'N/A'
             ) {
-              if (existing) {
-                await this.jobsService.update(existing.id, jobData);
-                this.logger.log(`Updated job: ${jobData.title} from TopCV`);
-              } else {
-                await this.jobsService.create(jobData);
-                this.logger.log(`Imported job: ${jobData.title} from TopCV`);
-              }
-            } else {
               this.logger.warn(
                 `Skipping job ${jobUrl} due to missing essential data (title/company)`,
               );
+              result.jobsSkipped++;
+              continue;
             }
 
-            await new Promise((r) => setTimeout(r, 1000));
+            // Check for duplicates using content hash
+            const dupeCheck = await this.deduplicationService.checkDuplicate(
+              jobData.title,
+              jobData.company,
+              jobData.location || '',
+              externalId,
+            );
+
+            // Skip if duplicate found (not by externalId - we want to update those)
+            if (dupeCheck.isDuplicate && dupeCheck.matchType !== 'external_id') {
+              this.logger.log(`Duplicate found: ${jobData.title} (${dupeCheck.matchType})`);
+              result.duplicatesSkipped++;
+              continue;
+            }
+
+            // Add content hash for future dedup
+            jobData.contentHash = this.deduplicationService.generateContentHash(
+              jobData.title,
+              jobData.company,
+              jobData.location || '',
+            );
+
+            const existing = await this.jobsService.findByExternalId(externalId);
+            if (existing) {
+              await this.jobsService.update(existing.id, jobData);
+              result.jobsUpdated++;
+              this.logger.log(`Updated job: ${jobData.title} from TopCV`);
+            } else {
+              await this.jobsService.create(jobData);
+              result.jobsCreated++;
+              this.logger.log(`Imported job: ${jobData.title} from TopCV`);
+            }
+
+            this.rateLimiter.recordSuccess('topcv');
           } catch (err) {
+            this.rateLimiter.recordError('topcv');
+            result.errors++;
             const message = err instanceof Error ? err.message : String(err);
             this.logger.error(`Failed to fetch details for ${jobUrl}`, message);
           }
         }
 
         currentPage++;
-        await new Promise((r) => setTimeout(r, 2000));
       }
     } catch (error) {
       this.logger.error('Failed to fetch TopCV list page', error);
+      result.errors++;
     } finally {
       await browser.close();
     }
+
+    return result;
   }
 
   private async fetchTopCVDetail(page: Page, url: string): Promise<TopCvDetailData> {
@@ -509,6 +556,7 @@ export class TopCvCrawler implements JobCrawlerStrategy {
       skills: this.parseSkills(raw.jsonLd?.skills, raw.tags),
       postedAt: raw.jsonLd?.datePosted ? new Date(raw.jsonLd.datePosted) : new Date(),
       originalData: { jsonLd: raw.jsonLd },
+      contentHash: null as string | null, // Will be set after normalization
     };
   }
 

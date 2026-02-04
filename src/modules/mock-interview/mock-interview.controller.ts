@@ -18,6 +18,12 @@ export class MockInterviewController {
     return this.mockInterviewService.start(req.user.id, dto);
   }
 
+  @Post(':id/retry')
+  @ApiOperation({ summary: 'Restart an existing interview session' })
+  async retry(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.mockInterviewService.retry(req.user.id, id);
+  }
+
   @Post(':id/answer')
   @ApiOperation({ summary: 'Submit an answer to the interview question' })
   async submitAnswer(

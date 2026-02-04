@@ -7,8 +7,16 @@ import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
+import { AIModule } from '../ai/ai.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([FollowUp]), JobsModule, ProfilesModule, SubscriptionModule],
+  imports: [
+    TypeOrmModule.forFeature([FollowUp]),
+    JobsModule,
+    ProfilesModule,
+    SubscriptionModule,
+    AIModule,
+  ],
   controllers: [FollowUpController],
   providers: [FollowUpService],
   exports: [FollowUpService],

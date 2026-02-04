@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
+import { BulkUpdateStatusDto } from './dto/bulk-update-status.dto';
 import { MailService } from '../mail/mail.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { GeminiService } from '../ai/gemini.service';
 import { JobsService } from '../jobs/jobs.service';
 import { InterviewSchedule } from './entities/interview-schedule.entity';
+import { TrackerNote } from './entities/tracker-note.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
+import { GoogleCalendarService } from './services/google-calendar.service';
 
 @Injectable()
 export class TrackerService {
@@ -20,10 +23,13 @@ export class TrackerService {
     private trackerRepository: Repository<JobTracker>,
     @InjectRepository(InterviewSchedule)
     private interviewRepository: Repository<InterviewSchedule>,
+    @InjectRepository(TrackerNote)
+    private noteRepository: Repository<TrackerNote>,
     private mailService: MailService,
     private subscriptionService: SubscriptionService,
     private geminiService: GeminiService,
     private jobsService: JobsService,
+    private googleCalendarService: GoogleCalendarService,
   ) {}
 
   /**
@@ -125,6 +131,7 @@ export class TrackerService {
 
         if (title && company) {
           await this.mailService.sendReminderEmail(
+            item.userId,
             item.user.email,
             title,
             company,
@@ -289,5 +296,150 @@ export class TrackerService {
       .getMany();
 
     return dueTrackers;
+  }
+  /**
+   * Add a note to a tracker
+   */
+  async addNote(userId: string, trackerId: string, content: string) {
+    const tracker = await this.trackerRepository.findOne({
+      where: { id: trackerId, userId },
+    });
+
+    if (!tracker) {
+      throw new NotFoundException('Tracker entry not found');
+    }
+
+    const note = this.noteRepository.create({
+      trackerId,
+      userId,
+      content,
+    });
+
+    return this.noteRepository.save(note);
+  }
+
+  /**
+   * Get all notes for a tracker
+   */
+  async getTrackerNotes(userId: string, trackerId: string) {
+    return this.noteRepository.find({
+      where: { trackerId, userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Update a note
+   */
+  async updateNote(userId: string, noteId: string, content: string) {
+    const note = await this.noteRepository.findOne({
+      where: { id: noteId, userId },
+    });
+
+    if (!note) {
+      throw new NotFoundException('Note not found');
+    }
+
+    note.content = content;
+    return this.noteRepository.save(note);
+  }
+
+  /**
+   * Delete a note
+   */
+  async deleteNote(userId: string, noteId: string) {
+    const note = await this.noteRepository.findOne({
+      where: { id: noteId, userId },
+    });
+
+    if (!note) {
+      throw new NotFoundException('Note not found');
+    }
+
+    return this.noteRepository.remove(note);
+  }
+
+  /**
+   * Bulk update status for multiple trackers
+   */
+  async bulkUpdateStatus(userId: string, dto: BulkUpdateStatusDto) {
+    const { trackerIds, status } = dto;
+    if (trackerIds.length === 0) return { updated: 0 };
+
+    const updateResult = await this.trackerRepository
+      .createQueryBuilder()
+      .update(JobTracker)
+      .set({ status, updatedAt: new Date() })
+      .where('userId = :userId', { userId })
+      .andWhere('id IN (:...trackerIds)', { trackerIds })
+      .execute();
+
+    // If status is APPLIED, update appliedAt if not set
+    if (status === ApplicationStatus.APPLIED) {
+      await this.trackerRepository
+        .createQueryBuilder()
+        .update(JobTracker)
+        .set({ appliedAt: new Date() })
+        .where('userId = :userId', { userId })
+        .andWhere('id IN (:...trackerIds)', { trackerIds })
+        .andWhere('appliedAt IS NULL')
+        .execute();
+    }
+
+    return { updated: updateResult.affected || 0 };
+  }
+
+  /**
+   * Sync interview to Google Calendar
+   */
+  async syncInterviewToCalendar(userId: string, interviewId: string, userAccessToken: string) {
+    if (!this.googleCalendarService.isConfigured()) {
+      throw new Error('Google Calendar is not configured on the server');
+    }
+
+    const interview = await this.interviewRepository.findOne({
+      where: { id: interviewId },
+      relations: ['tracker', 'tracker.job'],
+    });
+
+    if (!interview || interview.tracker.userId !== userId) {
+      throw new NotFoundException('Interview not found');
+    }
+
+    const jobTitle =
+      interview.tracker.job?.title || interview.tracker.manualTitle || 'Job Interview';
+    const company = interview.tracker.job?.company || interview.tracker.manualCompany || 'Company';
+
+    if (interview.googleEventId) {
+      // Update existing event
+      const success = await this.googleCalendarService.updateEvent(
+        interview.googleEventId,
+        interview,
+        userAccessToken,
+        jobTitle,
+        company,
+      );
+      if (success) {
+        interview.calendarSyncedAt = new Date();
+        await this.interviewRepository.save(interview);
+      }
+      return { success, action: 'updated', eventId: interview.googleEventId };
+    } else {
+      // Create new event
+      const eventId = await this.googleCalendarService.createEvent(
+        interview,
+        userAccessToken,
+        jobTitle,
+        company,
+      );
+
+      if (eventId) {
+        interview.googleEventId = eventId;
+        interview.calendarSyncedAt = new Date();
+        await this.interviewRepository.save(interview);
+        return { success: true, action: 'created', eventId };
+      }
+      return { success: false, action: 'failed' };
+    }
   }
 }

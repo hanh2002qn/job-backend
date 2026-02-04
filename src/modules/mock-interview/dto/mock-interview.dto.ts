@@ -11,6 +11,19 @@ export class StartInterviewDto {
   @IsOptional()
   @IsString()
   customJobDescription?: string;
+
+  @ApiPropertyOptional({ enum: ['easy', 'medium', 'hard'], default: 'medium' })
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
+  @ApiPropertyOptional({
+    enum: ['behavioral', 'technical', 'system_design'],
+    default: 'behavioral',
+  })
+  @IsOptional()
+  @IsString()
+  type?: string;
 }
 
 export class SubmitAnswerDto {

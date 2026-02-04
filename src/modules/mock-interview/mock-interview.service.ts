@@ -33,24 +33,40 @@ export class MockInterviewService {
       jobContext = dto.customJobDescription;
     }
 
+    const difficulty = dto.difficulty || 'medium';
+    const type = dto.type || 'behavioral';
+
     const interview = this.interviewRepository.create({
       userId,
       jobId: dto.jobId,
       status: InterviewStatus.IN_PROGRESS,
+      difficulty,
+      type,
     });
 
     const savedInterview = await this.interviewRepository.save(interview);
 
     // Generate first question
     const prompt = `
-      You are an expert interviewer. You are conducting a mock interview for a user with the following profile:
+      You are an expert interviewer. You are conducting a mock interview for a user.
+      
+      User Profile:
       Skills: ${profile.skills?.join(', ')}
       Preferred Industries: ${profile.preferredIndustries?.join(', ')}
       
       Job Context:
       ${jobContext}
       
-      Please start the interview by asking a relevant first question (brief, professional).
+      Interview Settings:
+      Difficulty: ${difficulty.toUpperCase()}
+      Type: ${type.toUpperCase()}
+      
+      Instructions:
+      Start the interview by asking a relevant first question matching the difficulty and type.
+      For 'technical' interviews, ask a coding or concept question.
+      For 'behavioral', ask about soft skills or past experiences.
+      For 'system_design', ask about architecture (if applicable).
+      
       Return ONLY the question text.
     `;
 
@@ -65,6 +81,65 @@ export class MockInterviewService {
     return {
       interviewId: savedInterview.id,
       firstQuestion: question,
+    };
+  }
+
+  async retry(userId: string, interviewId: string) {
+    const interview = await this.interviewRepository.findOne({
+      where: { id: interviewId, userId },
+      relations: ['job'],
+    });
+
+    if (!interview) throw new NotFoundException('Interview session not found');
+
+    // Reset interview state
+    interview.status = InterviewStatus.IN_PROGRESS;
+    interview.evaluation = null;
+    interview.overallScore = null;
+    await this.interviewRepository.save(interview);
+
+    // Clear messages
+    await this.messageRepository.delete({ interviewId });
+
+    // Regenerate first question based on original settings
+    let jobContext = '';
+    if (interview.job) {
+      jobContext = `Job Title: ${interview.job.title}\nDescription: ${interview.job.description}\nCompany: ${interview.job.company}`;
+    }
+
+    const profile = await this.profilesService.findByUserId(userId);
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    const prompt = `
+      You are an expert interviewer. Restarting a mock interview session.
+      
+      User Profile:
+      Skills: ${profile.skills?.join(', ')}
+      
+      Job Context:
+      ${jobContext}
+      
+      Interview Settings:
+      Difficulty: ${interview.difficulty?.toUpperCase() || 'MEDIUM'}
+      Type: ${interview.type?.toUpperCase() || 'BEHAVIORAL'}
+      
+      Instructions:
+      Start the interview by asking a relevant first question matching the difficulty and type.
+      Return ONLY the question text.
+    `;
+
+    const question = await this.geminiService.generateContent(prompt);
+
+    await this.messageRepository.save({
+      interviewId: interview.id,
+      role: 'ai',
+      content: question,
+    });
+
+    return {
+      interviewId: interview.id,
+      firstQuestion: question,
+      message: 'Interview restarted successfully',
     };
   }
 
@@ -100,6 +175,8 @@ export class MockInterviewService {
 
     const prompt = `
       You are an expert interviewer.
+      Settings: ${interview.difficulty?.toUpperCase()} ${interview.type?.toUpperCase()}
+      
       Conversation history:
       ${history}
       

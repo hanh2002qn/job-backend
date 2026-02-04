@@ -58,6 +58,12 @@ export class FollowUp {
   @Column({ type: 'text' })
   content: string;
 
+  @Column({ type: 'uuid', unique: true, nullable: true })
+  trackingToken: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  openedAt: Date;
+
   @Column({ type: 'timestamp', nullable: true })
   scheduledAt: Date;
 

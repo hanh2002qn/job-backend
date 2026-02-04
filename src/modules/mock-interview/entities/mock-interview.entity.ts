@@ -39,11 +39,17 @@ export class MockInterview {
   })
   status: InterviewStatus;
 
+  @Column({ default: 'medium' })
+  difficulty: string; // easy, medium, hard
+
+  @Column({ default: 'behavioral' })
+  type: string; // behavioral, technical, system_design
+
   @Column({ type: 'text', nullable: true })
-  evaluation: string;
+  evaluation: string | null;
 
   @Column({ type: 'int', nullable: true })
-  overallScore: number;
+  overallScore: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

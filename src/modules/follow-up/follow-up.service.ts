@@ -8,6 +8,10 @@ import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
+import { v4 as uuidv4 } from 'uuid';
+import { GeminiService } from '../ai/gemini.service';
+import { UpdateFollowUpDto } from './dto/update-follow-up.dto';
+
 @Injectable()
 export class FollowUpService {
   constructor(
@@ -16,6 +20,7 @@ export class FollowUpService {
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
+    private geminiService: GeminiService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateFollowUpDto): Promise<FollowUp> {
@@ -42,43 +47,58 @@ export class FollowUpService {
         'Profile not found. Please update your profile before generating a follow-up.',
       );
     }
-    const name = profile.fullName || 'Candidate';
+
     const type = generateDto.type || FollowUpType.AFTER_APPLY;
     const tone = generateDto.tone || 'professional';
 
-    // MOCK AI GENERATION
-    let subject = '';
-    let body = '';
+    const prompt = `
+      You are an expert career coach helping a candidate write a follow-up email.
+      
+      Candidate Info:
+      - Name: ${profile.fullName}
+      - Skills: ${profile.skills?.join(', ')}
+      
+      Job Info:
+      - Title: ${job.title}
+      - Company: ${job.company}
+      - Description: ${job.description}
+      
+      Instructions:
+      1. Write a compelling follow-up email of type "${type}" with a "${tone}" tone.
+      2. The email should be concise, professional, and highlight the candidate's fit.
+      3. Return ONLY valid JSON with 'subject' and 'body' fields.
+    `;
 
-    const greeting = tone === 'casual' ? 'Hi' : 'Dear';
-    const closing = tone === 'casual' ? 'Best,' : 'Sincerely,';
-
-    switch (type) {
-      case FollowUpType.AFTER_APPLY:
-        subject = `Following up on my application for ${job.title} - ${name}`;
-        body = `${greeting} Hiring Manager,\n\nI hope this email finds you well.\n\nI recently applied for the ${job.title} position at ${job.company} and wanted to briefly reiterate my strong interest in the role. With my background in ${profile.skills?.[0] || 'the field'}, I am confident in my ability to contribute to your team.\n\nPlease let me know if you need any further information regarding my application.\n\n${closing}\n${name}\n${profile.phone || ''}`;
-        break;
-      case FollowUpType.AFTER_INTERVIEW:
-        subject = `Thank you for the interview - ${job.title} - ${name}`;
-        body = `${greeting} [Interviewer Name],\n\nThank you so much for the opportunity to interview for the ${job.title} role today. I enjoyed learning more about ${job.company} and discussing how my skills in ${profile.skills?.slice(0, 2).join(', ') || 'this area'} can help the team.\n\nI look forward to hearing from you regarding the next steps.\n\n${closing}\n${name}`;
-        break;
-      case FollowUpType.OFFER:
-        subject = `Regarding the Offer for ${job.title}`;
-        body = `${greeting} Hiring Team,\n\nThank you for offering me the position of ${job.title}. I am excited about the opportunity to join ${job.company}.\n\nBefore I sign, I would like to discuss... [AI Suggestion: Insert details]\n\n${closing}\n${name}`;
-        break;
-      default:
-        subject = `Inquiry regarding ${job.title}`;
-        body = `${greeting} Hiring Manager,\n\nI am writing to inquire about the status of my application for the ${job.title} position.\n\n${closing}\n${name}`;
-    }
+    const aiResponse = await this.geminiService.generateJson<{ subject: string; body: string }>(
+      prompt,
+    );
 
     const followUp = this.followUpRepository.create({
       userId,
       jobId: job.id,
       type,
-      content: JSON.stringify({ subject, body }),
+      content: JSON.stringify(aiResponse),
       status: FollowUpStatus.DRAFT,
+      trackingToken: uuidv4(),
     });
 
+    return this.followUpRepository.save(followUp);
+  }
+
+  async update(userId: string, id: string, updateDto: UpdateFollowUpDto): Promise<FollowUp> {
+    const followUp = await this.followUpRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!followUp) {
+      throw new NotFoundException('Follow-up draft not found');
+    }
+
+    if (followUp.status !== FollowUpStatus.DRAFT) {
+      throw new ForbiddenException('Only drafts can be edited');
+    }
+
+    followUp.content = updateDto.content;
     return this.followUpRepository.save(followUp);
   }
 
@@ -104,5 +124,16 @@ export class FollowUpService {
     }
 
     return this.followUpRepository.save(followUp);
+  }
+
+  async markAsOpened(trackingToken: string): Promise<void> {
+    const followUp = await this.followUpRepository.findOne({
+      where: { trackingToken },
+    });
+
+    if (followUp && !followUp.openedAt) {
+      followUp.openedAt = new Date();
+      await this.followUpRepository.save(followUp);
+    }
   }
 }

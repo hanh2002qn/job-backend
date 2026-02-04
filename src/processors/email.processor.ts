@@ -7,6 +7,7 @@ import { MailService } from '../modules/mail/mail.service';
 interface EmailJobData {
   type: string;
   to: string;
+  userId: string;
   subject?: string;
   data?: Record<string, unknown>;
 }
@@ -42,6 +43,7 @@ export class EmailProcessor extends WorkerHost {
         case JOB_TYPES.SEND_REMINDER: {
           const data = job.data as ReminderEmailData;
           await this.mailService.sendReminderEmail(
+            data.userId,
             data.to,
             data.jobTitle,
             data.company,

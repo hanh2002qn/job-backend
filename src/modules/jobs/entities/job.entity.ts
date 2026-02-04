@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import type { OriginalJobData } from '../../job-crawler/interfaces/job-crawler.interface';
 import { City, Currency, Education, Gender, Industry, JobLevel, JobType } from '../enums/job.enums';
@@ -132,6 +133,19 @@ export class Job {
 
   @Column({ default: false })
   isAlertSent: boolean;
+
+  // Full-text search vector (PostgreSQL tsvector)
+  @Column({ type: 'tsvector', nullable: true, select: false })
+  searchVector: string;
+
+  // Expiration date (auto-calculated or from deadline)
+  @Column({ type: 'timestamp', nullable: true })
+  expiresAt: Date | null;
+
+  // Content hash for deduplication (SHA256 of title+company+location)
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  @Index()
+  contentHash: string | null;
 
   @UpdateDateColumn()
   updatedAt: Date;

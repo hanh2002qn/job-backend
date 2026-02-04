@@ -98,8 +98,17 @@ export interface NormalizedJobData {
   originalData?: OriginalJobData;
 }
 
+export interface CrawlResult {
+  jobsFound: number;
+  jobsCreated: number;
+  jobsUpdated: number;
+  jobsSkipped: number;
+  duplicatesSkipped: number;
+  errors: number;
+}
+
 export interface JobCrawlerStrategy {
   name: string;
-  crawl(limit?: number): Promise<void>;
+  crawl(limit?: number): Promise<CrawlResult>;
   crawlSpecificUrl?(url: string): Promise<void>;
 }

@@ -3,8 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { SubscriptionPlan } from '../entities/subscription.entity';
 
 export class CreateCheckoutSessionDto {
-  @ApiProperty({ enum: SubscriptionPlan, default: SubscriptionPlan.PREMIUM })
+  @ApiProperty({ enum: SubscriptionPlan, default: SubscriptionPlan.PREMIUM_MONTHLY })
   @IsNotEmpty()
   @IsEnum(SubscriptionPlan)
   plan: SubscriptionPlan;
+
+  @ApiProperty({ required: false })
+  promoCode?: string;
 }

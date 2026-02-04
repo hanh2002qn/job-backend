@@ -2,11 +2,15 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CV } from './entities/cv.entity';
+import { CvVersion } from './entities/cv-version.entity';
 import { GenerateCvDto } from './dto/generate-cv.dto';
+import { UpdateCvDto } from './dto/update-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { GeminiService } from '../ai/gemini.service';
+import { PdfService } from './services/pdf.service';
+import { CvRendererService } from './services/cv-renderer.service';
 import type { CvContent } from './interfaces/cv.interface';
 
 @Injectable()
@@ -14,10 +18,14 @@ export class CvService {
   constructor(
     @InjectRepository(CV)
     private cvRepository: Repository<CV>,
+    @InjectRepository(CvVersion)
+    private cvVersionRepository: Repository<CvVersion>,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
     private geminiService: GeminiService,
+    private pdfService: PdfService,
+    private cvRendererService: CvRendererService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateCvDto): Promise<CV> {
@@ -152,5 +160,86 @@ export class CvService {
     });
     if (!cv) throw new NotFoundException('CV not found');
     return cv;
+  }
+  async update(userId: string, id: string, updateDto: UpdateCvDto) {
+    const cv = await this.cvRepository.findOne({
+      where: { id, userId },
+    });
+    if (!cv) {
+      throw new NotFoundException('CV not found');
+    }
+
+    // Create a version snapshot before updating
+    const versionCount = await this.cvVersionRepository.count({ where: { cvId: id } });
+    const version = this.cvVersionRepository.create({
+      cvId: id,
+      versionNumber: versionCount + 1,
+      content: cv.content,
+    });
+    await this.cvVersionRepository.save(version);
+
+    // Update CV fields
+    if (updateDto.name) cv.name = updateDto.name;
+    if (updateDto.template) cv.template = updateDto.template;
+    if (updateDto.content) {
+      cv.content = {
+        ...cv.content,
+        ...updateDto.content,
+      };
+    }
+
+    return this.cvRepository.save(cv);
+  }
+
+  async remove(userId: string, id: string) {
+    const cv = await this.cvRepository.findOne({
+      where: { id, userId },
+    });
+    if (!cv) {
+      throw new NotFoundException('CV not found');
+    }
+    return this.cvRepository.remove(cv);
+  }
+
+  async getVersions(userId: string, cvId: string) {
+    const cv = await this.cvRepository.findOne({ where: { id: cvId, userId } });
+    if (!cv) throw new NotFoundException('CV not found');
+
+    return this.cvVersionRepository.find({
+      where: { cvId },
+      order: { versionNumber: 'DESC' },
+    });
+  }
+
+  async restoreVersion(userId: string, cvId: string, versionId: string) {
+    const cv = await this.cvRepository.findOne({ where: { id: cvId, userId } });
+    if (!cv) throw new NotFoundException('CV not found');
+
+    const version = await this.cvVersionRepository.findOne({ where: { id: versionId, cvId } });
+    if (!version) throw new NotFoundException('Version not found');
+
+    // Create a backup of current state before restore
+    const currentVersionCount = await this.cvVersionRepository.count({ where: { cvId } });
+    const backupVersion = this.cvVersionRepository.create({
+      cvId,
+      versionNumber: currentVersionCount + 1,
+      content: cv.content,
+    });
+    await this.cvVersionRepository.save(backupVersion);
+
+    // Restore content
+    cv.content = version.content;
+    return this.cvRepository.save(cv);
+  }
+
+  async downloadPdf(userId: string, cvId: string): Promise<Buffer> {
+    const cv = await this.cvRepository.findOne({ where: { id: cvId, userId } });
+    if (!cv) throw new NotFoundException('CV not found');
+
+    // Render HTML
+    const html = this.cvRendererService.render(cv.content, cv.template || 'modern');
+
+    // Generate PDF
+    return this.pdfService.generatePdf(html);
   }
 }
