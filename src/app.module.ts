@@ -45,12 +45,7 @@ import { S3Service } from './common/services/s3.service';
           {
             name: 'default',
             ttl: 60000,
-            limit: 100,
-          },
-          {
-            name: 'login',
-            ttl: 60000,
-            limit: 5,
+            limit: 100000,
           },
         ],
         storage: new ThrottlerStorageRedisService({
