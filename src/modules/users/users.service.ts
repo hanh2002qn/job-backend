@@ -8,6 +8,7 @@ export interface OAuthUserData {
   email: string;
   googleId?: string;
   githubId?: string;
+  appleId?: string;
   avatarUrl?: string;
   fullName?: string;
 }
@@ -81,6 +82,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { githubId } });
   }
 
+  async findByAppleId(appleId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { appleId } });
+  }
+
   async findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<User> {
     // 1. Try to find by OAuth provider ID
     if (oauthData.googleId) {
@@ -93,12 +98,18 @@ export class UsersService {
       if (existingByGithub) return existingByGithub;
     }
 
+    if (oauthData.appleId) {
+      const existingByApple = await this.findByAppleId(oauthData.appleId);
+      if (existingByApple) return existingByApple;
+    }
+
     // 2. Try to find by email and link the account
     const existingByEmail = await this.findOneByEmail(oauthData.email);
     if (existingByEmail) {
       // Link OAuth account to existing user
       if (oauthData.googleId) existingByEmail.googleId = oauthData.googleId;
       if (oauthData.githubId) existingByEmail.githubId = oauthData.githubId;
+      if (oauthData.appleId) existingByEmail.appleId = oauthData.appleId;
       if (oauthData.avatarUrl && !existingByEmail.avatarUrl) {
         existingByEmail.avatarUrl = oauthData.avatarUrl;
       }
@@ -110,6 +121,7 @@ export class UsersService {
       email: oauthData.email,
       googleId: oauthData.googleId,
       githubId: oauthData.githubId,
+      appleId: oauthData.appleId,
       avatarUrl: oauthData.avatarUrl,
       isVerified: true, // OAuth users are auto-verified
       passwordHash: null, // OAuth users don't have password

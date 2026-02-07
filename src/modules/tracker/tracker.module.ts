@@ -11,9 +11,11 @@ import { JobsModule } from '../jobs/jobs.module';
 import { MailModule } from '../mail/mail.module';
 import { AIModule } from '../ai/ai.module';
 
+import { UserCredits } from '../users/entities/user-credits.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([JobTracker, InterviewSchedule, TrackerNote]),
+    TypeOrmModule.forFeature([JobTracker, InterviewSchedule, TrackerNote, UserCredits]),
     JobsModule,
     SubscriptionModule,
     MailModule,

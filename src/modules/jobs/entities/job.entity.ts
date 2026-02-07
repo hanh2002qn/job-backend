@@ -7,7 +7,16 @@ import {
   Index,
 } from 'typeorm';
 import type { OriginalJobData } from '../../job-crawler/interfaces/job-crawler.interface';
-import { City, Currency, Education, Gender, Industry, JobLevel, JobType } from '../enums/job.enums';
+import {
+  City,
+  Currency,
+  Education,
+  Gender,
+  Industry,
+  JobLevel,
+  JobType,
+  JobStatus,
+} from '../enums/job.enums';
 
 @Entity('jobs')
 export class Job {
@@ -133,6 +142,13 @@ export class Job {
 
   @Column({ default: false })
   isAlertSent: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: JobStatus,
+    default: JobStatus.PENDING,
+  })
+  status: JobStatus;
 
   // Full-text search vector (PostgreSQL tsvector)
   @Column({ type: 'tsvector', nullable: true, select: false })

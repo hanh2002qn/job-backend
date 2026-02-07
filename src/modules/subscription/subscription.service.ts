@@ -2,17 +2,28 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Subscription, SubscriptionPlan, SubscriptionStatus } from './entities/subscription.entity';
+import {
+  Subscription as SubscriptionEntity,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from './entities/subscription.entity';
+import { Plan } from './entities/plan.entity';
+import { UserCredits } from '../users/entities/user-credits.entity';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { StripeService } from './stripe.service';
+import Stripe from 'stripe';
 
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(
-    @InjectRepository(Subscription)
-    private subscriptionRepository: Repository<Subscription>,
+    @InjectRepository(SubscriptionEntity)
+    private subscriptionRepository: Repository<SubscriptionEntity>,
+    @InjectRepository(UserCredits)
+    private creditsRepository: Repository<UserCredits>,
+    @InjectRepository(Plan) // Injected Plan repository
+    private planRepository: Repository<Plan>,
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
   ) {}
@@ -22,6 +33,12 @@ export class SubscriptionService {
     userEmail: string,
     createDto: CreateCheckoutSessionDto,
   ) {
+    // Lookup plan by slug (enum value)
+    const plan = await this.planRepository.findOne({ where: { slug: createDto.plan } });
+    if (!plan) {
+      throw new BadRequestException('Invalid subscription plan');
+    }
+
     const priceIdKey =
       createDto.plan === SubscriptionPlan.PREMIUM_YEARLY
         ? 'STRIPE_PREMIUM_YEARLY_PRICE_ID'
@@ -40,6 +57,7 @@ export class SubscriptionService {
       successUrl: this.configService.get<string>('STRIPE_SUCCESS_URL') || '',
       cancelUrl: this.configService.get<string>('STRIPE_CANCEL_URL') || '',
       promoCode: createDto.promoCode,
+      metadata: { userId, planId: plan.id, planSlug: plan.slug }, // Store plan info in metadata
     });
 
     return {
@@ -48,18 +66,19 @@ export class SubscriptionService {
     };
   }
 
-  async handleWebhook(payload: any, signature: string) {
+  async handleWebhook(payload: Buffer | string, signature: string) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
-    let event: any;
+    let event: Stripe.Event;
 
     try {
       event = this.stripeService.constructEvent(payload, signature, webhookSecret);
-    } catch (err: any) {
-      this.logger.error(`Webhook signature verification failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Webhook signature verification failed: ${message}`);
       throw new BadRequestException('Webhook Error');
     }
 
-    const session = event.data.object;
+    const session = event.data.object as any;
 
     switch (event.type) {
       case 'checkout.session.completed':
@@ -78,35 +97,64 @@ export class SubscriptionService {
     return { received: true };
   }
 
-  private async handleCheckoutSessionCompleted(session: any) {
-    const userId = session.metadata.userId;
-    const stripeSubscriptionId = session.subscription;
-    const stripeCustomerId = session.customer;
+  private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+    const userId = session.metadata?.userId;
+    const planId = session.metadata?.planId;
+    const stripeSubscriptionId = session.subscription as string;
+    const stripeCustomerId = session.customer as string;
+
+    if (!userId) {
+      this.logger.error('No userId found in session metadata');
+      return;
+    }
 
     let sub = await this.subscriptionRepository.findOne({ where: { userId } });
     if (!sub) {
       sub = this.subscriptionRepository.create({ userId });
     }
 
+    const plan = await this.planRepository.findOne({ where: { id: planId } });
+    if (!plan) {
+      this.logger.error(`Plan not found for id: ${planId}`);
+      // Fallback or error handling? For now, we proceed but might have issues
+    }
+
     sub.stripeSubscriptionId = stripeSubscriptionId;
     sub.stripeCustomerId = stripeCustomerId;
     sub.status = SubscriptionStatus.ACTIVE;
-    // Note: Plan mapping depends on priceId from session.line_items, but simplified for now
-    sub.plan =
-      session.amount_total > 5000
-        ? SubscriptionPlan.PREMIUM_YEARLY
-        : SubscriptionPlan.PREMIUM_MONTHLY;
+    sub.planId = plan?.id || null; // Save relation
+
+    // Legacy support: keep enum for now if needed, or derived from plan slug
+    if (plan) {
+      sub.plan = plan.slug as SubscriptionPlan;
+    }
 
     await this.subscriptionRepository.save(sub);
-    this.logger.log(`Subscription activated for user ${userId}`);
+
+    // Refill credits based on Plan Limits
+    let credits = await this.creditsRepository.findOne({ where: { userId } });
+    if (!credits) {
+      credits = this.creditsRepository.create({ userId });
+    }
+
+    // Dynamic Refill
+    const monthlyCredits = plan?.limits?.monthly_credits || 0;
+    credits.balance = monthlyCredits;
+    credits.lastRefillDate = new Date();
+    await this.creditsRepository.save(credits);
+
+    this.logger.log(
+      `Subscription activated and credits refilled for user ${userId} with ${monthlyCredits} credits`,
+    );
   }
 
   private async handleSubscriptionUpdated(stripeSub: any) {
+    // using any because of name collision with Subscription entity and complex Stripe event objects
     const sub = await this.subscriptionRepository.findOne({
       where: { stripeSubscriptionId: stripeSub.id },
     });
     if (sub) {
-      sub.status = stripeSub.status as SubscriptionStatus;
+      sub.status = stripeSub.status as unknown as SubscriptionStatus;
       sub.expiresAt = new Date(stripeSub.current_period_end * 1000);
       sub.cancelAtPeriodEnd = stripeSub.cancel_at_period_end;
       await this.subscriptionRepository.save(sub);
@@ -119,6 +167,11 @@ export class SubscriptionService {
     });
     if (sub) {
       sub.status = SubscriptionStatus.CANCELED;
+      // Reset to Free Plan
+      const freePlan = await this.planRepository.findOne({
+        where: { slug: SubscriptionPlan.FREE },
+      });
+      sub.planId = freePlan?.id || null;
       sub.plan = SubscriptionPlan.FREE;
       await this.subscriptionRepository.save(sub);
     }
@@ -140,8 +193,11 @@ export class SubscriptionService {
     return { message: 'Subscription will be canceled at the end of the current period', sub };
   }
 
-  async getSubscription(userId: string) {
-    return this.subscriptionRepository.findOne({ where: { userId } });
+  async getSubscription(userId: string): Promise<SubscriptionEntity | null> {
+    return this.subscriptionRepository.findOne({
+      where: { userId },
+      relations: ['planDetails'],
+    });
   }
 
   async isPremium(userId: string): Promise<boolean> {

@@ -70,3 +70,9 @@ export enum Industry {
   CONSTRUCTION = 'Xây dựng',
   OTHER = 'Khác',
 }
+
+export enum JobStatus {
+  PENDING = 'Pending',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected',
+}

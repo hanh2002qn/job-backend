@@ -13,6 +13,7 @@ import { CV } from '../../cv/entities/cv.entity';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 import { SkillRoadmap } from '../../skill-roadmap/entities/skill-roadmap.entity';
 import { JobAlert } from '../../job-alert/entities/job-alert.entity';
+import { UserCredits } from './user-credits.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -36,6 +37,9 @@ export class User {
   @Column({ default: false })
   isVerified: boolean;
 
+  @Column({ default: false })
+  isBanned: boolean;
+
   @Column({ type: 'varchar', nullable: true })
   verificationToken: string | null;
 
@@ -58,6 +62,9 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true, unique: true })
   githubId: string | null;
+
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  appleId: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   avatarUrl: string | null;
@@ -85,4 +92,7 @@ export class User {
 
   @OneToOne(() => JobAlert, (alert) => alert.user)
   jobAlert: JobAlert;
+
+  @OneToOne(() => UserCredits, (credits) => credits.user)
+  credits: UserCredits;
 }

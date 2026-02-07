@@ -6,8 +6,10 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Plan } from './plan.entity';
 
 export enum SubscriptionPlan {
   FREE = 'free',
@@ -34,6 +36,13 @@ export class Subscription {
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column({ nullable: true })
+  planId: string | null;
+
+  @ManyToOne(() => Plan)
+  @JoinColumn({ name: 'planId' })
+  planDetails: Plan;
 
   @Column({
     type: 'enum',

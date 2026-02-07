@@ -1,5 +1,10 @@
 {
   "permissions": {
-    "allow": ["Bash(pnpm prettier:*)", "Bash(pnpm eslint:*)", "Bash(pnpm build:*)"]
+    "allow": [
+      "Bash(pnpm prettier:*)",
+      "Bash(pnpm eslint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm start:dev)"
+    ]
   }
 }

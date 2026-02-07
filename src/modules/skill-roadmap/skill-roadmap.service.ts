@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SkillRoadmap } from './entities/skill-roadmap.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { JobsService } from '../jobs/jobs.service';
 import { GeminiService } from '../ai/gemini.service';
+import { UserCredits } from '../users/entities/user-credits.entity';
 import { GenerateRoadmapDto } from './dto/skill-roadmap.dto';
 
 export interface RoadmapTopic {
@@ -31,6 +32,8 @@ export class SkillRoadmapService {
   constructor(
     @InjectRepository(SkillRoadmap)
     private roadmapRepository: Repository<SkillRoadmap>,
+    @InjectRepository(UserCredits)
+    private creditsRepository: Repository<UserCredits>,
     private profilesService: ProfilesService,
     private jobsService: JobsService,
     private geminiService: GeminiService,
@@ -39,6 +42,15 @@ export class SkillRoadmapService {
   async generate(userId: string, dto: GenerateRoadmapDto) {
     const profile = await this.profilesService.findByUserId(userId);
     if (!profile) throw new NotFoundException('Please complete your profile first');
+
+    // Credit Check (10 credits per roadmap)
+    const creditCost = 10;
+    const credits = await this.creditsRepository.findOne({ where: { userId } });
+    if (!credits || credits.balance < creditCost) {
+      throw new BadRequestException(
+        `Insufficient credits. This action requires ${creditCost} credits.`,
+      );
+    }
 
     let context = `Target Goal: ${dto.targetGoal}\n`;
     if (dto.jobId) {
@@ -92,7 +104,13 @@ export class SkillRoadmapService {
       roadmapData: roadmapData as unknown as Record<string, unknown>, // Cast to satisfy TypeORM
     });
 
-    return this.roadmapRepository.save(roadmap);
+    const savedRoadmap = await this.roadmapRepository.save(roadmap);
+
+    // Deduct credits
+    credits.balance -= creditCost;
+    await this.creditsRepository.save(credits);
+
+    return savedRoadmap;
   }
 
   async updateProgress(

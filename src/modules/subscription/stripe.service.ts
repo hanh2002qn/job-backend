@@ -21,6 +21,7 @@ export class StripeService {
     successUrl: string;
     cancelUrl: string;
     promoCode?: string;
+    metadata?: Record<string, string>;
   }) {
     return this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -36,6 +37,7 @@ export class StripeService {
       customer_email: params.userEmail,
       metadata: {
         userId: params.userId,
+        ...params.metadata,
       },
       allow_promotion_codes: true, // Allow manually entered codes
       // If a specific promo code is provided, we'd need to handle it via discounts
@@ -51,5 +53,21 @@ export class StripeService {
 
   constructEvent(payload: string | Buffer, signature: string, secret: string) {
     return this.stripe.webhooks.constructEvent(payload, signature, secret);
+  }
+
+  async listTransactions(limit = 100) {
+    return this.stripe.charges.list({ limit });
+  }
+
+  async listCoupons(limit = 100) {
+    return this.stripe.coupons.list({ limit });
+  }
+
+  async createCoupon(params: Stripe.CouponCreateParams) {
+    return this.stripe.coupons.create(params);
+  }
+
+  async deleteCoupon(couponId: string) {
+    return this.stripe.coupons.del(couponId);
   }
 }

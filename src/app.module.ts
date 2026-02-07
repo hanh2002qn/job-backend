@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
@@ -24,12 +24,15 @@ import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { ExtensionModule } from './modules/extension/extension.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AIModule } from './modules/ai/ai.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { MockInterviewModule } from './modules/mock-interview/mock-interview.module';
 import { SkillRoadmapModule } from './modules/skill-roadmap/skill-roadmap.module';
 import { RedisModule } from './common/redis/redis.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
 import { S3Service } from './common/services/s3.service';
+import { MaintenanceMiddleware } from './common/middleware/maintenance.middleware';
 
 @Module({
   imports: [
@@ -81,6 +84,8 @@ import { S3Service } from './common/services/s3.service';
     MockInterviewModule,
     SkillRoadmapModule,
     RedisModule,
+    NotificationsModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [
@@ -92,4 +97,8 @@ import { S3Service } from './common/services/s3.service';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MaintenanceMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

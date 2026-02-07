@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, Sse } from '@nestjs/common';
+import { Observable, from, map } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { MockInterviewService } from './mock-interview.service';
@@ -34,6 +35,17 @@ export class MockInterviewController {
     return this.mockInterviewService.submitAnswer(req.user.id, id, dto.answer);
   }
 
+  @Sse(':id/answer-stream')
+  @ApiOperation({ summary: 'Submit an answer and stream the AI response' })
+  async submitAnswerStream(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: SubmitAnswerDto,
+  ): Promise<Observable<{ data: string }>> {
+    const stream = this.mockInterviewService.submitAnswerStream(req.user.id, id, dto.answer);
+    return from(stream).pipe(map((chunk) => ({ data: chunk })));
+  }
+
   @Get('history')
   @ApiOperation({ summary: 'Get user interview history' })
   async getHistory(@Req() req: AuthenticatedRequest) {
@@ -44,5 +56,11 @@ export class MockInterviewController {
   @ApiOperation({ summary: 'Get interview session detail' })
   async getDetail(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.mockInterviewService.getDetail(req.user.id, id);
+  }
+
+  @Post(':id/delete')
+  @ApiOperation({ summary: 'Delete an interview session' })
+  async delete(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return await this.mockInterviewService.remove(req.user.id, id);
   }
 }

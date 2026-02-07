@@ -29,6 +29,8 @@ import { GithubAuthGuard } from './guards/github-auth.guard';
 import { UsersService } from '../users/users.service';
 import { GoogleProfile } from './strategies/google.strategy';
 import { GithubProfile } from './strategies/github.strategy';
+import { AppleAuthGuard } from './guards/apple-auth.guard';
+import { AppleProfile } from './strategies/apple.strategy';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -153,6 +155,33 @@ export class AuthController {
       githubId: profile.githubId,
       avatarUrl: profile.avatarUrl,
       fullName: profile.displayName || profile.username,
+    });
+
+    const tokens = await this.authService.handleOAuthLogin(user);
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+
+    // Redirect to frontend with tokens
+    res.redirect(
+      `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+    );
+  }
+
+  @Post('apple')
+  @UseGuards(AppleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Apple OAuth login' })
+  appleAuth() {
+    // Guard redirects to Apple
+  }
+
+  @Post('apple/callback')
+  @UseGuards(AppleAuthGuard)
+  @ApiOperation({ summary: 'Apple OAuth callback' })
+  async appleAuthCallback(@Req() req: Request, @Res() res: Response) {
+    const profile = req.user as AppleProfile;
+    const user = await this.usersService.findOrCreateOAuthUser({
+      email: profile.email,
+      appleId: profile.appleId,
+      fullName: profile.firstName ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
     });
 
     const tokens = await this.authService.handleOAuthLogin(user);

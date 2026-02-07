@@ -9,11 +9,12 @@ import { CvRendererService } from './services/cv-renderer.service';
 import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { UserCredits } from '../users/entities/user-credits.entity';
 import { AIModule } from '../ai/ai.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CV, CvVersion]),
+    TypeOrmModule.forFeature([CV, CvVersion, UserCredits]),
     JobsModule,
     ProfilesModule,
     SubscriptionModule,

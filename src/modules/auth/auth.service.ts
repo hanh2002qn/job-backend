@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -25,6 +26,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
+    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<User> {
@@ -179,10 +181,20 @@ export class AuthService {
     return { message: 'Password has been reset successfully' };
   }
 
-  private async getTokens(user: Omit<User, 'passwordHash'>) {
+  async getTokens(user: Omit<User, 'passwordHash'>) {
     const payload = { email: user.email, sub: user.id, role: user.role };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get<string>(
+        'JWT_EXPIRATION',
+        '1d',
+      ) as `${number}${'s' | 'm' | 'h' | 'd'}`,
+    });
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get<string>(
+        'JWT_REFRESH_EXPIRATION',
+        '7d',
+      ) as `${number}${'s' | 'm' | 'h' | 'd'}`,
+    });
 
     const salt = await bcrypt.genSalt();
     const refreshTokenHash = await bcrypt.hash(refreshToken, salt);
