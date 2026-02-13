@@ -14,6 +14,7 @@ import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 import { SkillRoadmap } from '../../skill-roadmap/entities/skill-roadmap.entity';
 import { JobAlert } from '../../job-alert/entities/job-alert.entity';
 import { UserCredits } from './user-credits.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -30,9 +31,6 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   passwordHash: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  refreshTokenHash: string | null;
 
   @Column({ default: false })
   isVerified: boolean;
@@ -83,6 +81,9 @@ export class User {
 
   @OneToMany(() => CV, (cv) => cv.user)
   cvs: CV[];
+
+  @OneToMany(() => RefreshToken, (token) => token.user)
+  refreshTokens: RefreshToken[];
 
   @OneToMany(() => CoverLetter, (cl) => cl.user)
   coverLetters: CoverLetter[];

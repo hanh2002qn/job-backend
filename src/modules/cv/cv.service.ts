@@ -44,7 +44,7 @@ export class CvService {
       cv_templates: ['free'],
     };
 
-    let credits = await this.creditsRepository.findOne({ where: { userId } });
+    const credits = await this.creditsRepository.findOne({ where: { userId } });
 
     // 1. Max CVs Check
     if (limits.max_cvs < 9999) {

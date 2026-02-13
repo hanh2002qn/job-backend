@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-github2';
@@ -16,8 +16,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   constructor(configService: ConfigService) {
     super({
       clientID: configService.get<string>('GITHUB_CLIENT_ID') || 'not-configured',
-      clientSecret:
-        configService.get<string>('GITHUB_CLIENT_SECRET') || 'not-configured',
+      clientSecret: configService.get<string>('GITHUB_CLIENT_SECRET') || 'not-configured',
       callbackURL:
         configService.get<string>('GITHUB_CALLBACK_URL') ||
         'http://localhost:3000/auth/github/callback',
@@ -33,9 +32,15 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   ): void {
     const { id, username, displayName, emails, photos } = profile;
 
+    const emailObj = emails?.[0] as { value: string; verified: boolean };
+    // GitHub emails from passport-github2 have a 'verified' property
+    if (!emailObj?.verified) {
+      return done(new UnauthorizedException('GitHub email not verified'));
+    }
+
     const user: GithubProfile = {
       githubId: id,
-      email: emails?.[0]?.value || '',
+      email: emailObj.value || '',
       username: username || '',
       displayName: displayName || '',
       avatarUrl: photos?.[0]?.value || '',

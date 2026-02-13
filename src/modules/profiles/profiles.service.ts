@@ -7,6 +7,8 @@ import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
 import { FileUploadService } from '../../common/services/file-upload.service';
 import { GeminiService } from '../ai/gemini.service';
 import { UsersService } from '../users/users.service';
+import { CvImportSession } from './entities/cv-import-session.entity';
+import { CvImportSessionService } from './services/cv-import-session.service';
 import { EducationRecord, ExperienceRecord } from './interfaces/profile.interface';
 
 export interface ParsedCvData {
@@ -29,6 +31,7 @@ export class ProfilesService {
     private fileUploadService: FileUploadService,
     private geminiService: GeminiService,
     private usersService: UsersService,
+    private cvImportSessionService: CvImportSessionService,
   ) {}
 
   async findByUserId(userId: string): Promise<Profile | null> {
@@ -63,8 +66,7 @@ export class ProfilesService {
   async uploadCv(
     userId: string,
     file: Express.Multer.File,
-    autoPopulate: boolean = true,
-  ): Promise<{ url: string; parsedData?: ParsedCvData }> {
+  ): Promise<{ url: string; session?: CvImportSession }> {
     // Validate file type
     const allowedTypes = [
       'application/pdf',
@@ -84,6 +86,7 @@ export class ProfilesService {
     let profile = await this.findByUserId(userId);
     if (!profile) {
       profile = this.profilesRepository.create({ userId });
+      await this.profilesRepository.save(profile);
     }
 
     // Delete old CV if exists
@@ -95,53 +98,21 @@ export class ProfilesService {
     profile.cvUrl = uploadResult.url;
     profile.cvFileName = uploadResult.fileName;
     profile.cvS3Key = uploadResult.key;
-
-    let parsedData: ParsedCvData | undefined;
-
-    // AI Parse CV if autoPopulate is enabled
-    if (autoPopulate) {
-      try {
-        parsedData = await this.parseCvWithAI(file);
-
-        // Auto-populate profile fields (only if currently empty)
-        if (parsedData.fullName && !profile.fullName) profile.fullName = parsedData.fullName;
-        if (parsedData.phone && !profile.phone) profile.phone = parsedData.phone;
-        if (parsedData.address && !profile.address) profile.address = parsedData.address;
-        if (parsedData.linkedin && !profile.linkedin) profile.linkedin = parsedData.linkedin;
-        if (parsedData.portfolio && !profile.portfolio) profile.portfolio = parsedData.portfolio;
-
-        // Merge skills
-        if (parsedData.skills && parsedData.skills.length > 0) {
-          const existingSkills = profile.skills || [];
-          const newSkills = parsedData.skills.filter(
-            (s) => !existingSkills.some((es) => es.toLowerCase() === s.toLowerCase()),
-          );
-          profile.skills = [...existingSkills, ...newSkills];
-        }
-
-        // Merge education
-        if (parsedData.education && parsedData.education.length > 0) {
-          profile.education = [...(profile.education || []), ...parsedData.education];
-        }
-
-        // Merge experience
-        if (parsedData.experience && parsedData.experience.length > 0) {
-          profile.experience = [...(profile.experience || []), ...parsedData.experience];
-        }
-      } catch {
-        // CV parsing failed - continue without auto-populate
-        // CV is still uploaded successfully
-      }
-    }
-
-    // Update completeness score
-    profile.completenessScore = this.calculateCompleteness(profile);
-
     await this.profilesRepository.save(profile);
+
+    // Create CV import session for user to review
+    let session: CvImportSession | undefined;
+    try {
+      const rawText = this.fileUploadService.extractTextFromFile(file);
+      session = await this.cvImportSessionService.createFromText(profile.id, rawText);
+    } catch {
+      // Session creation failed - CV is still uploaded successfully
+      // User can manually add information later
+    }
 
     return {
       url: uploadResult.url,
-      parsedData,
+      session,
     };
   }
 
