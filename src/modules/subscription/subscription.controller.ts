@@ -37,7 +37,7 @@ export class SubscriptionController {
     }
     // Note: To use req.body as a Buffer for Stripe signature verification,
     // ensure the NestJS app is configured with a raw-body parser for this route.
-    return this.subscriptionService.handleWebhook(req.body, signature);
+    return this.subscriptionService.handleWebhook(req.body as string | Buffer, signature);
   }
 
   @Post('cancel')

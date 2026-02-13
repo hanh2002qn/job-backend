@@ -17,6 +17,8 @@ import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { BulkUpdateStatusDto } from './dto/bulk-update-status.dto';
 import { CreateNoteDto, UpdateNoteDto } from './dto/note.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { ApplicationStatus } from './entities/job-tracker.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -65,6 +67,8 @@ export class TrackerController {
   }
 
   @Get('interviews/:id/prep-tips')
+  @UseGuards(AiFeatureGuard)
+  @AiFeature('interview_prep')
   @ApiOperation({ summary: 'Get AI preparation tips for an interview' })
   getPrepTips(@CurrentUser() user: User, @Param('id') id: string) {
     return this.trackerService.getInterviewPrepTips(user.id, id);

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import {
@@ -9,7 +9,7 @@ import {
 import { JobTracker, ApplicationStatus } from '../tracker/entities/job-tracker.entity';
 import { Job } from '../jobs/entities/job.entity';
 import { ExtractJobDto } from './dto/extract-job.dto';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 
 @Injectable()
 export class ExtensionService {
@@ -20,7 +20,7 @@ export class ExtensionService {
     private trackerRepository: Repository<JobTracker>,
     @InjectRepository(Job)
     private jobRepository: Repository<Job>,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   /**
@@ -50,7 +50,7 @@ export class ExtensionService {
     `;
 
     try {
-      const extractedData = await this.geminiService.generateJson<{
+      const extractedData = await this.llmService.generateJson<{
         title: string;
         company: string;
         location: string;

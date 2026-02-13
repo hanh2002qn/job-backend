@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SkillRoadmap } from './entities/skill-roadmap.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { JobsService } from '../jobs/jobs.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { UserCredits } from '../users/entities/user-credits.entity';
 import { GenerateRoadmapDto } from './dto/skill-roadmap.dto';
 
@@ -36,7 +36,7 @@ export class SkillRoadmapService {
     private creditsRepository: Repository<UserCredits>,
     private profilesService: ProfilesService,
     private jobsService: JobsService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async generate(userId: string, dto: GenerateRoadmapDto) {
@@ -96,7 +96,7 @@ export class SkillRoadmapService {
       }
     `;
 
-    const roadmapData = await this.geminiService.generateJson<RoadmapResponse>(prompt);
+    const roadmapData = await this.llmService.generateJson<RoadmapResponse>(prompt);
 
     const roadmap = this.roadmapRepository.create({
       userId,

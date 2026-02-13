@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FollowUp, FollowUpStatus, FollowUpType } from './entities/follow-up.entity';
@@ -9,7 +9,7 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 import { v4 as uuidv4 } from 'uuid';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { UpdateFollowUpDto } from './dto/update-follow-up.dto';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class FollowUpService {
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateFollowUpDto): Promise<FollowUp> {
@@ -69,7 +69,7 @@ export class FollowUpService {
       3. Return ONLY valid JSON with 'subject' and 'body' fields.
     `;
 
-    const aiResponse = await this.geminiService.generateJson<{ subject: string; body: string }>(
+    const aiResponse = await this.llmService.generateJson<{ subject: string; body: string }>(
       prompt,
     );
 

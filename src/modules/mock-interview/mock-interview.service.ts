@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MockInterview, InterviewStatus, InterviewMessage } from './entities/mock-interview.entity';
 import { UserCredits } from '../users/entities/user-credits.entity';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { ProfilesService } from '../profiles/profiles.service';
 import { JobsService } from '../jobs/jobs.service';
 import { StartInterviewDto } from './dto/mock-interview.dto';
@@ -17,7 +17,7 @@ export class MockInterviewService {
     private messageRepository: Repository<InterviewMessage>,
     @InjectRepository(UserCredits)
     private creditsRepository: Repository<UserCredits>,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
     private profilesService: ProfilesService,
     private jobsService: JobsService,
   ) {}
@@ -98,7 +98,7 @@ export class MockInterviewService {
       For 'system_design', ask about architecture (if applicable).
     `;
 
-    const question = await this.geminiService.generateContent(prompt, systemInstruction);
+    const question = await this.llmService.generateContent(prompt, systemInstruction);
 
     await this.messageRepository.save({
       interviewId: savedInterview.id,
@@ -169,7 +169,7 @@ export class MockInterviewService {
       ### SETTINGS END ###
     `;
 
-    const question = await this.geminiService.generateContent(prompt, systemInstruction);
+    const question = await this.llmService.generateContent(prompt, systemInstruction);
 
     await this.messageRepository.save({
       interviewId: interview.id,
@@ -246,7 +246,7 @@ export class MockInterviewService {
       Return as JSON: { "feedback": "...", "nextQuestion": "..." }
     `;
 
-    const response = await this.geminiService.generateJson<{
+    const response = await this.llmService.generateJson<{
       feedback: string;
       nextQuestion: string;
     }>(prompt, systemInstruction);
@@ -291,7 +291,7 @@ export class MockInterviewService {
       Return as JSON: { "evaluation": "markdown text...", "score": 85 }
     `;
 
-    const result = await this.geminiService.generateJson<{ evaluation: string; score: number }>(
+    const result = await this.llmService.generateJson<{ evaluation: string; score: number }>(
       prompt,
       systemInstruction,
     );
@@ -386,7 +386,7 @@ export class MockInterviewService {
       ### USER LATEST ANSWER END ###
     `;
 
-    const stream = this.geminiService.generateStream(prompt, systemInstruction);
+    const stream = this.llmService.generateStream(prompt, systemInstruction);
 
     for await (const chunk of stream) {
       fullAIResponse += chunk;

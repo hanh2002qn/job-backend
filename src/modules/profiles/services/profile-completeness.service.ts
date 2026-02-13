@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileSkill } from '../entities/profile-skill.entity';
@@ -7,7 +7,7 @@ import { ProfileProject } from '../entities/profile-project.entity';
 import { CareerIntent } from '../entities/career-intent.entity';
 import { Profile } from '../entities/profile.entity';
 import { SkillLevel } from '../interfaces/profile-enums';
-import { GeminiService } from '../../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
 
 export interface CompletenessResult {
   targetRole: string;
@@ -34,7 +34,7 @@ export class ProfileCompletenessService {
     private projectsRepository: Repository<ProfileProject>,
     @InjectRepository(CareerIntent)
     private careerIntentRepository: Repository<CareerIntent>,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async calculateCompleteness(profileId: string, targetRole: string): Promise<CompletenessResult> {
@@ -163,8 +163,8 @@ export class ProfileCompletenessService {
     `;
 
     try {
-      const result = await this.geminiService.generateJson<MissingElement[]>(prompt);
-      return result || [];
+      const result = await this.llmService.generateJson<MissingElement[]>(prompt);
+      return Array.isArray(result) ? result : [];
     } catch {
       return [];
     }

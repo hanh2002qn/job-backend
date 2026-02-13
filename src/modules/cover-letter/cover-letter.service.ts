@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CoverLetter } from './entities/cover-letter.entity';
 import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class CoverLetterService {
     private coverLettersRepository: Repository<CoverLetter>,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async generate(userId: string, generateDto: GenerateCoverLetterDto): Promise<CoverLetter> {
@@ -56,7 +56,7 @@ export class CoverLetterService {
       Keep it concise (300-400 words).
     `;
 
-    const content = await this.geminiService.generateContent(prompt);
+    const content = await this.llmService.generateContent(prompt);
 
     const coverLetter = this.coverLettersRepository.create({
       userId,

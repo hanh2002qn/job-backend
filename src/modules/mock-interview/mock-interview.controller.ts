@@ -2,6 +2,8 @@ import { Controller, Post, Get, Body, Param, UseGuards, Req, Sse } from '@nestjs
 import { Observable, from, map } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { MockInterviewService } from './mock-interview.service';
 import { StartInterviewDto, SubmitAnswerDto } from './dto/mock-interview.dto';
 import type { AuthenticatedRequest } from '../../common/interfaces';
@@ -14,6 +16,8 @@ export class MockInterviewController {
   constructor(private readonly mockInterviewService: MockInterviewService) {}
 
   @Post('start')
+  @UseGuards(AiFeatureGuard)
+  @AiFeature('mock_interview')
   @ApiOperation({ summary: 'Start a new AI mock interview session' })
   async start(@Req() req: AuthenticatedRequest, @Body() dto: StartInterviewDto) {
     return this.mockInterviewService.start(req.user.id, dto);
@@ -37,11 +41,11 @@ export class MockInterviewController {
 
   @Sse(':id/answer-stream')
   @ApiOperation({ summary: 'Submit an answer and stream the AI response' })
-  async submitAnswerStream(
+  submitAnswerStream(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: SubmitAnswerDto,
-  ): Promise<Observable<{ data: string }>> {
+  ): Observable<{ data: string }> {
     const stream = this.mockInterviewService.submitAnswerStream(req.user.id, id, dto.answer);
     return from(stream).pipe(map((chunk) => ({ data: chunk })));
   }

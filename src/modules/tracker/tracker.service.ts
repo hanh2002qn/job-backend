@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
@@ -7,7 +7,7 @@ import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { BulkUpdateStatusDto } from './dto/bulk-update-status.dto';
 import { MailService } from '../mail/mail.service';
 import { SubscriptionService } from '../subscription/subscription.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { JobsService } from '../jobs/jobs.service';
 import { InterviewSchedule } from './entities/interview-schedule.entity';
 import { TrackerNote } from './entities/tracker-note.entity';
@@ -30,7 +30,7 @@ export class TrackerService {
     private creditsRepository: Repository<UserCredits>,
     private mailService: MailService,
     private subscriptionService: SubscriptionService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
     private jobsService: JobsService,
     private googleCalendarService: GoogleCalendarService,
   ) {}
@@ -130,7 +130,7 @@ export class TrackerService {
       }
     `;
 
-    const prepTips = await this.geminiService.generateJson<Record<string, unknown>>(
+    const prepTips = await this.llmService.generateJson<Record<string, unknown>>(
       prompt,
       systemInstruction,
     );

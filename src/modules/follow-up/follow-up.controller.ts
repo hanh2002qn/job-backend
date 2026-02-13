@@ -7,6 +7,8 @@ import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
 import { SendFollowUpDto } from './dto/send-follow-up.dto';
 import { UpdateFollowUpDto } from './dto/update-follow-up.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
@@ -16,7 +18,8 @@ export class FollowUpController {
   constructor(private readonly followUpService: FollowUpService) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AiFeatureGuard)
+  @AiFeature('follow_up_email')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('generate')
   @ApiOperation({ summary: 'Generate a follow-up email draft' })

@@ -30,7 +30,6 @@ import { AdminCouponController } from './controllers/admin-coupon.controller';
     TypeOrmModule.forFeature([User, Job, CV, Subscription, Plan]),
     UsersModule,
     JobsModule,
-
     CvModule,
     SubscriptionModule,
     AuthModule,
@@ -49,5 +48,6 @@ import { AdminCouponController } from './controllers/admin-coupon.controller';
     AdminCouponController,
   ],
   providers: [AdminDashboardService, AdminPlanService, AdminPromptService],
+  exports: [],
 })
 export class AdminModule {}

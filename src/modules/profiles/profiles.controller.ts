@@ -23,6 +23,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
@@ -125,7 +127,8 @@ export class ProfilesController {
 
   @Get('me/completeness')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AiFeatureGuard)
+  @AiFeature('profile_completeness')
   @ApiOperation({ summary: 'Get profile completeness score for target role' })
   async getCompleteness(@CurrentUser() user: User, @Query() query: CompletenessQueryDto) {
     const profile = await this.profilesService.findByUserId(user.id);
@@ -179,7 +182,8 @@ export class ProfilesController {
 
   @Get('me/insights')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AiFeatureGuard)
+  @AiFeature('profile_insights')
   @ApiOperation({ summary: 'Get AI insights for current user profile' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   async getInsights(@CurrentUser() user: User, @Query('unreadOnly') unreadOnly?: string) {

@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { ProfilesService } from '../profiles/profiles.service';
 import { JobsService } from '../jobs/jobs.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { Job } from '../jobs/entities/job.entity';
 import { Profile } from '../profiles/entities/profile.entity';
 import { ExperienceRecord } from '../profiles/interfaces/profile.interface';
@@ -27,7 +27,7 @@ export class MatchingService {
   constructor(
     private profilesService: ProfilesService,
     private jobsService: JobsService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
     private cacheService: CacheService,
   ) {}
 
@@ -170,7 +170,7 @@ export class MatchingService {
           }
         `;
 
-        return this.geminiService.generateJson(prompt);
+        return this.llmService.generateJson(prompt);
       },
       24 * 3600 * 1000, // 24 hours
     );
@@ -254,7 +254,7 @@ export class MatchingService {
 
         try {
           const aiRecommendations =
-            await this.geminiService.generateJson<AIJobRecommendation[]>(prompt);
+            await this.llmService.generateJson<AIJobRecommendation[]>(prompt);
 
           // Enrich with full job data
           const enrichedRecommendations = aiRecommendations

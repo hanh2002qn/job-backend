@@ -1,6 +1,8 @@
 import { Controller, Post, Get, Body, UseGuards, Req, Patch, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { SkillRoadmapService } from './skill-roadmap.service';
 import { GenerateRoadmapDto } from './dto/skill-roadmap.dto';
 import type { AuthenticatedRequest } from '../../common/interfaces';
@@ -13,6 +15,8 @@ export class SkillRoadmapController {
   constructor(private readonly roadmapService: SkillRoadmapService) {}
 
   @Post('generate')
+  @UseGuards(AiFeatureGuard)
+  @AiFeature('skill_roadmap')
   @ApiOperation({ summary: 'Generate a personalized career roadmap' })
   generate(@Req() req: AuthenticatedRequest, @Body() dto: GenerateRoadmapDto) {
     return this.roadmapService.generate(req.user.id, dto);

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
 import { FileUploadService } from '../../common/services/file-upload.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { UsersService } from '../users/users.service';
 import { CvImportSession } from './entities/cv-import-session.entity';
 import { CvImportSessionService } from './services/cv-import-session.service';
@@ -29,7 +29,7 @@ export class ProfilesService {
     @InjectRepository(Profile)
     private profilesRepository: Repository<Profile>,
     private fileUploadService: FileUploadService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
     private usersService: UsersService,
     private cvImportSessionService: CvImportSessionService,
   ) {}
@@ -168,7 +168,7 @@ export class ProfilesService {
       Only include fields that you can confidently extract. Use null for missing fields.
     `;
 
-    return this.geminiService.generateJson<ParsedCvData>(prompt, systemInstruction);
+    return this.llmService.generateJson<ParsedCvData>(prompt, systemInstruction);
   }
 
   // ============ Feature 2: Profile Completeness Score ============

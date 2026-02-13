@@ -83,7 +83,7 @@ export class AdminDashboardService {
     });
 
     // Group by date
-    const growth = {};
+    const growth: Record<string, number> = {};
     users.forEach((user) => {
       const date = user.createdAt.toISOString().split('T')[0];
       growth[date] = (growth[date] || 0) + 1;

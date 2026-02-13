@@ -2,6 +2,8 @@ import { Controller, Get, UseGuards, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MatchingService } from './matching.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
@@ -19,6 +21,8 @@ export class MatchingController {
   }
 
   @Get('ai-recommendations')
+  @UseGuards(AiFeatureGuard)
+  @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get AI-powered job recommendations based on profile' })
   async getAIRecommendations(@CurrentUser() user: User) {
     return this.matchingService.getAIRecommendations(user.id);
@@ -35,6 +39,8 @@ export class MatchingController {
   }
 
   @Get('job/:jobId/semantic')
+  @UseGuards(AiFeatureGuard)
+  @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get detailed AI semantic matching analysis' })
   async getSemanticMatch(@CurrentUser() user: User, @Param('jobId') jobId: string) {
     return this.matchingService.getSemanticMatch(user.id, jobId);

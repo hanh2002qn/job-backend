@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileMetadata } from '../entities/profile-metadata.entity';
 import { ProfileInsight, InsightTrigger } from '../entities/profile-insight.entity';
-import { GeminiService } from '../../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
 import { ProfileSkill } from '../entities/profile-skill.entity';
 import { ProfileExperience } from '../entities/profile-experience.entity';
 
@@ -18,7 +18,7 @@ export class ProfileInsightsService {
     private skillsRepository: Repository<ProfileSkill>,
     @InjectRepository(ProfileExperience)
     private experienceRepository: Repository<ProfileExperience>,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async recordUsage(
@@ -145,7 +145,7 @@ export class ProfileInsightsService {
       `;
 
       try {
-        const result = await this.geminiService.generateJson<{
+        const result = await this.llmService.generateJson<{
           insight: string;
           suggestedAction: string;
           relatedProfileFields: string[];

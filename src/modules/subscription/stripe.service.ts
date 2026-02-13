@@ -10,7 +10,7 @@ export class StripeService {
   constructor(private readonly configService: ConfigService) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY') || '';
     this.stripe = new Stripe(secretKey, {
-      apiVersion: '2025-01-27.acacia' as any, // Use specific version literal
+      apiVersion: '2025-01-27.acacia' as Stripe.LatestApiVersion, // Use specific version literal
     });
   }
 

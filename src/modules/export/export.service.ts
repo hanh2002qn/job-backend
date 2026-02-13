@@ -5,6 +5,13 @@ import { PdfService } from '../cv/services/pdf.service';
 import { CvRendererService } from '../cv/services/cv-renderer.service';
 import { TrackerService } from '../tracker/tracker.service';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import type { CvContent } from '../cv/interfaces/cv.interface';
+
+interface CvForExport {
+  id: string;
+  content: CvContent;
+  template: string;
+}
 
 @Injectable()
 export class ExportService {
@@ -60,18 +67,21 @@ export class ExportService {
     };
   }
 
-  private async generateDocx(cv: any): Promise<Buffer> {
+  private async generateDocx(cv: CvForExport): Promise<Buffer> {
+    const content = cv.content;
     const doc = new Document({
       sections: [
         {
           children: [
             new Paragraph({
-              text: cv.content.personalInfo.fullName,
+              text: content.personalInfo?.fullName ?? '',
               heading: HeadingLevel.HEADING_1,
             }),
             new Paragraph({
               children: [
-                new TextRun(`${cv.content.personalInfo.email} | ${cv.content.personalInfo.phone}`),
+                new TextRun(
+                  `${content.personalInfo?.email ?? ''} | ${content.personalInfo?.phone ?? ''}`,
+                ),
               ],
             }),
             new Paragraph({
@@ -80,7 +90,7 @@ export class ExportService {
               spacing: { before: 400 },
             }),
             new Paragraph({
-              text: cv.content.summary,
+              text: content.summary ?? '',
             }),
             // Experience
             new Paragraph({
@@ -88,17 +98,20 @@ export class ExportService {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400 },
             }),
-            ...cv.content.experience.flatMap((exp: any) => [
+            ...(content.experience ?? []).flatMap((exp) => [
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `${exp.position || exp.role} at ${exp.company}`,
+                    text: `${exp.role ?? exp.title ?? ''} at ${exp.company ?? ''}`,
                     bold: true,
                   }),
-                  new TextRun({ text: ` (${exp.startDate} - ${exp.endDate})`, italics: true }),
+                  new TextRun({
+                    text: ` (${exp.startDate ?? ''} - ${exp.endDate ?? ''})`,
+                    italics: true,
+                  }),
                 ],
               }),
-              ...(exp.achievements || []).map(
+              ...(exp.achievements ?? []).map(
                 (a: string) =>
                   new Paragraph({
                     text: a,
@@ -113,7 +126,7 @@ export class ExportService {
               spacing: { before: 400 },
             }),
             new Paragraph({
-              text: (cv.content.skills || []).join(', '),
+              text: (content.skills ?? []).join(', '),
             }),
           ],
         },

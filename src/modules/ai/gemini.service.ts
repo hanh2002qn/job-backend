@@ -6,9 +6,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
+import type { LlmService } from './llm.interface';
 
 @Injectable()
-export class GeminiService implements OnModuleInit {
+export class GeminiService implements LlmService, OnModuleInit {
   private readonly logger = new Logger(GeminiService.name);
   private genAI: GoogleGenerativeAI;
   private model: GenerativeModel;
@@ -79,7 +80,7 @@ export class GeminiService implements OnModuleInit {
     try {
       const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
       return prompt ? prompt.content : defaultContent;
-    } catch (error) {
+    } catch (_error) {
       this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
       return defaultContent;
     }

@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
+import type Stripe from 'stripe';
 
 @ApiTags('admin/coupons')
 @ApiBearerAuth()
@@ -35,7 +36,7 @@ export class AdminCouponController {
       },
     },
   })
-  async createCoupon(@Body() body: any) {
+  async createCoupon(@Body() body: Stripe.CouponCreateParams) {
     return this.stripeService.createCoupon(body);
   }
 

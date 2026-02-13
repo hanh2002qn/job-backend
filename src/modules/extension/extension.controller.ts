@@ -1,6 +1,8 @@
 import { Controller, Post, Get, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
+import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { ExtensionService } from './extension.service';
 import { ExtensionEventDto, JobStatusResponseDto } from './dto/extension-event.dto';
 import { ExtractJobDto } from './dto/extract-job.dto';
@@ -38,7 +40,8 @@ export class ExtensionController {
   }
 
   @Post('extract')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AiFeatureGuard)
+  @AiFeature('job_extraction')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Extract job details from raw content using AI' })
   async extractJob(@Body() dto: ExtractJobDto) {

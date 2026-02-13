@@ -40,7 +40,7 @@ export class AdminSupportController {
     // However, findOneById returns User | null.
 
     // Let's strip sensitive fields just in case
-    const { passwordHash, ...safeUser } = user;
+    const { passwordHash: _passwordHash, ...safeUser } = user;
     return this.authService.getTokens(safeUser);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CvImportSession } from '../entities/cv-import-session.entity';
@@ -6,7 +6,7 @@ import { ProfileSkill } from '../entities/profile-skill.entity';
 import { ProfileExperience } from '../entities/profile-experience.entity';
 import { ProfileProject } from '../entities/profile-project.entity';
 import { ImportStatus, DataSource, type ParsedFields } from '../interfaces/profile-enums';
-import { GeminiService } from '../../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
 
 @Injectable()
 export class CvImportSessionService {
@@ -19,7 +19,7 @@ export class CvImportSessionService {
     private experienceRepository: Repository<ProfileExperience>,
     @InjectRepository(ProfileProject)
     private projectsRepository: Repository<ProfileProject>,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
   async findByProfileId(profileId: string): Promise<CvImportSession[]> {
@@ -86,7 +86,7 @@ export class CvImportSessionService {
     `;
 
     try {
-      const result = await this.geminiService.generateJson<ParsedFields>(prompt, systemInstruction);
+      const result = await this.llmService.generateJson<ParsedFields>(prompt, systemInstruction);
       return result || { skills: [], experiences: [], projects: [] };
     } catch {
       return { skills: [], experiences: [], projects: [] };

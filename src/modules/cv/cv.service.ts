@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CV } from './entities/cv.entity';
@@ -9,7 +9,7 @@ import { UpdateCvDto } from './dto/update-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
-import { GeminiService } from '../ai/gemini.service';
+import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { PdfService } from './services/pdf.service';
 import { CvRendererService } from './services/cv-renderer.service';
 import type { CvContent } from './interfaces/cv.interface';
@@ -26,7 +26,7 @@ export class CvService {
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
-    private geminiService: GeminiService,
+    @Inject(LLM_SERVICE) private llmService: LlmService,
     private pdfService: PdfService,
     private cvRendererService: CvRendererService,
   ) {}
@@ -36,7 +36,7 @@ export class CvService {
     const plan = subscription?.planDetails; // Assume we will load this relation
 
     // Default to Free limits if no plan found (should be impossible if seeded correctly, but safe fallback)
-    const isPremium = await this.subscriptionService.isPremium(userId);
+    const _isPremium = await this.subscriptionService.isPremium(userId);
     const limits = plan?.limits || {
       max_cvs: 2,
       monthly_credits: 0,
@@ -130,7 +130,7 @@ export class CvService {
       }
     `;
 
-    const aiResult = await this.geminiService.generateJson<{
+    const aiResult = await this.llmService.generateJson<{
       summary: string;
       experience: { company: string; achievements: string[] }[];
       score: number;

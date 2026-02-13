@@ -24,6 +24,7 @@ import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { ExtensionModule } from './modules/extension/extension.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AIModule } from './modules/ai/ai.module';
+import { AiFeatureModule } from './modules/ai/ai-feature.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { MockInterviewModule } from './modules/mock-interview/mock-interview.module';
 import { SkillRoadmapModule } from './modules/skill-roadmap/skill-roadmap.module';
@@ -81,6 +82,7 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
     ExtensionModule,
     AdminModule,
     AIModule,
+    AiFeatureModule,
     MockInterviewModule,
     SkillRoadmapModule,
     RedisModule,

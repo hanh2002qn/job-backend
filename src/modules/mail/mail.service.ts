@@ -40,15 +40,16 @@ export class MailService {
           const content = fs.readFileSync(filePath, 'utf-8');
           this.templates[file] = Handlebars.compile(content);
         }
-      } catch (err: any) {
-        this.logger.error(`Failed to load template ${file}: ${err.message as string}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Failed to load template ${file}: ${message}`);
       }
     });
 
     // Register base layout as partial if needed, but here we'll use a wrap approach
   }
 
-  private render(templateName: string, data: Record<string, any>): string {
+  private render(templateName: string, data: Record<string, unknown>): string {
     const template = this.templates[templateName];
     if (!template) {
       this.logger.warn(`Template ${templateName} not found, falling back to empty body`);

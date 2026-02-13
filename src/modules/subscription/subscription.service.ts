@@ -13,6 +13,13 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { StripeService } from './stripe.service';
 import Stripe from 'stripe';
 
+interface StripeSubscriptionEvent {
+  id: string;
+  status: string;
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+}
+
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
@@ -78,17 +85,17 @@ export class SubscriptionService {
       throw new BadRequestException('Webhook Error');
     }
 
-    const session = event.data.object as any;
+    const session = event.data.object;
 
     switch (event.type) {
       case 'checkout.session.completed':
-        await this.handleCheckoutSessionCompleted(session);
+        await this.handleCheckoutSessionCompleted(session as Stripe.Checkout.Session);
         break;
       case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdated(session);
+        await this.handleSubscriptionUpdated(session as unknown as StripeSubscriptionEvent);
         break;
       case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(session);
+        await this.handleSubscriptionDeleted(session as unknown as StripeSubscriptionEvent);
         break;
       default:
         this.logger.log(`Unhandled event type ${event.type}`);
@@ -148,8 +155,7 @@ export class SubscriptionService {
     );
   }
 
-  private async handleSubscriptionUpdated(stripeSub: any) {
-    // using any because of name collision with Subscription entity and complex Stripe event objects
+  private async handleSubscriptionUpdated(stripeSub: StripeSubscriptionEvent) {
     const sub = await this.subscriptionRepository.findOne({
       where: { stripeSubscriptionId: stripeSub.id },
     });
@@ -161,7 +167,7 @@ export class SubscriptionService {
     }
   }
 
-  private async handleSubscriptionDeleted(stripeSub: any) {
+  private async handleSubscriptionDeleted(stripeSub: StripeSubscriptionEvent) {
     const sub = await this.subscriptionRepository.findOne({
       where: { stripeSubscriptionId: stripeSub.id },
     });
