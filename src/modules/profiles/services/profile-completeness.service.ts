@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileSkill } from '../entities/profile-skill.entity';
@@ -8,6 +8,8 @@ import { CareerIntent } from '../entities/career-intent.entity';
 import { Profile } from '../entities/profile.entity';
 import { SkillLevel } from '../interfaces/profile-enums';
 import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
+import { CacheService } from '../../../common/redis/cache.service';
+import { CACHE_TTL } from '../../../common/redis/queue.constants';
 
 export interface CompletenessResult {
   targetRole: string;
@@ -23,6 +25,8 @@ export interface MissingElement {
 
 @Injectable()
 export class ProfileCompletenessService {
+  private readonly logger = new Logger(ProfileCompletenessService.name);
+
   constructor(
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
@@ -35,105 +39,119 @@ export class ProfileCompletenessService {
     @InjectRepository(CareerIntent)
     private careerIntentRepository: Repository<CareerIntent>,
     @Inject(LLM_SERVICE) private llmService: LlmService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async calculateCompleteness(profileId: string, targetRole: string): Promise<CompletenessResult> {
-    const [profile, skills, experiences, projects, careerIntent] = await Promise.all([
-      this.profileRepository.findOne({ where: { id: profileId } }),
-      this.skillsRepository.find({ where: { profileId } }),
-      this.experienceRepository.find({ where: { profileId } }),
-      this.projectsRepository.find({ where: { profileId } }),
-      this.careerIntentRepository.findOne({ where: { profileId } }),
-    ]);
+    const cacheKey = `profile:completeness:${profileId}:${targetRole}`;
 
-    // First, calculate base score from profile completeness
-    let baseScore = 0;
-    const missingElements: MissingElement[] = [];
+    // Wrap the entire calculation logic with cacheService.wrap
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        const [profile, skills, experiences, projects, careerIntent] = await Promise.all([
+          this.profileRepository.findOne({ where: { id: profileId } }),
+          this.skillsRepository.find({ where: { profileId } }),
+          this.experienceRepository.find({ where: { profileId } }),
+          this.projectsRepository.find({ where: { profileId } }),
+          this.careerIntentRepository.findOne({ where: { profileId } }),
+        ]);
 
-    // Overview check (20% weight)
-    if (profile?.fullName) baseScore += 5;
-    else
-      missingElements.push({
-        type: 'overview',
-        description: 'Missing full name',
-        priority: 'high',
-      });
+        // First, calculate base score from profile completeness
+        let baseScore = 0;
+        const missingElements: MissingElement[] = [];
 
-    if (profile?.currentRole) baseScore += 5;
-    else
-      missingElements.push({
-        type: 'overview',
-        description: 'Missing current role',
-        priority: 'medium',
-      });
+        // Overview check (20% weight)
+        if (profile?.fullName) baseScore += 5;
+        else
+          missingElements.push({
+            type: 'overview',
+            description: 'Missing full name',
+            priority: 'high',
+          });
 
-    if (profile?.seniorityLevel) baseScore += 5;
-    if (profile?.yearsOfExperience) baseScore += 5;
+        if (profile?.currentRole) baseScore += 5;
+        else
+          missingElements.push({
+            type: 'overview',
+            description: 'Missing current role',
+            priority: 'medium',
+          });
 
-    // Skills check (25% weight)
-    if (skills.length >= 5) baseScore += 15;
-    else if (skills.length >= 3) baseScore += 10;
-    else if (skills.length >= 1) baseScore += 5;
-    else
-      missingElements.push({ type: 'skill', description: 'No skills added yet', priority: 'high' });
+        if (profile?.seniorityLevel) baseScore += 5;
+        if (profile?.yearsOfExperience) baseScore += 5;
 
-    const strongSkills = skills.filter((s) => s.level === SkillLevel.STRONG).length;
-    if (strongSkills >= 3) baseScore += 10;
-    else if (strongSkills >= 1) baseScore += 5;
+        // Skills check (25% weight)
+        if (skills.length >= 5) baseScore += 15;
+        else if (skills.length >= 3) baseScore += 10;
+        else if (skills.length >= 1) baseScore += 5;
+        else
+          missingElements.push({
+            type: 'skill',
+            description: 'No skills added yet',
+            priority: 'high',
+          });
 
-    // Experience check (30% weight)
-    if (experiences.length >= 2) baseScore += 20;
-    else if (experiences.length >= 1) baseScore += 10;
-    else
-      missingElements.push({
-        type: 'experience',
-        description: 'No work experience added',
-        priority: 'high',
-      });
+        const strongSkills = skills.filter((s) => s.level === SkillLevel.STRONG).length;
+        if (strongSkills >= 3) baseScore += 10;
+        else if (strongSkills >= 1) baseScore += 5;
 
-    const experiencesWithImpact = experiences.filter((e) =>
-      e.responsibilities.some((r) => r.impact || r.metrics.length > 0),
-    ).length;
-    if (experiencesWithImpact >= 1) baseScore += 10;
-    else if (experiences.length > 0) {
-      missingElements.push({
-        type: 'experience',
-        description: 'Experience entries lack impact/metrics',
-        priority: 'medium',
-      });
-    }
+        // Experience check (30% weight)
+        if (experiences.length >= 2) baseScore += 20;
+        else if (experiences.length >= 1) baseScore += 10;
+        else
+          missingElements.push({
+            type: 'experience',
+            description: 'No work experience added',
+            priority: 'high',
+          });
 
-    // Project check (15% weight - important for fresher/switch)
-    if (projects.length >= 2) baseScore += 15;
-    else if (projects.length >= 1) baseScore += 10;
+        const experiencesWithImpact = experiences.filter((e) =>
+          e.responsibilities.some((r) => r.impact || r.metrics.length > 0),
+        ).length;
+        if (experiencesWithImpact >= 1) baseScore += 10;
+        else if (experiences.length > 0) {
+          missingElements.push({
+            type: 'experience',
+            description: 'Experience entries lack impact/metrics',
+            priority: 'medium',
+          });
+        }
 
-    // Career intent check (10% weight)
-    if (careerIntent?.applyNowRoles?.length) baseScore += 5;
-    else
-      missingElements.push({
-        type: 'career_intent',
-        description: 'No target roles set',
-        priority: 'medium',
-      });
+        // Project check (15% weight - important for fresher/switch)
+        if (projects.length >= 2) baseScore += 15;
+        else if (projects.length >= 1) baseScore += 10;
 
-    if (careerIntent?.targetRoles?.length) baseScore += 5;
+        // Career intent check (10% weight)
+        if (careerIntent?.applyNowRoles?.length) baseScore += 5;
+        else
+          missingElements.push({
+            type: 'career_intent',
+            description: 'No target roles set',
+            priority: 'medium',
+          });
 
-    // Use AI to get role-specific gaps
-    const aiGaps = await this.analyzeRoleGaps(targetRole, skills, experiences, projects);
-    missingElements.push(...aiGaps);
+        if (careerIntent?.targetRoles?.length) baseScore += 5;
 
-    // Adjust score based on AI analysis
-    const gapPenalty =
-      aiGaps.filter((g) => g.priority === 'high').length * 5 +
-      aiGaps.filter((g) => g.priority === 'medium').length * 2;
+        // Use AI to get role-specific gaps
+        const aiGaps = await this.analyzeRoleGaps(targetRole, skills, experiences, projects);
+        missingElements.push(...aiGaps);
 
-    const finalScore = Math.max(0, Math.min(100, baseScore - gapPenalty));
+        // Adjust score based on AI analysis
+        const gapPenalty =
+          aiGaps.filter((g) => g.priority === 'high').length * 5 +
+          aiGaps.filter((g) => g.priority === 'medium').length * 2;
 
-    return {
-      targetRole,
-      readinessScore: finalScore / 100,
-      missingElements: missingElements.slice(0, 10), // Limit to 10 items
-    };
+        const finalScore = Math.max(0, Math.min(100, baseScore - gapPenalty));
+
+        return {
+          targetRole,
+          readinessScore: finalScore / 100,
+          missingElements: missingElements.slice(0, 10), // Limit to 10 items
+        };
+      },
+      CACHE_TTL.PROFILE, // Use PROFILE TTL (30 mins) from constants
+    );
   }
 
   private async analyzeRoleGaps(
@@ -165,7 +183,11 @@ export class ProfileCompletenessService {
     try {
       const result = await this.llmService.generateJson<MissingElement[]>(prompt);
       return Array.isArray(result) ? result : [];
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `AI role gap analysis failed for "${targetRole}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      // Return empty array - base score calculation still works without AI gaps
       return [];
     }
   }

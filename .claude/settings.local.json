@@ -4,7 +4,8 @@
       "Bash(pnpm prettier:*)",
       "Bash(pnpm eslint:*)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm start:dev)"
+      "Bash(pnpm start:dev)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

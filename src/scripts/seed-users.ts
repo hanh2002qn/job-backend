@@ -67,10 +67,8 @@ async function bootstrap() {
       fullName: userData.fullName,
       phone: faker.phone.number(),
       address: faker.location.streetAddress(),
-      skills: faker.helpers.arrayElements(
-        ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Python', 'Docker'],
-        { min: 2, max: 4 },
-      ),
+      currentRole: faker.person.jobTitle(),
+      yearsOfExperience: faker.number.int({ min: 1, max: 10 }),
     };
     await profilesService.updateByUserId(user.id, profileData);
 

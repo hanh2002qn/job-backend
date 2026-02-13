@@ -1,90 +1,57 @@
-import { IsArray, IsOptional, IsString, IsNumber } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { EducationRecord, ExperienceRecord } from '../interfaces/profile.interface';
+import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SeniorityLevel, WorkMode } from '../interfaces/profile-enums';
 
 export class UpdateProfileDto {
-  @ApiProperty({
-    description: 'List of education records',
-    example: [{ school: 'MIT', degree: 'BS' }],
-  })
-  @IsArray()
-  @IsOptional()
-  education?: EducationRecord[];
-
-  @ApiProperty({
-    description: 'List of experience records',
-    example: [{ company: 'Google', role: 'Engineer' }],
-  })
-  @IsArray()
-  @IsOptional()
-  experience?: ExperienceRecord[];
-
-  @ApiProperty({ description: 'List of skills', example: ['Node.js', 'React'] })
-  @IsArray()
-  @IsOptional()
-  skills?: string[];
-
-  @ApiProperty({ required: false, example: 'https://linkedin.com/in/johndoe' })
-  @IsOptional()
-  @IsString()
-  linkedin?: string;
-
-  @ApiProperty({ required: false, example: 'https://johndoe.com' })
-  @IsOptional()
-  @IsString()
-  portfolio?: string;
-
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ description: 'Full name', example: 'Nguyen Van A' })
   @IsOptional()
   @IsString()
   fullName?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ description: 'Phone number', example: '+84912345678' })
   @IsOptional()
   @IsString()
   phone?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ description: 'Address', example: 'Ha Noi, Vietnam' })
   @IsOptional()
   @IsString()
   address?: string;
 
-  @ApiProperty({
-    description: 'Job preferences: Industries',
-    example: ['IT', 'Design'],
-    required: false,
-  })
-  @IsArray()
+  @ApiPropertyOptional({ description: 'Current job role', example: 'Senior Frontend Developer' })
   @IsOptional()
-  @IsString({ each: true })
-  preferredIndustries?: string[];
+  @IsString()
+  currentRole?: string;
 
-  @ApiProperty({
-    description: 'Job preferences: Job Types',
-    example: ['Full-time', 'Remote'],
-    required: false,
-  })
-  @IsArray()
+  @ApiPropertyOptional({ enum: SeniorityLevel, description: 'Seniority level' })
   @IsOptional()
-  @IsString({ each: true })
-  preferredJobTypes?: string[];
+  @IsEnum(SeniorityLevel)
+  seniorityLevel?: SeniorityLevel;
 
-  @ApiProperty({
-    description: 'Job preferences: Locations',
-    example: ['Hà Nội', 'Hồ Chí Minh'],
-    required: false,
-  })
-  @IsArray()
+  @ApiPropertyOptional({ description: 'Years of experience', example: 5 })
   @IsOptional()
-  @IsString({ each: true })
-  preferredLocations?: string[];
-
-  @ApiProperty({
-    description: 'Minimum salary expectation',
-    example: 10000000,
-    required: false,
-  })
   @IsNumber()
+  @Min(0)
+  @Max(50)
+  yearsOfExperience?: number;
+
+  @ApiPropertyOptional({ description: 'Current location', example: 'Ho Chi Minh City' })
   @IsOptional()
-  minSalaryExpectation?: number;
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional({ enum: WorkMode, description: 'Preferred work mode' })
+  @IsOptional()
+  @IsEnum(WorkMode)
+  workPreference?: WorkMode;
+
+  @ApiPropertyOptional({ description: 'LinkedIn profile URL', example: 'https://linkedin.com/in/johndoe' })
+  @IsOptional()
+  @IsString()
+  linkedin?: string;
+
+  @ApiPropertyOptional({ description: 'Portfolio website URL', example: 'https://johndoe.dev' })
+  @IsOptional()
+  @IsString()
+  portfolio?: string;
 }

@@ -1,15 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CvImportSession } from '../entities/cv-import-session.entity';
 import { ProfileSkill } from '../entities/profile-skill.entity';
 import { ProfileExperience } from '../entities/profile-experience.entity';
 import { ProfileProject } from '../entities/profile-project.entity';
-import { ImportStatus, DataSource, type ParsedFields } from '../interfaces/profile-enums';
+import {
+  ImportStatus,
+  DataSource,
+  SkillCategory,
+  type ParsedFields,
+  type ParsedSkill,
+  type ParsedExperience,
+  type ParsedProject,
+} from '../interfaces/profile-enums';
 import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
 
 @Injectable()
 export class CvImportSessionService {
+  private readonly logger = new Logger(CvImportSessionService.name);
+
   constructor(
     @InjectRepository(CvImportSession)
     private sessionRepository: Repository<CvImportSession>,
@@ -129,53 +139,55 @@ export class CvImportSessionService {
     }
 
     const { parsedFields } = session;
-    let skillsCreated = 0;
-    let experiencesCreated = 0;
-    let projectsCreated = 0;
 
-    // Import skills
-    for (const skill of parsedFields.skills) {
-      await this.skillsRepository.save(
-        this.skillsRepository.create({
-          profileId,
-          name: skill.name,
-          category: skill.category,
-          source: DataSource.CV_PARSE,
-          confidence: skill.confidence,
-        }),
-      );
-      skillsCreated++;
+    // Validate and filter parsed data
+    const validSkills = this.validateSkills(parsedFields.skills);
+    const validExperiences = this.validateExperiences(parsedFields.experiences);
+    const validProjects = this.validateProjects(parsedFields.projects);
+
+    // Batch insert skills
+    const skillEntities = validSkills.map((skill) =>
+      this.skillsRepository.create({
+        profileId,
+        name: skill.name,
+        category: skill.category || SkillCategory.TECHNICAL,
+        source: DataSource.CV_PARSE,
+        confidence: skill.confidence,
+      }),
+    );
+    if (skillEntities.length > 0) {
+      await this.skillsRepository.save(skillEntities);
     }
 
-    // Import experiences
-    for (const exp of parsedFields.experiences) {
-      await this.experienceRepository.save(
-        this.experienceRepository.create({
-          profileId,
-          organization: exp.organization,
-          role: exp.role,
-          startDate: exp.startDate ? new Date(exp.startDate) : null,
-          endDate: exp.endDate ? new Date(exp.endDate) : null,
-          source: DataSource.CV_PARSE,
-          confidence: exp.confidence,
-        }),
-      );
-      experiencesCreated++;
+    // Batch insert experiences
+    const experienceEntities = validExperiences.map((exp) =>
+      this.experienceRepository.create({
+        profileId,
+        organization: exp.organization,
+        role: exp.role,
+        startDate: this.parseDate(exp.startDate),
+        endDate: this.parseDate(exp.endDate),
+        source: DataSource.CV_PARSE,
+        confidence: exp.confidence,
+      }),
+    );
+    if (experienceEntities.length > 0) {
+      await this.experienceRepository.save(experienceEntities);
     }
 
-    // Import projects
-    for (const proj of parsedFields.projects) {
-      await this.projectsRepository.save(
-        this.projectsRepository.create({
-          profileId,
-          name: proj.name,
-          description: proj.description,
-          role: proj.role,
-          source: DataSource.CV_PARSE,
-          confidence: proj.confidence,
-        }),
-      );
-      projectsCreated++;
+    // Batch insert projects
+    const projectEntities = validProjects.map((proj) =>
+      this.projectsRepository.create({
+        profileId,
+        name: proj.name,
+        description: proj.description,
+        role: proj.role,
+        source: DataSource.CV_PARSE,
+        confidence: proj.confidence,
+      }),
+    );
+    if (projectEntities.length > 0) {
+      await this.projectsRepository.save(projectEntities);
     }
 
     // Update session status
@@ -183,7 +195,74 @@ export class CvImportSessionService {
     session.confirmedAt = new Date();
     await this.sessionRepository.save(session);
 
-    return { skills: skillsCreated, experiences: experiencesCreated, projects: projectsCreated };
+    this.logger.log(
+      `CV import confirmed for profile ${profileId}: ${skillEntities.length} skills, ${experienceEntities.length} experiences, ${projectEntities.length} projects`,
+    );
+
+    return {
+      skills: skillEntities.length,
+      experiences: experienceEntities.length,
+      projects: projectEntities.length,
+    };
+  }
+
+  // ============ Validation Helpers ============
+
+  private validateSkills(skills: ParsedSkill[]): ParsedSkill[] {
+    return skills.filter((skill) => {
+      if (!skill.name || typeof skill.name !== 'string') return false;
+      if (skill.name.trim().length === 0 || skill.name.length > 100) return false;
+      if (typeof skill.confidence !== 'number' || skill.confidence < 0 || skill.confidence > 1) {
+        skill.confidence = 0.5; // Default confidence
+      }
+      return true;
+    });
+  }
+
+  private validateExperiences(experiences: ParsedExperience[]): ParsedExperience[] {
+    return experiences.filter((exp) => {
+      if (!exp.organization || typeof exp.organization !== 'string') return false;
+      if (exp.organization.trim().length === 0) return false;
+      if (!exp.role || typeof exp.role !== 'string') return false;
+      if (typeof exp.confidence !== 'number' || exp.confidence < 0 || exp.confidence > 1) {
+        exp.confidence = 0.5;
+      }
+      return true;
+    });
+  }
+
+  private validateProjects(projects: ParsedProject[]): ParsedProject[] {
+    return projects.filter((proj) => {
+      if (!proj.name || typeof proj.name !== 'string') return false;
+      if (proj.name.trim().length === 0) return false;
+      if (typeof proj.confidence !== 'number' || proj.confidence < 0 || proj.confidence > 1) {
+        proj.confidence = 0.5;
+      }
+      return true;
+    });
+  }
+
+  private parseDate(dateStr?: string): Date | null {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+
+    // Support formats: YYYY-MM, YYYY-MM-DD, YYYY
+    const datePattern = /^(\d{4})(-(\d{2}))?(-(\d{2}))?$/;
+    const match = dateStr.match(datePattern);
+
+    if (!match) return null;
+
+    const year = parseInt(match[1], 10);
+    const month = match[3] ? parseInt(match[3], 10) - 1 : 0;
+    const day = match[5] ? parseInt(match[5], 10) : 1;
+
+    const date = new Date(year, month, day);
+
+    // Validate date is reasonable (1950 - future 5 years)
+    const minYear = 1950;
+    const maxYear = new Date().getFullYear() + 5;
+    if (year < minYear || year > maxYear) return null;
+
+    return date;
   }
 
   async discard(profileId: string, sessionId: string): Promise<void> {

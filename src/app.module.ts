@@ -31,6 +31,7 @@ import { SkillRoadmapModule } from './modules/skill-roadmap/skill-roadmap.module
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
+import { HealthModule } from './modules/health/health.module';
 
 import { S3Service } from './common/services/s3.service';
 import { MaintenanceMiddleware } from './common/middleware/maintenance.middleware';
@@ -49,7 +50,7 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
           {
             name: 'default',
             ttl: 60000,
-            limit: 100000,
+            limit: 60,
           },
         ],
         storage: new ThrottlerStorageRedisService({
@@ -88,6 +89,7 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
     RedisModule,
     NotificationsModule,
     FeedbackModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

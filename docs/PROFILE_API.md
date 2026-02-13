@@ -156,6 +156,261 @@ PUT /api/profiles/me/visibility
 
 ---
 
+## 🛠️ Skills API
+
+### 1. Get All Skills
+
+```http
+GET /api/profiles/me/skills
+```
+
+**Response:** Array of Skill objects
+
+### 2. Add New Skill
+
+```http
+POST /api/profiles/me/skills
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "React",
+  "category": "technical",
+  "level": "strong",
+  "lastUsedYear": 2024,
+  "contexts": [
+    {
+      "type": "project",
+      "referenceId": "project-uuid"
+    }
+  ],
+  "evidence": [
+    {
+      "type": "cv_bullet",
+      "description": "Built complex UI with React"
+    }
+  ]
+}
+```
+
+**Fields:**
+
+- `category`: `"professional"` | `"technical"` | `"interpersonal"` | `"domain"` | `"language"` | `"tool"`
+- `level`: `"strong"` | `"used_before"` | `"learning"`
+- `contexts[].type`: `"experience"` | `"project"` | `"education"` | `"certification"`
+- `evidence[].type`: `"achievement"` | `"metric"` | `"interview_answer"` | `"cv_bullet"`
+
+### 3. Update Skill
+
+```http
+PUT /api/profiles/me/skills/:skillId
+```
+
+**Request Body:** Same as Create Skill (all fields optional)
+
+### 4. Delete Skill
+
+```http
+DELETE /api/profiles/me/skills/:skillId
+```
+
+### 5. Merge Skills
+
+```http
+POST /api/profiles/me/skills/merge
+```
+
+**Request Body:**
+
+```json
+{
+  "skillIds": ["uuid-1", "uuid-2"],
+  "targetName": "React.js"
+}
+```
+
+---
+
+## 💼 Experience API
+
+### 1. Get All Experiences
+
+```http
+GET /api/profiles/me/experiences
+```
+
+**Response:** Array of Experience objects
+
+### 2. Add Experience
+
+```http
+POST /api/profiles/me/experiences
+```
+
+**Request Body:**
+
+```json
+{
+  "organization": "Google",
+  "role": "Software Engineer",
+  "employmentType": "full_time",
+  "startDate": "2022-01-01",
+  "endDate": "2024-01-01",
+  "scope": "team",
+  "responsibilities": [
+    {
+      "description": "Developed backend APIs",
+      "impact": "Reduced latency by 20%",
+      "metrics": ["20% latency reduction"]
+    }
+  ],
+  "skillsUsed": ["skill-uuid-1", "skill-uuid-2"]
+}
+```
+
+**Enum Values:**
+
+- `employmentType`: `"full_time"` | `"part_time"` | `"freelance"` | `"internship"`
+- `scope`: `"individual"` | `"team"` | `"multi_team"` | `"organization"`
+
+### 3. Update Experience
+
+```http
+PUT /api/profiles/me/experiences/:experienceId
+```
+
+**Request Body:** Same as Create Experience (all fields optional)
+
+### 4. Delete Experience
+
+```http
+DELETE /api/profiles/me/experiences/:experienceId
+```
+
+---
+
+## 🚀 Projects API
+
+### 1. Get All Projects
+
+```http
+GET /api/profiles/me/projects
+```
+
+**Response:** Array of Project objects
+
+### 2. Add Project
+
+```http
+POST /api/profiles/me/projects
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "E-commerce Platform",
+  "context": "professional",
+  "role": "Lead Developer",
+  "description": "Built a scalable platform...",
+  "outcomes": ["Launched to 1M users"],
+  "skillsUsed": ["skill-uuid-1"]
+}
+```
+
+**Enum Values:**
+
+- `context`: `"academic"` | `"personal"` | `"freelance"` | `"internal"` | `"volunteer"`
+
+### 3. Update Project
+
+```http
+PUT /api/profiles/me/projects/:projectId
+```
+
+**Request Body:** Same as Create Project (all fields optional)
+
+### 4. Delete Project
+
+```http
+DELETE /api/profiles/me/projects/:projectId
+```
+
+---
+
+## 🎯 Career Intent API
+
+### 1. Get Career Intent
+
+```http
+GET /api/profiles/me/career-intent
+```
+
+### 2. Update Career Intent
+
+```http
+PUT /api/profiles/me/career-intent
+```
+
+**Request Body:**
+
+```json
+{
+  "targetRoles": ["Tech Lead", "Engineering Manager"],
+  "desiredSeniority": "senior",
+  "salaryExpectation": {
+    "min": 100000,
+    "max": 150000,
+    "currency": "USD"
+  },
+  "industries": ["Technology", "Finance"],
+  "companyPreferences": ["startup", "remote-first"],
+  "applyNowRoles": ["Backend Developer"],
+  "avoid": {
+    "roles": ["QA"],
+    "industries": ["Gambling"],
+    "skills": ["PHP"]
+  }
+}
+```
+
+---
+
+## ⚙️ Work Preferences API
+
+### 1. Get Work Preferences
+
+```http
+GET /api/profiles/me/work-preferences
+```
+
+### 2. Update Work Preferences
+
+```http
+PUT /api/profiles/me/work-preferences
+```
+
+**Request Body:**
+
+```json
+{
+  "locations": ["San Francisco", "Remote"],
+  "workMode": "remote",
+  "workingHours": "flexible",
+  "languages": ["English", "Vietnamese"],
+  "dealBreakers": ["No travel", "No on-call"]
+}
+```
+
+**Enum Values:**
+
+- `workMode`: `"remote"` | `"onsite"` | `"hybrid"` | `"flexible"`
+- `workingHours`: `"fixed"` | `"flexible"` | `"shift"`
+
+---
+
 ## 📄 CV Upload Flow
 
 ### Step 1: Upload CV File
@@ -389,21 +644,15 @@ Content-Type: multipart/form-data
 
 ---
 
-## 🔍 Public Profile
+## 🌐 Public Profile
+
+### Get Public Profile
 
 ```http
-GET /api/profiles/:profileId
+GET /api/profiles/:id
 ```
 
-**Note:** Chỉ trả về profile có `isPublic = true`. Respects visibility settings:
-
-- Luôn hiển thị: `id`, `fullName`, `skills`, `education`, `experience`, `completenessScore`
-- `showEmail` → hiện email từ User entity
-- `showPhone` → hiện phone
-- `showSalary` → hiện `minSalaryExpectation`
-- `showSocials` → hiện `linkedin` & `portfolio`
-
-Nếu profile private hoặc không tồn tại → 404 NotFoundException.
+**Response:** Public Profile object (filtered by visibility settings)
 
 ---
 
@@ -864,38 +1113,56 @@ export interface UpdateProfileRequest {
   address?: string;
   linkedin?: string;
   portfolio?: string;
+  // Legacy fields - use specialized endpoints instead
   skills?: string[];
   education?: EducationRecord[];
   experience?: ExperienceRecord[];
-  preferredIndustries?: string[];
-  preferredJobTypes?: string[];
-  preferredLocations?: string[];
-  minSalaryExpectation?: number;
 }
 
-export interface UpdateVisibilityRequest {
-  isPublic?: boolean;
-  visibilitySettings?: Partial<VisibilitySettings>;
+export interface SkillDto {
+  name: string;
+  category: SkillCategory;
+  level: SkillLevel;
+  contexts?: SkillContext[];
+  evidence?: SkillEvidence[];
+  lastUsedYear?: number;
 }
 
-export interface EducationRecord {
-  school?: string;
-  degree?: string;
-  major?: string;
+export interface ExperienceDto {
+  organization: string;
+  role: string;
+  employmentType: EmploymentType;
   startDate?: string;
   endDate?: string;
-  description?: string;
+  scope: WorkScope;
+  responsibilities: Responsibility[];
+  skillsUsed: string[]; // UUIDs
 }
 
-export interface ExperienceRecord {
-  company?: string;
+export interface ProjectDto {
+  name: string;
+  context: ProjectContext;
   role?: string;
-  title?: string;
-  startDate?: string;
-  endDate?: string;
   description?: string;
-  achievements?: string[];
-  years?: number;
+  outcomes?: string[];
+  skillsUsed?: string[]; // UUIDs
+}
+
+export interface CareerIntentDto {
+  targetRoles: string[];
+  desiredSeniority: SeniorityLevel;
+  salaryExpectation: SalaryRange;
+  industries: string[];
+  companyPreferences: string[];
+  avoid: AvoidPreferences;
+}
+
+export interface WorkPreferencesDto {
+  locations: string[];
+  workMode: WorkMode;
+  workingHours: WorkingHours;
+  languages: string[];
+  dealBreakers: string[];
 }
 ```
 
@@ -918,3 +1185,20 @@ export interface ExperienceRecord {
 | POST   | `/api/profiles/me/insights/:id/actioned` | Đánh dấu insight đã xử lý        |
 | POST   | `/api/profiles/me/avatar`                | Upload avatar (multipart)        |
 | GET    | `/api/profiles/:profileId`               | Lấy public profile               |
+| GET    | `/api/profiles/me/skills`                | Lấy danh sách skills             |
+| POST   | `/api/profiles/me/skills`                | Thêm skill mới                   |
+| PUT    | `/api/profiles/me/skills/:id`            | Update skill                     |
+| DELETE | `/api/profiles/me/skills/:id`            | Xóa skill                        |
+| POST   | `/api/profiles/me/skills/merge`          | Merge duplicate skills           |
+| GET    | `/api/profiles/me/experiences`           | Lấy danh sách experience         |
+| POST   | `/api/profiles/me/experiences`           | Thêm experience mới              |
+| PUT    | `/api/profiles/me/experiences/:id`       | Update experience                |
+| DELETE | `/api/profiles/me/experiences/:id`       | Xóa experience                   |
+| GET    | `/api/profiles/me/projects`              | Lấy danh sách projects           |
+| POST   | `/api/profiles/me/projects`              | Thêm project mới                 |
+| PUT    | `/api/profiles/me/projects/:id`          | Update project                   |
+| DELETE | `/api/profiles/me/projects/:id`          | Xóa project                      |
+| GET    | `/api/profiles/me/career-intent`         | Lấy career intent                |
+| PUT    | `/api/profiles/me/career-intent`         | Update career intent             |
+| GET    | `/api/profiles/me/work-preferences`      | Lấy work preferences             |
+| PUT    | `/api/profiles/me/work-preferences`      | Update work preferences          |

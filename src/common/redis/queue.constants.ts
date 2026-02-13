@@ -36,13 +36,13 @@ export const CACHE_KEYS = {
   PROFILE: 'profile',
 } as const;
 
-// Cache TTL in seconds
+// Cache TTL in milliseconds
 export const CACHE_TTL = {
-  JOBS_LIST: 300, // 5 minutes
-  JOB_DETAIL: 1800, // 30 minutes
-  MATCHING: 3600, // 1 hour
-  USER_STATS: 600, // 10 minutes
-  PROFILE: 1800, // 30 minutes
+  JOBS_LIST: 300 * 1000, // 5 minutes
+  JOB_DETAIL: 1800 * 1000, // 30 minutes
+  MATCHING: 3600 * 1000, // 1 hour
+  USER_STATS: 600 * 1000, // 10 minutes
+  PROFILE: 1800 * 1000, // 30 minutes
 } as const;
 
 // Types
