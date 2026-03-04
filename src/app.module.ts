@@ -1,5 +1,4 @@
 import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -23,6 +22,8 @@ import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiFeatureModule } from './modules/ai/ai-feature.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -31,13 +32,16 @@ import { HealthModule } from './modules/health/health.module';
 
 import { S3Service } from './common/services/s3.service';
 import { MaintenanceMiddleware } from './common/middleware/maintenance.middleware';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
-    // Note: ScheduleModule removed - all cron/schedule jobs now run in worker app only
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    SettingsModule,
+    AiFeatureModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -77,11 +81,11 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
     MailModule,
     JobAlertModule,
     AdminModule,
-    AiFeatureModule,
     RedisModule,
     NotificationsModule,
     FeedbackModule,
     HealthModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [
@@ -90,6 +94,10 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

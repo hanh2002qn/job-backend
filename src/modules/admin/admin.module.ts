@@ -6,6 +6,7 @@ import { CvModule } from '../cv/cv.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { AuthModule } from '../auth/auth.module';
 import { FeedbackModule } from '../feedback/feedback.module';
+import { SettingsModule } from '../settings/settings.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminJobsController } from './controllers/admin-jobs.controller';
 import { AdminCrawlerController } from './controllers/admin-crawler.controller';
@@ -24,6 +25,7 @@ import { AdminPromptService } from './services/admin-prompt.service';
 import { AdminModerationController } from './controllers/admin-moderation.controller';
 import { AdminSupportController } from './controllers/admin-support.controller';
 import { AdminCouponController } from './controllers/admin-coupon.controller';
+import { AdminSettingsController } from './controllers/admin-settings.controller';
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { AdminCouponController } from './controllers/admin-coupon.controller';
     SubscriptionModule,
     AuthModule,
     FeedbackModule,
+    SettingsModule,
   ],
   controllers: [
     AdminUsersController,
@@ -46,6 +49,7 @@ import { AdminCouponController } from './controllers/admin-coupon.controller';
     AdminModerationController,
     AdminSupportController,
     AdminCouponController,
+    AdminSettingsController,
   ],
   providers: [AdminDashboardService, AdminPlanService, AdminPromptService],
   exports: [],

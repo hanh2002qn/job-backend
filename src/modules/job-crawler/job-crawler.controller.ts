@@ -1,6 +1,7 @@
-import { Controller, Post, Get, UseGuards, Body } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, UseGuards, Body } from '@nestjs/common';
 import { JobCrawlerService } from './job-crawler.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { UpdateCrawlerConfigDto } from './dto/update-crawler-config.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -18,6 +19,20 @@ export class JobCrawlerController {
   @ApiOperation({ summary: 'Get crawler health status (Admin only)' })
   async getHealth() {
     return this.crawlerService.getHealth();
+  }
+
+  @Get('configs')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get all crawler configurations (Admin only)' })
+  async getConfigs() {
+    return this.crawlerService.getConfigs();
+  }
+
+  @Patch('configs/:source')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a specific crawler configuration (Admin only)' })
+  async updateConfig(@Param('source') source: string, @Body() updateDto: UpdateCrawlerConfigDto) {
+    return this.crawlerService.updateConfig(source, updateDto);
   }
 
   @Post('trigger')

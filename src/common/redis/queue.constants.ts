@@ -13,7 +13,15 @@ export const JOB_TYPES = {
   CRAWL_TOPCV: 'crawl-topcv',
   CRAWL_LINKEDIN: 'crawl-linkedin',
   CRAWL_VIETNAMWORKS: 'crawl-vietnamworks',
-  FETCH_JOB_DETAIL: 'fetch-job-detail',
+  CRAWL_INDEED: 'crawl-indeed',
+  CRAWL_TIMVIECNHANH: 'crawl-timviecnhanh',
+  CRAWL_ITVIEC: 'crawl-itviec',
+  CRAWL_TOPDEV: 'crawl-topdev',
+  CRAWL_UPWORK: 'crawl-upwork',
+  CRAWL_FREELANCER: 'crawl-freelancer',
+  CRAWL_VIECLAM24H: 'crawl-vieclam24h',
+  CRAWL_123JOB: 'crawl-123job',
+  CRAWL_FACEBOOK: 'crawl-facebook',
 
   // Email jobs
   SEND_REMINDER: 'send-reminder',

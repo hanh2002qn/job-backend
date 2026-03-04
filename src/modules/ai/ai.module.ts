@@ -1,6 +1,5 @@
 import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { GroqService } from './groq.service';
 import { OpenAIService } from './openai.service';
@@ -8,10 +7,12 @@ import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
 import { AiFeatureConfig } from './entities/ai-feature-config.entity';
 import { LLM_SERVICE } from './llm.interface';
+import { SettingsModule } from '../settings/settings.module';
+import { SettingsService } from '../settings/settings.service';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([Prompt, AiUsage, AiFeatureConfig])],
+  imports: [TypeOrmModule.forFeature([Prompt, AiUsage, AiFeatureConfig]), SettingsModule],
   providers: [
     GeminiService,
     GroqService,
@@ -22,13 +23,14 @@ import { LLM_SERVICE } from './llm.interface';
         gemini: GeminiService,
         groq: GroqService,
         openai: OpenAIService,
-        config: ConfigService,
+        settings: SettingsService,
       ) => {
-        const provider = config.get<string>('LLM_PROVIDER') || 'gemini';
+        const provider = settings.getSettingFromCache<string>('llm_provider') || 'gemini';
         if (provider === 'openai') return openai;
-        return provider === 'groq' ? groq : gemini;
+        if (provider === 'groq') return groq;
+        return gemini;
       },
-      inject: [GeminiService, GroqService, OpenAIService, ConfigService],
+      inject: [GeminiService, GroqService, OpenAIService, SettingsService],
     },
   ],
   exports: [LLM_SERVICE, GeminiService, GroqService, OpenAIService, TypeOrmModule],

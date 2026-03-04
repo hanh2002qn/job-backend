@@ -9,8 +9,8 @@ import {
   SubscriptionStatus,
   SubscriptionPlan,
 } from '../../subscription/entities/subscription.entity';
-import { CacheService } from '../../../common/redis/cache.service';
 import { StripeService } from '../../subscription/stripe.service';
+import { SettingsService } from '../../settings/settings.service';
 
 @Injectable()
 export class AdminDashboardService {
@@ -23,7 +23,7 @@ export class AdminDashboardService {
     private cvRepository: Repository<CV>,
     @InjectRepository(Subscription)
     private subscriptionRepository: Repository<Subscription>,
-    private readonly cacheService: CacheService,
+    private readonly settingsService: SettingsService,
     private readonly stripeService: StripeService,
   ) {}
 
@@ -93,7 +93,7 @@ export class AdminDashboardService {
   }
 
   async setMaintenanceMode(enabled: boolean): Promise<void> {
-    await this.cacheService.set('MAINTENANCE_MODE', String(enabled));
+    await this.settingsService.update('maintenance_mode', { value: enabled });
   }
 
   async getTransactions() {

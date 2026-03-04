@@ -5,7 +5,9 @@ import { JobCrawlerStrategy, CrawlResult } from './interfaces/job-crawler.interf
 import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
 import { CrawlerStats, CrawlerStatus } from './entities/crawler-stats.entity';
+import { CrawlerConfig } from './entities/crawler-config.entity';
 import { RateLimiterService } from './services/rate-limiter.service';
+import { UpdateCrawlerConfigDto } from './dto/update-crawler-config.dto';
 
 @Injectable()
 export class JobCrawlerService {
@@ -17,6 +19,8 @@ export class JobCrawlerService {
     private readonly linkedInCrawler: LinkedInCrawler,
     @InjectRepository(CrawlerStats)
     private readonly statsRepository: Repository<CrawlerStats>,
+    @InjectRepository(CrawlerConfig)
+    private readonly configRepository: Repository<CrawlerConfig>,
     private readonly rateLimiter: RateLimiterService,
   ) {
     this.strategies = [this.topCvCrawler, this.linkedInCrawler];
@@ -28,7 +32,20 @@ export class JobCrawlerService {
   async handleCron() {
     this.logger.log('Starting job crawl...');
 
+    // Sync sources before running
+    await this.syncConfigs();
+    const activeConfigs = await this.configRepository.find({ where: { isActive: true } });
+    const activeSources = activeConfigs.map((c) => c.source);
+
     for (const strategy of this.strategies) {
+      if (
+        !activeSources.includes(strategy.name.toLowerCase()) &&
+        !activeSources.includes(strategy.name)
+      ) {
+        this.logger.log(`Skipping inactive strategy: ${strategy.name}`);
+        continue;
+      }
+
       const startTime = Date.now();
       let status: CrawlerStatus = 'success';
       let errorMessage: string | null = null;
@@ -83,11 +100,60 @@ export class JobCrawlerService {
   }
 
   /**
+   * Sync configuration table with available strategies
+   */
+  async syncConfigs() {
+    const existingConfigs = await this.configRepository.find();
+    const strategyNames = this.strategies.map((s) => s.name);
+
+    for (const name of strategyNames) {
+      if (!existingConfigs.some((c) => c.source === name)) {
+        const config = this.configRepository.create({
+          source: name,
+          isActive: true, // Default to true
+        });
+        await this.configRepository.save(config);
+      }
+    }
+  }
+
+  /**
+   * Get all crawler configs
+   */
+  async getConfigs() {
+    await this.syncConfigs();
+    return this.configRepository.find({ order: { source: 'ASC' } });
+  }
+
+  /**
+   * Update crawler config
+   */
+  async updateConfig(source: string, updateDto: UpdateCrawlerConfigDto) {
+    const config = await this.configRepository.findOne({ where: { source } });
+    if (!config) {
+      throw new Error(`Crawler config not found for source: ${source}`);
+    }
+
+    if (updateDto.isActive !== undefined) {
+      config.isActive = updateDto.isActive;
+    }
+
+    if (updateDto.config !== undefined) {
+      config.config = updateDto.config;
+    }
+
+    return this.configRepository.save(config);
+  }
+
+  /**
    * Get crawler health stats
    */
   async getHealth() {
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+    await this.syncConfigs();
+    const configs = await this.getConfigs();
 
     const recentStats = await this.statsRepository.find({
       where: { runAt: MoreThan(oneDayAgo) },
@@ -95,10 +161,11 @@ export class JobCrawlerService {
       take: 20,
     });
 
-    const sources = ['topcv', 'linkedin'];
+    const sources = this.strategies.map((s) => s.name);
     const health: Record<
       string,
       {
+        isActive: boolean;
         lastRun: Date | null;
         lastStatus: CrawlerStatus | null;
         totalJobsLast24h: number;
@@ -109,10 +176,14 @@ export class JobCrawlerService {
     > = {};
 
     for (const source of sources) {
-      const sourceStats = recentStats.filter((s) => s.source === source);
+      const sourceStats = recentStats.filter(
+        (s) => s.source.toLowerCase() === source.toLowerCase(),
+      );
       const lastStat = sourceStats[0] || null;
+      const config = configs.find((c) => c.source === source);
 
       health[source] = {
+        isActive: config?.isActive ?? true,
         lastRun: lastStat?.runAt || null,
         lastStatus: lastStat?.status || null,
         totalJobsLast24h: sourceStats.reduce((sum, s) => sum + s.jobsCreated, 0),

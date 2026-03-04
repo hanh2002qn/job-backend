@@ -26,6 +26,9 @@ export class AiFeatureConfig {
   @Column({ type: 'int', default: 0 })
   maxRequestsPerDay: number; // 0 = unlimited
 
+  @Column({ type: 'jsonb', nullable: true })
+  tierQuotas: Record<string, number>; // e.g. { "free": 5, "premium_monthly": 50 }
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -22,6 +22,10 @@ export class UpdateAiFeatureDto {
   @IsInt()
   @Min(0)
   maxRequestsPerDay?: number;
+
+  @ApiPropertyOptional({ example: { free: 5, premium_monthly: 50 } })
+  @IsOptional()
+  tierQuotas?: Record<string, number>;
 }
 
 export class ToggleAiFeatureDto {

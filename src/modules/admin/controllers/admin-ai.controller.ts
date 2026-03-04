@@ -6,6 +6,7 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 import { AdminAiService } from '../services/admin-ai.service';
 import { UpdateAiFeatureDto, ToggleAiFeatureDto } from '../dto/ai-feature.dto';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 
 @ApiTags('Admin AI')
 @ApiBearerAuth()
@@ -30,12 +31,14 @@ export class AdminAiController {
   }
 
   @Patch('features/:id')
+  @AuditAction({ action: 'UPDATE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Update AI feature config' })
   updateFeature(@Param('id') id: string, @Body() dto: UpdateAiFeatureDto) {
     return this.adminAiService.updateFeature(id, dto);
   }
 
   @Patch('features/:id/toggle')
+  @AuditAction({ action: 'TOGGLE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Toggle AI feature enabled/disabled' })
   toggleFeature(@Param('id') id: string, @Body() dto: ToggleAiFeatureDto) {
     return this.adminAiService.toggleFeature(id, dto.isEnabled);

@@ -3,6 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { AI_FEATURE_KEY } from '../decorators/ai-feature.decorator';
 import { AdminAiService } from '../../modules/admin/services/admin-ai.service';
 import { Request } from 'express';
+import { SubscriptionService } from '../../modules/subscription/subscription.service';
+import { SubscriptionPlan } from '../../modules/subscription/entities/subscription.entity';
 
 /**
  * Guard that checks if an AI feature is enabled and enforces rate limits.
@@ -18,6 +20,7 @@ export class AiFeatureGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private adminAiService: AdminAiService,
+    private subscriptionService: SubscriptionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,19 +44,34 @@ export class AiFeatureGuard implements CanActivate {
       );
     }
 
-    // Check rate limit (0 = unlimited)
-    if (featureConfig.maxRequestsPerDay > 0) {
-      const request = context.switchToHttp().getRequest<Request>();
-      const user = request.user as { id?: string } | undefined;
-      const userId = user?.id;
+    // Determine quota based on tier or global default
+    const request = context.switchToHttp().getRequest<Request>();
+    const user = request.user as { id?: string; role?: string } | undefined;
+    const userId = user?.id;
 
-      if (userId) {
-        const dailyCount = await this.adminAiService.getUserDailyUsageCount(userId, featureKey);
-        if (dailyCount >= featureConfig.maxRequestsPerDay) {
-          throw new ForbiddenException(
-            `Daily limit reached for "${featureConfig.displayName}" (${featureConfig.maxRequestsPerDay} requests/day).`,
-          );
-        }
+    if (!userId) return true;
+
+    // Admin bypass
+    if (user?.role === 'admin') return true;
+
+    let quota = featureConfig.maxRequestsPerDay;
+
+    // Check tier quotas
+    if (featureConfig.tierQuotas) {
+      const subscription = await this.subscriptionService.getSubscription(userId);
+      const tier = subscription?.plan || SubscriptionPlan.FREE;
+      if (featureConfig.tierQuotas[tier] !== undefined) {
+        quota = featureConfig.tierQuotas[tier];
+      }
+    }
+
+    // Check rate limit (0 = unlimited)
+    if (quota > 0) {
+      const dailyCount = await this.adminAiService.getUserDailyUsageCount(userId, featureKey);
+      if (dailyCount >= quota) {
+        throw new ForbiddenException(
+          `Daily limit reached for "${featureConfig.displayName}" (${quota} requests/day).`,
+        );
       }
     }
 

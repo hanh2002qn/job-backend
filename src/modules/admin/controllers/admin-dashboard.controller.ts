@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 
 @ApiTags('admin/dashboard')
 @ApiBearerAuth()
@@ -27,6 +28,7 @@ export class AdminDashboardController {
   }
 
   @Post('maintenance')
+  @AuditAction({ action: 'TOGGLE_MAINTENANCE', module: 'DASHBOARD' })
   @ApiOperation({ summary: 'Toggle maintenance mode' })
   async toggleMaintenance(@Body('enabled') enabled: boolean) {
     await this.dashboardService.setMaintenanceMode(enabled);
