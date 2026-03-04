@@ -1,9 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  JobCrawlerStrategy,
-  NormalizedJobData,
-  CrawlResult,
-} from '../interfaces/job-crawler.interface';
+import { JobCrawlerStrategy, CrawlResult } from '../interfaces/job-crawler.interface';
 import { JobsService } from '../../jobs/jobs.service';
 import { JobNormalizationService } from '../services/job-normalization.service';
 import { DeduplicationService } from '../services/deduplication.service';
@@ -21,7 +17,7 @@ export class UpworkCrawler implements JobCrawlerStrategy {
     private readonly rateLimiter: RateLimiterService,
   ) {}
 
-  async crawl(): Promise<CrawlResult> {
+  crawl(): Promise<CrawlResult> {
     this.logger.log(`Crawling ${this.name} (Mock)...`);
     const result: CrawlResult = {
       jobsFound: 0,
@@ -31,6 +27,6 @@ export class UpworkCrawler implements JobCrawlerStrategy {
       duplicatesSkipped: 0,
       errors: 0,
     };
-    return result;
+    return Promise.resolve(result);
   }
 }

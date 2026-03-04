@@ -4,7 +4,8 @@ import { IsOptional, IsString } from 'class-validator';
 export class UpdateSystemSettingDto {
   @ApiPropertyOptional()
   @IsOptional()
-  value?: any;
+  // Using unknown instead of any to satisfy strict type safety rules. JSONB can store primitives or objects.
+  value?: unknown;
 
   @ApiPropertyOptional()
   @IsOptional()

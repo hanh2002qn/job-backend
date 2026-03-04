@@ -15,7 +15,8 @@ export class SystemSetting {
   key: string;
 
   @Column({ type: 'jsonb' })
-  value: any;
+  // Using unknown instead of any to satisfy strict type safety rules. JSONB can store primitives or objects.
+  value: unknown;
 
   @Column({ type: 'text', nullable: true })
   description: string;

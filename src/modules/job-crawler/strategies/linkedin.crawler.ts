@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   JobCrawlerStrategy,
-  NormalizedJobData,
   RawLinkedInJob,
+  NormalizedJobData,
   CrawlResult,
 } from '../interfaces/job-crawler.interface';
 import { JobsService } from '../../jobs/jobs.service';
@@ -69,7 +69,7 @@ export class LinkedInCrawler implements JobCrawlerStrategy {
           continue;
         }
 
-        const normalized = this.normalizeJobData(raw);
+        const normalized: NormalizedJobData & { contentHash?: string } = this.normalizeJobData(raw);
 
         // Add content hash
         normalized.contentHash = this.deduplicationService.generateContentHash(
@@ -100,7 +100,7 @@ export class LinkedInCrawler implements JobCrawlerStrategy {
     return result;
   }
 
-  private normalizeJobData(raw: RawLinkedInJob): NormalizedJobData & { contentHash?: string } {
+  private normalizeJobData(raw: RawLinkedInJob): NormalizedJobData {
     const salaryParsed = this.normalizationService.parseSalary(raw.salaryRaw);
 
     return {

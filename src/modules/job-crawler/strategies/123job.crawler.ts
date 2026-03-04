@@ -17,7 +17,7 @@ export class Job123Crawler implements JobCrawlerStrategy {
     private readonly rateLimiter: RateLimiterService,
   ) {}
 
-  async crawl(): Promise<CrawlResult> {
+  crawl(): Promise<CrawlResult> {
     this.logger.log(`Crawling ${this.name} (Mock)...`);
     const result: CrawlResult = {
       jobsFound: 0,
@@ -27,6 +27,6 @@ export class Job123Crawler implements JobCrawlerStrategy {
       duplicatesSkipped: 0,
       errors: 0,
     };
-    return result;
+    return Promise.resolve(result);
   }
 }

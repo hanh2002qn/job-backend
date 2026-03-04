@@ -45,7 +45,10 @@ export class UpdateProfileDto {
   @IsEnum(WorkMode)
   workPreference?: WorkMode;
 
-  @ApiPropertyOptional({ description: 'LinkedIn profile URL', example: 'https://linkedin.com/in/johndoe' })
+  @ApiPropertyOptional({
+    description: 'LinkedIn profile URL',
+    example: 'https://linkedin.com/in/johndoe',
+  })
   @IsOptional()
   @IsString()
   linkedin?: string;

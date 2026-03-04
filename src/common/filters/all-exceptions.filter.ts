@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as Sentry from '@sentry/nestjs';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -45,10 +46,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
           ...errorResponse,
           userId: request.user?.id ?? null,
           stack: exception instanceof Error ? exception.stack : undefined,
-          // FUTURE: Add Sentry capture here
-          // Sentry.captureException(exception);
         }),
       );
+
+      // Production Error Tracking
+      Sentry.captureException(exception);
     } else {
       this.logger.warn(JSON.stringify(errorResponse));
     }
