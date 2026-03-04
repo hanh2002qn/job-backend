@@ -4,6 +4,10 @@ import { Repository, Between } from 'typeorm';
 import { AiFeatureConfig } from '../../ai/entities/ai-feature-config.entity';
 import { AiUsage } from '../../ai/entities/ai-usage.entity';
 import { UpdateAiFeatureDto } from '../dto/ai-feature.dto';
+import {
+  OverallUsageStatsResponseDto,
+  FeatureUsageStatsResponseDto,
+} from '../dto/ai-usage-stats.dto';
 
 const DEFAULT_FEATURES: Array<{ featureKey: string; displayName: string; description: string }> = [
   {
@@ -105,19 +109,7 @@ export class AdminAiService implements OnModuleInit {
 
   // ============ Usage Analytics ============
 
-  async getOverallUsageStats(): Promise<{
-    totalTokens: number;
-    totalRequests: number;
-    totalCost: number;
-    byFeature: Array<{
-      feature: string;
-      totalTokens: number;
-      totalRequests: number;
-      totalCost: number;
-    }>;
-    byModel: Array<{ model: string; totalTokens: number; totalRequests: number }>;
-    last7Days: Array<{ date: string; totalTokens: number; totalRequests: number }>;
-  }> {
+  async getOverallUsageStats(): Promise<OverallUsageStatsResponseDto> {
     const [totals, byFeature, byModel, last7Days] = await Promise.all([
       this.aiUsageRepository
         .createQueryBuilder('u')
@@ -184,15 +176,7 @@ export class AdminAiService implements OnModuleInit {
     };
   }
 
-  async getFeatureUsageStats(featureKey: string): Promise<{
-    feature: string;
-    totalTokens: number;
-    totalRequests: number;
-    totalCost: number;
-    todayRequests: number;
-    last7Days: Array<{ date: string; totalTokens: number; totalRequests: number }>;
-    topUsers: Array<{ userId: string; totalRequests: number; totalTokens: number }>;
-  }> {
+  async getFeatureUsageStats(featureKey: string): Promise<FeatureUsageStatsResponseDto> {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 

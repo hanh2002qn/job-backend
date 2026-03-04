@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { AnalyticsService, type AnalyticsPeriod } from './analytics.service';
+import { AnalyticsService, type AnalyticsPeriod, AnalyticsOverview } from './analytics.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 import { Request as ExpressRequest } from 'express';
@@ -24,7 +24,10 @@ export class AnalyticsController {
     enum: ['7d', '30d', '90d'],
     description: 'Timeline period (default: 7d)',
   })
-  async getOverview(@Request() req: AuthenticatedRequest, @Query('period') period?: string) {
+  async getOverview(
+    @Request() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+  ): Promise<AnalyticsOverview> {
     return this.analyticsService.getOverview(req.user.id, (period as AnalyticsPeriod) || '7d');
   }
 }

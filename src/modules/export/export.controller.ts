@@ -17,7 +17,11 @@ export class ExportController {
 
   @Post('cv')
   @ApiOperation({ summary: 'Export CV to PDF/DOCX' })
-  async exportCv(@CurrentUser() user: User, @Body() exportDto: ExportCvDto, @Res() res: Response) {
+  async exportCv(
+    @CurrentUser() user: User,
+    @Body() exportDto: ExportCvDto,
+    @Res() res: Response,
+  ): Promise<void> {
     const result = await this.exportService.exportCv(user.id, exportDto);
     res.set({
       'Content-Type': result.contentType,
@@ -33,7 +37,7 @@ export class ExportController {
     @CurrentUser() user: User,
     @Body() exportDto: ExportCoverLetterDto,
     @Res() res: Response,
-  ) {
+  ): Promise<void> {
     const result = await this.exportService.exportCoverLetter(user.id, exportDto);
     res.set({
       'Content-Type': result.contentType,
@@ -45,7 +49,7 @@ export class ExportController {
 
   @Get('tracker/csv')
   @ApiOperation({ summary: 'Export Job Tracker to CSV' })
-  async exportTrackerCsv(@CurrentUser() user: User, @Res() res: Response) {
+  async exportTrackerCsv(@CurrentUser() user: User, @Res() res: Response): Promise<void> {
     const result = await this.exportService.exportTrackerCsv(user.id);
     res.set({
       'Content-Type': result.contentType,

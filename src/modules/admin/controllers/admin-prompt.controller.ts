@@ -19,27 +19,27 @@ export class AdminPromptController {
   @Post()
   @AuditAction({ action: 'CREATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Create a new prompt' })
-  create(@Body() createPromptDto: Partial<Prompt>) {
+  create(@Body() createPromptDto: Partial<Prompt>): Promise<Prompt> {
     return this.adminPromptService.create(createPromptDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all prompts' })
-  findAll() {
+  findAll(): Promise<Prompt[]> {
     return this.adminPromptService.findAll();
   }
 
   @Patch(':id')
   @AuditAction({ action: 'UPDATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Update a prompt' })
-  update(@Param('id') id: string, @Body() updatePromptDto: Partial<Prompt>) {
+  update(@Param('id') id: string, @Body() updatePromptDto: Partial<Prompt>): Promise<Prompt> {
     return this.adminPromptService.update(id, updatePromptDto);
   }
 
   @Delete(':id')
   @AuditAction({ action: 'DELETE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Delete a prompt' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<void> {
     return this.adminPromptService.remove(id);
   }
 }

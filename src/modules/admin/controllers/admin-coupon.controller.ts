@@ -18,7 +18,7 @@ export class AdminCouponController {
 
   @Get()
   @ApiOperation({ summary: 'List all coupons' })
-  async listCoupons() {
+  async listCoupons(): Promise<Stripe.Response<Stripe.ApiList<Stripe.Coupon>>> {
     return this.stripeService.listCoupons();
   }
 
@@ -38,14 +38,16 @@ export class AdminCouponController {
       },
     },
   })
-  async createCoupon(@Body() body: Stripe.CouponCreateParams) {
+  async createCoupon(
+    @Body() body: Stripe.CouponCreateParams,
+  ): Promise<Stripe.Response<Stripe.Coupon>> {
     return this.stripeService.createCoupon(body);
   }
 
   @Delete(':id')
   @AuditAction({ action: 'DELETE_COUPON', module: 'COUPON' })
   @ApiOperation({ summary: 'Delete a coupon' })
-  async deleteCoupon(@Param('id') id: string) {
+  async deleteCoupon(@Param('id') id: string): Promise<Stripe.Response<Stripe.DeletedCoupon>> {
     return this.stripeService.deleteCoupon(id);
   }
 }

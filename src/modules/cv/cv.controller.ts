@@ -11,6 +11,8 @@ import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
 import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { CV } from './entities/cv.entity';
+import { CvVersion } from './entities/cv-version.entity';
 
 @ApiTags('cv')
 @ApiBearerAuth()
@@ -24,49 +26,57 @@ export class CvController {
   @AiFeature('cv_generation')
   @Post('generate')
   @ApiOperation({ summary: 'Generate a CV for a specific job' })
-  generate(@CurrentUser() user: User, @Body() generateDto: GenerateCvDto) {
+  generate(@CurrentUser() user: User, @Body() generateDto: GenerateCvDto): Promise<CV> {
     return this.cvService.generate(user.id, generateDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List my generated CVs' })
-  findAll(@CurrentUser() user: User) {
+  findAll(@CurrentUser() user: User): Promise<CV[]> {
     return this.cvService.findAll(user.id);
   }
 
   @Get('templates')
   @ApiOperation({ summary: 'List available CV templates' })
-  getTemplates() {
+  getTemplates(): { id: string; name: string; type: string }[] {
     return this.cvService.getTemplates();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get CV detail' })
-  findOne(@CurrentUser() user: User, @Param('id') id: string) {
+  findOne(@CurrentUser() user: User, @Param('id') id: string): Promise<CV> {
     return this.cvService.findOne(user.id, id);
   }
 
   @Post(':id/tailor')
   @ApiOperation({ summary: 'Re-tailor an existing CV for a new job' })
-  tailor(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: TailorCvDto) {
+  tailor(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: TailorCvDto,
+  ): Promise<CV> {
     return this.cvService.tailor(user.id, id, dto.jobId);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update CV content and name' })
-  update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateCvDto) {
+  update(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: UpdateCvDto,
+  ): Promise<CV> {
     return this.cvService.update(user.id, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a CV' })
-  remove(@CurrentUser() user: User, @Param('id') id: string) {
+  remove(@CurrentUser() user: User, @Param('id') id: string): Promise<CV> {
     return this.cvService.remove(user.id, id);
   }
 
   @Get(':id/versions')
   @ApiOperation({ summary: 'Get version history of a CV' })
-  getVersions(@CurrentUser() user: User, @Param('id') id: string) {
+  getVersions(@CurrentUser() user: User, @Param('id') id: string): Promise<CvVersion[]> {
     return this.cvService.getVersions(user.id, id);
   }
 
@@ -76,13 +86,13 @@ export class CvController {
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Param('versionId') versionId: string,
-  ) {
+  ): Promise<CV> {
     return this.cvService.restoreVersion(user.id, id, versionId);
   }
 
   @Get(':id/html')
   @ApiOperation({ summary: 'Get CV HTML for client-side rendering/printing' })
-  async getHtml(@CurrentUser() user: User, @Param('id') id: string) {
+  async getHtml(@CurrentUser() user: User, @Param('id') id: string): Promise<{ html: string }> {
     const html = await this.cvService.getHtml(user.id, id);
     return { html };
   }

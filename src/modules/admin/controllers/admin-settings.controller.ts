@@ -7,6 +7,7 @@ import { UserRole } from '../../users/entities/user.entity';
 import { SettingsService } from '../../settings/settings.service';
 import { UpdateSystemSettingDto } from '../../settings/dto/update-system-setting.dto';
 import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import { SystemSetting } from '../../settings/entities/system-setting.entity';
 
 @ApiTags('Admin Settings')
 @ApiBearerAuth()
@@ -18,20 +19,23 @@ export class AdminSettingsController {
 
   @Get()
   @ApiOperation({ summary: 'List all system settings' })
-  findAll() {
+  findAll(): Promise<SystemSetting[]> {
     return this.settingsService.findAll();
   }
 
   @Get(':key')
   @ApiOperation({ summary: 'Get a single system setting' })
-  findOne(@Param('key') key: string) {
+  findOne(@Param('key') key: string): Promise<SystemSetting> {
     return this.settingsService.findOne(key);
   }
 
   @Patch(':key')
   @AuditAction({ action: 'UPDATE_SETTING', module: 'SETTINGS' })
   @ApiOperation({ summary: 'Update or create a system setting' })
-  update(@Param('key') key: string, @Body() updateDto: UpdateSystemSettingDto) {
+  update(
+    @Param('key') key: string,
+    @Body() updateDto: UpdateSystemSettingDto,
+  ): Promise<SystemSetting> {
     return this.settingsService.update(key, updateDto);
   }
 }

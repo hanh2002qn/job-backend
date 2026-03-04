@@ -19,9 +19,11 @@ import { CreateNoteDto, UpdateNoteDto } from './dto/note.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
 import { AiFeature } from '../../common/decorators/ai-feature.decorator';
-import { ApplicationStatus } from './entities/job-tracker.entity';
+import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { InterviewSchedule } from './entities/interview-schedule.entity';
+import { TrackerNote } from './entities/tracker-note.entity';
 
 @ApiTags('tracker')
 @ApiBearerAuth()
@@ -32,7 +34,10 @@ export class TrackerController {
 
   @Post()
   @ApiOperation({ summary: 'Track a new job' })
-  create(@CurrentUser() user: User, @Body() createTrackerDto: CreateTrackerDto) {
+  create(
+    @CurrentUser() user: User,
+    @Body() createTrackerDto: CreateTrackerDto,
+  ): Promise<JobTracker> {
     return this.trackerService.create(user.id, createTrackerDto);
   }
 
@@ -50,7 +55,7 @@ export class TrackerController {
     @Query('title') title?: string,
     @Query('sortBy') sortBy?: string,
     @Query('order') order?: 'ASC' | 'DESC',
-  ) {
+  ): Promise<JobTracker[]> {
     return this.trackerService.findAll(user.id, {
       status,
       company,
@@ -62,7 +67,7 @@ export class TrackerController {
 
   @Get('interviews/calendar')
   @ApiOperation({ summary: 'Get all scheduled interviews' })
-  getCalendar(@CurrentUser() user: User) {
+  getCalendar(@CurrentUser() user: User): Promise<InterviewSchedule[]> {
     return this.trackerService.findAllInterviews(user.id);
   }
 
@@ -70,13 +75,16 @@ export class TrackerController {
   @UseGuards(AiFeatureGuard)
   @AiFeature('interview_prep')
   @ApiOperation({ summary: 'Get AI preparation tips for an interview' })
-  getPrepTips(@CurrentUser() user: User, @Param('id') id: string) {
+  getPrepTips(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<Record<string, unknown>> {
     return this.trackerService.getInterviewPrepTips(user.id, id);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get application statistics' })
-  getStats(@CurrentUser() user: User) {
+  getStats(@CurrentUser() user: User): Promise<Record<string, number>> {
     return this.trackerService.getStats(user.id);
   }
 
@@ -86,25 +94,32 @@ export class TrackerController {
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Body() dto: CreateInterviewDto,
-  ) {
+  ): Promise<InterviewSchedule> {
     return this.trackerService.addInterview(user.id, id, dto);
   }
 
   @Post('bulk-status')
   @ApiOperation({ summary: 'Bulk update status for multiply trackers' })
-  bulkUpdateStatus(@CurrentUser() user: User, @Body() dto: BulkUpdateStatusDto) {
+  bulkUpdateStatus(
+    @CurrentUser() user: User,
+    @Body() dto: BulkUpdateStatusDto,
+  ): Promise<{ updated: number }> {
     return this.trackerService.bulkUpdateStatus(user.id, dto);
   }
 
   @Post(':id/notes')
   @ApiOperation({ summary: 'Add a note to a tracker' })
-  addNote(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: CreateNoteDto) {
+  addNote(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: CreateNoteDto,
+  ): Promise<TrackerNote> {
     return this.trackerService.addNote(user.id, id, dto.content);
   }
 
   @Get(':id/notes')
   @ApiOperation({ summary: 'Get all notes for a tracker' })
-  getNotes(@CurrentUser() user: User, @Param('id') id: string) {
+  getNotes(@CurrentUser() user: User, @Param('id') id: string): Promise<TrackerNote[]> {
     return this.trackerService.getTrackerNotes(user.id, id);
   }
 
@@ -114,13 +129,13 @@ export class TrackerController {
     @CurrentUser() user: User,
     @Param('noteId') noteId: string,
     @Body() dto: UpdateNoteDto,
-  ) {
+  ): Promise<TrackerNote> {
     return this.trackerService.updateNote(user.id, noteId, dto.content);
   }
 
   @Delete('notes/:noteId')
   @ApiOperation({ summary: 'Delete a note' })
-  deleteNote(@CurrentUser() user: User, @Param('noteId') noteId: string) {
+  deleteNote(@CurrentUser() user: User, @Param('noteId') noteId: string): Promise<TrackerNote> {
     return this.trackerService.deleteNote(user.id, noteId);
   }
 
@@ -143,13 +158,17 @@ export class TrackerController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update tracker entry (status, notes, cv, etc.)' })
-  update(@CurrentUser() user: User, @Param('id') id: string, @Body() updateDto: UpdateTrackerDto) {
+  update(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateTrackerDto,
+  ): Promise<JobTracker> {
     return this.trackerService.update(id, user.id, updateDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remove a job from tracking list' })
-  remove(@CurrentUser() user: User, @Param('id') id: string) {
+  remove(@CurrentUser() user: User, @Param('id') id: string): Promise<JobTracker> {
     return this.trackerService.remove(id, user.id);
   }
 }

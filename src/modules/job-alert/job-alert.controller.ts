@@ -5,6 +5,7 @@ import { UpdateJobAlertDto } from './dto/update-job-alert.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { JobAlert } from './entities/job-alert.entity';
 
 @ApiTags('job-alerts')
 @ApiBearerAuth()
@@ -15,13 +16,16 @@ export class JobAlertController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get my job alert settings' })
-  async getSettings(@CurrentUser() user: User) {
+  async getSettings(@CurrentUser() user: User): Promise<JobAlert> {
     return this.jobAlertService.getSettings(user.id);
   }
 
   @Patch('me')
   @ApiOperation({ summary: 'Update my job alert settings' })
-  async updateSettings(@CurrentUser() user: User, @Body() dto: UpdateJobAlertDto) {
+  async updateSettings(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateJobAlertDto,
+  ): Promise<JobAlert> {
     return this.jobAlertService.updateSettings(user.id, dto);
   }
 }

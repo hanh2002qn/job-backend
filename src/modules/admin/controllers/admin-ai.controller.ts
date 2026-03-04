@@ -6,7 +6,13 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 import { AdminAiService } from '../services/admin-ai.service';
 import { UpdateAiFeatureDto, ToggleAiFeatureDto } from '../dto/ai-feature.dto';
+import {
+  OverallUsageStatsResponseDto,
+  FeatureUsageStatsResponseDto,
+} from '../dto/ai-usage-stats.dto';
 import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+
+import { AiFeatureConfig } from '../../ai/entities/ai-feature-config.entity';
 
 @ApiTags('Admin AI')
 @ApiBearerAuth()
@@ -20,27 +26,33 @@ export class AdminAiController {
 
   @Get('features')
   @ApiOperation({ summary: 'List all AI feature configs' })
-  listFeatures() {
+  listFeatures(): Promise<AiFeatureConfig[]> {
     return this.adminAiService.listFeatures();
   }
 
   @Get('features/:id')
   @ApiOperation({ summary: 'Get a single AI feature config' })
-  getFeature(@Param('id') id: string) {
+  getFeature(@Param('id') id: string): Promise<AiFeatureConfig> {
     return this.adminAiService.getFeature(id);
   }
 
   @Patch('features/:id')
   @AuditAction({ action: 'UPDATE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Update AI feature config' })
-  updateFeature(@Param('id') id: string, @Body() dto: UpdateAiFeatureDto) {
+  updateFeature(
+    @Param('id') id: string,
+    @Body() dto: UpdateAiFeatureDto,
+  ): Promise<AiFeatureConfig> {
     return this.adminAiService.updateFeature(id, dto);
   }
 
   @Patch('features/:id/toggle')
   @AuditAction({ action: 'TOGGLE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Toggle AI feature enabled/disabled' })
-  toggleFeature(@Param('id') id: string, @Body() dto: ToggleAiFeatureDto) {
+  toggleFeature(
+    @Param('id') id: string,
+    @Body() dto: ToggleAiFeatureDto,
+  ): Promise<AiFeatureConfig> {
     return this.adminAiService.toggleFeature(id, dto.isEnabled);
   }
 
@@ -48,13 +60,15 @@ export class AdminAiController {
 
   @Get('usage')
   @ApiOperation({ summary: 'Get overall AI usage analytics' })
-  getUsageStats() {
+  getUsageStats(): Promise<OverallUsageStatsResponseDto> {
     return this.adminAiService.getOverallUsageStats();
   }
 
   @Get('usage/:featureKey')
   @ApiOperation({ summary: 'Get usage analytics for a specific AI feature' })
-  getFeatureUsageStats(@Param('featureKey') featureKey: string) {
+  getFeatureUsageStats(
+    @Param('featureKey') featureKey: string,
+  ): Promise<FeatureUsageStatsResponseDto> {
     return this.adminAiService.getFeatureUsageStats(featureKey);
   }
 }

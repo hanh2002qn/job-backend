@@ -46,14 +46,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
   @ApiResponse({ status: 409, description: 'Email already exists.' })
-  async register(@Body() registerDto: RegisterDto) {
+  async register(@Body() registerDto: RegisterDto): Promise<User> {
     return this.authService.register(registerDto);
   }
 
   @Get('verify')
   @ApiOperation({ summary: 'Verify email address' })
   @ApiQuery({ name: 'token', required: true })
-  async verifyEmail(@Query('token') token: string) {
+  async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
     return this.authService.verifyEmail(token);
   }
 
@@ -63,7 +63,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful.' })
   @ApiResponse({ status: 401, description: 'Invalid credentials.' })
-  async login(@Body() loginDto: LoginDto) {
+  async login(
+    @Body() loginDto: LoginDto,
+  ): Promise<{ accessToken: string; refreshToken: string; user: Omit<User, 'passwordHash'> }> {
     return this.authService.login(loginDto);
   }
 
@@ -72,14 +74,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Logout user' })
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentUser() user: User) {
+  async logout(@CurrentUser() user: User): Promise<{ message: string }> {
     return this.authService.logout(user.id);
   }
 
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
   @HttpCode(HttpStatus.OK)
-  async refreshTokens(@Body() refreshDto: RefreshTokenDto) {
+  async refreshTokens(
+    @Body() refreshDto: RefreshTokenDto,
+  ): Promise<{ accessToken: string; refreshToken: string; user: Omit<User, 'passwordHash'> }> {
     return this.authService.refreshTokensWithDecode(refreshDto.refreshToken);
   }
 
@@ -88,7 +92,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password' })
   @HttpCode(HttpStatus.OK)
-  async changePassword(@CurrentUser() user: User, @Body() changeDto: ChangePasswordDto) {
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() changeDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
     return this.authService.changePassword(user.id, changeDto);
   }
 
@@ -96,7 +103,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Request password reset' })
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotDto: ForgotPasswordDto) {
+  async forgotPassword(@Body() forgotDto: ForgotPasswordDto): Promise<{ message: string }> {
     return this.authService.forgotPassword(forgotDto.email);
   }
 
@@ -104,7 +111,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Reset password using token' })
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetDto: ResetPasswordDto) {
+  async resetPassword(@Body() resetDto: ResetPasswordDto): Promise<{ message: string }> {
     return this.authService.resetPassword(resetDto);
   }
 
@@ -113,14 +120,14 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
-  googleAuth() {
+  googleAuth(): void {
     // Guard redirects to Google
   }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+  async googleAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as GoogleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,
@@ -142,14 +149,14 @@ export class AuthController {
   @Get('github')
   @UseGuards(GithubAuthGuard)
   @ApiOperation({ summary: 'Initiate GitHub OAuth login' })
-  githubAuth() {
+  githubAuth(): void {
     // Guard redirects to GitHub
   }
 
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
   @ApiOperation({ summary: 'GitHub OAuth callback' })
-  async githubAuthCallback(@Req() req: Request, @Res() res: Response) {
+  async githubAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as GithubProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,
@@ -171,14 +178,14 @@ export class AuthController {
   @Post('apple')
   @UseGuards(AppleAuthGuard)
   @ApiOperation({ summary: 'Initiate Apple OAuth login' })
-  appleAuth() {
+  appleAuth(): void {
     // Guard redirects to Apple
   }
 
   @Post('apple/callback')
   @UseGuards(AppleAuthGuard)
   @ApiOperation({ summary: 'Apple OAuth callback' })
-  async appleAuthCallback(@Req() req: Request, @Res() res: Response) {
+  async appleAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as AppleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,

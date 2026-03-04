@@ -6,6 +6,8 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
+import { CrawlerStatus, CrawlerStats } from './entities/crawler-stats.entity';
+import { CrawlerConfig } from './entities/crawler-config.entity';
 
 @ApiTags('Crawler')
 @Controller('crawler')
@@ -17,28 +19,46 @@ export class JobCrawlerController {
   @Get('health')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get crawler health status (Admin only)' })
-  async getHealth() {
+  async getHealth(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    sources: Record<
+      string,
+      {
+        isActive: boolean;
+        lastRun: Date | null;
+        lastStatus: CrawlerStatus | null;
+        totalJobsLast24h: number;
+        errorsLast24h: number;
+        avgDurationMs: number;
+        rateLimitStatus: { currentDelay: number; consecutiveErrors: number };
+      }
+    >;
+    recentRuns: CrawlerStats[];
+  }> {
     return this.crawlerService.getHealth();
   }
 
   @Get('configs')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all crawler configurations (Admin only)' })
-  async getConfigs() {
+  async getConfigs(): Promise<CrawlerConfig[]> {
     return this.crawlerService.getConfigs();
   }
 
   @Patch('configs/:source')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a specific crawler configuration (Admin only)' })
-  async updateConfig(@Param('source') source: string, @Body() updateDto: UpdateCrawlerConfigDto) {
+  async updateConfig(
+    @Param('source') source: string,
+    @Body() updateDto: UpdateCrawlerConfigDto,
+  ): Promise<CrawlerConfig> {
     return this.crawlerService.updateConfig(source, updateDto);
   }
 
   @Post('trigger')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Trigger job crawler manually (Admin only)' })
-  triggerCrawl() {
+  triggerCrawl(): { message: string } {
     // Trigger in background
     void this.crawlerService.handleCron();
     return { message: 'Crawler triggered in background' };
@@ -47,7 +67,7 @@ export class JobCrawlerController {
   @Post('test')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Test crawler with specific URL' })
-  async testCrawl(@Body() body: { url: string }) {
+  async testCrawl(@Body() body: { url: string }): Promise<{ message: string }> {
     await this.crawlerService.crawlSpecificUrl(body.url);
     return { message: 'Test crawl executed' };
   }

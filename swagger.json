@@ -1,0 +1,4682 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          }
+        },
+        "tags": ["App"]
+      }
+    },
+    "/api/subscription/checkout": {
+      "post": {
+        "operationId": "SubscriptionController_createCheckoutSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCheckoutSessionDto" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Create Stripe Checkout Session",
+        "tags": ["subscription"]
+      }
+    },
+    "/api/subscription/webhook": {
+      "post": {
+        "operationId": "SubscriptionController_handleWebhook",
+        "parameters": [
+          {
+            "name": "stripe-signature",
+            "required": true,
+            "in": "header",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "201": { "description": "" } },
+        "summary": "Stripe Webhook Handler",
+        "tags": ["subscription"]
+      }
+    },
+    "/api/subscription/cancel": {
+      "post": {
+        "operationId": "SubscriptionController_cancelSubscription",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Cancel subscription at period end",
+        "tags": ["subscription"]
+      }
+    },
+    "/api/subscription/me": {
+      "get": {
+        "operationId": "SubscriptionController_getMySubscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get current subscription status",
+        "tags": ["subscription"]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get current user profile",
+        "tags": ["users"]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RegisterDto" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "User successfully registered." },
+          "409": { "description": "Email already exists." }
+        },
+        "summary": "Register a new user",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/verify": {
+      "get": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [
+          { "name": "token", "required": true, "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "summary": "Verify email address",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful." },
+          "401": { "description": "Invalid credentials." }
+        },
+        "summary": "Login user",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Logout user",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refreshTokens",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RefreshTokenDto" } }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "summary": "Refresh access token",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ChangePasswordDto" } }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Change password",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ForgotPasswordDto" } }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "summary": "Request password reset",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ResetPasswordDto" } }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "summary": "Reset password using token",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/google": {
+      "get": {
+        "operationId": "AuthController_googleAuth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "summary": "Initiate Google OAuth login",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/google/callback": {
+      "get": {
+        "operationId": "AuthController_googleAuthCallback",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "summary": "Google OAuth callback",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/github": {
+      "get": {
+        "operationId": "AuthController_githubAuth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "summary": "Initiate GitHub OAuth login",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/github/callback": {
+      "get": {
+        "operationId": "AuthController_githubAuthCallback",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "summary": "GitHub OAuth callback",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/apple": {
+      "post": {
+        "operationId": "AuthController_appleAuth",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "summary": "Initiate Apple OAuth login",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/apple/callback": {
+      "post": {
+        "operationId": "AuthController_appleAuthCallback",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "summary": "Apple OAuth callback",
+        "tags": ["auth"]
+      }
+    },
+    "/api/mail/preferences": {
+      "get": {
+        "operationId": "MailController_getPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EmailPreference" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get current email notification preferences",
+        "tags": ["mail"]
+      },
+      "patch": {
+        "operationId": "MailController_updatePreferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateMailPreferencesDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/EmailPreference" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update email notification preferences",
+        "tags": ["mail"]
+      }
+    },
+    "/api/profiles/me": {
+      "get": {
+        "operationId": "ProfilesController_getMyProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get current user profile with completeness score",
+        "tags": ["profiles"]
+      },
+      "put": {
+        "operationId": "ProfilesController_updateMyProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateProfileDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update current user profile",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/cv": {
+      "post": {
+        "operationId": "ProfilesController_uploadCv",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": { "file": { "type": "string", "format": "binary" } }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Upload CV and auto-populate profile with AI parsing",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/avatar": {
+      "post": {
+        "operationId": "ProfilesController_uploadAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": { "file": { "type": "string", "format": "binary" } }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Upload profile avatar",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/visibility": {
+      "put": {
+        "operationId": "ProfilesController_updateVisibility",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateVisibilityDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update profile visibility settings",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/completeness": {
+      "get": {
+        "operationId": "ProfilesController_getCompleteness",
+        "parameters": [
+          {
+            "name": "targetRole",
+            "required": false,
+            "in": "query",
+            "description": "Target role to calculate completeness for",
+            "schema": { "example": "Backend Developer", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get profile completeness score for target role",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/cv/sessions": {
+      "get": {
+        "operationId": "ProfilesController_getCvSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CvImportSession" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get CV import sessions for current user",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/cv/confirm/{sessionId}": {
+      "post": {
+        "operationId": "ProfilesController_confirmCvImport",
+        "parameters": [
+          { "name": "sessionId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Confirm CV import session and merge to profile",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/cv/discard/{sessionId}": {
+      "post": {
+        "operationId": "ProfilesController_discardCvImport",
+        "parameters": [
+          { "name": "sessionId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Discard CV import session",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/insights": {
+      "get": {
+        "operationId": "ProfilesController_getInsights",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileInsight" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get AI insights for current user profile",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/insights/{insightId}/read": {
+      "post": {
+        "operationId": "ProfilesController_markInsightAsRead",
+        "parameters": [
+          { "name": "insightId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileInsight" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Mark insight as read",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/insights/{insightId}/actioned": {
+      "post": {
+        "operationId": "ProfilesController_markInsightAsActioned",
+        "parameters": [
+          { "name": "insightId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileInsight" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Mark insight as actioned",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/skills": {
+      "get": {
+        "operationId": "ProfilesController_getSkills",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileSkill" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all skills for current user",
+        "tags": ["profiles"]
+      },
+      "post": {
+        "operationId": "ProfilesController_createSkill",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateSkillDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileSkill" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Add a new skill",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/skills/{skillId}": {
+      "put": {
+        "operationId": "ProfilesController_updateSkill",
+        "parameters": [
+          { "name": "skillId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateSkillDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileSkill" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a skill",
+        "tags": ["profiles"]
+      },
+      "delete": {
+        "operationId": "ProfilesController_deleteSkill",
+        "parameters": [
+          { "name": "skillId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a skill",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/skills/merge": {
+      "post": {
+        "operationId": "ProfilesController_mergeSkills",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/MergeSkillsDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileSkill" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Merge duplicate skills",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/experiences": {
+      "get": {
+        "operationId": "ProfilesController_getExperiences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileExperience" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all experiences for current user",
+        "tags": ["profiles"]
+      },
+      "post": {
+        "operationId": "ProfilesController_createExperience",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateExperienceDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileExperience" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Add a new experience",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/experiences/{experienceId}": {
+      "put": {
+        "operationId": "ProfilesController_updateExperience",
+        "parameters": [
+          { "name": "experienceId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateExperienceDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileExperience" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update an experience",
+        "tags": ["profiles"]
+      },
+      "delete": {
+        "operationId": "ProfilesController_deleteExperience",
+        "parameters": [
+          { "name": "experienceId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete an experience",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/projects": {
+      "get": {
+        "operationId": "ProfilesController_getProjects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileProject" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all projects for current user",
+        "tags": ["profiles"]
+      },
+      "post": {
+        "operationId": "ProfilesController_createProject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateProjectDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileProject" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Add a new project",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/projects/{projectId}": {
+      "put": {
+        "operationId": "ProfilesController_updateProject",
+        "parameters": [
+          { "name": "projectId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateProjectDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProfileProject" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a project",
+        "tags": ["profiles"]
+      },
+      "delete": {
+        "operationId": "ProfilesController_deleteProject",
+        "parameters": [
+          { "name": "projectId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a project",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/career-intent": {
+      "get": {
+        "operationId": "ProfilesController_getCareerIntent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get career intent for current user",
+        "tags": ["profiles"]
+      },
+      "put": {
+        "operationId": "ProfilesController_updateCareerIntent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCareerIntentDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CareerIntent" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update career intent",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/me/work-preferences": {
+      "get": {
+        "operationId": "ProfilesController_getWorkPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get work preferences for current user",
+        "tags": ["profiles"]
+      },
+      "put": {
+        "operationId": "ProfilesController_updateWorkPreferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateWorkPreferencesDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/WorkPreferences" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update work preferences",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/profiles/{id}": {
+      "get": {
+        "operationId": "ProfilesController_getPublicProfile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Profile ID (UUID)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "summary": "Get public profile by ID",
+        "tags": ["profiles"]
+      }
+    },
+    "/api/jobs/search": {
+      "get": {
+        "operationId": "JobsController_search",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 10, "type": "number" }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": { "default": "DESC", "type": "string", "enum": ["ASC", "DESC"] }
+          },
+          { "name": "keyword", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "location", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "An Giang",
+                "Bà Rịa - Vũng Tàu",
+                "Bắc Giang",
+                "Bắc Kạn",
+                "Bạc Liêu",
+                "Bắc Ninh",
+                "Bến Tre",
+                "Bình Định",
+                "Bình Dương",
+                "Bình Phước",
+                "Bình Thuận",
+                "Cà Mau",
+                "Cần Thơ",
+                "Cao Bằng",
+                "Đà Nẵng",
+                "Đắk Lắk",
+                "Đắk Nông",
+                "Điện Biên",
+                "Đồng Nai",
+                "Đồng Tháp",
+                "Gia Lai",
+                "Hà Giang",
+                "Hà Nam",
+                "Hà Nội",
+                "Hà Tĩnh",
+                "Hải Dương",
+                "Hải Phòng",
+                "Hậu Giang",
+                "Hòa Bình",
+                "Hồ Chí Minh",
+                "Hưng Yên",
+                "Khánh Hòa",
+                "Kiên Giang",
+                "Kon Tum",
+                "Lai Châu",
+                "Lâm Đồng",
+                "Lạng Sơn",
+                "Lào Cai",
+                "Long An",
+                "Nam Định",
+                "Nghệ An",
+                "Ninh Bình",
+                "Ninh Thuận",
+                "Phú Thọ",
+                "Phú Yên",
+                "Quảng Bình",
+                "Quảng Nam",
+                "Quảng Ngãi",
+                "Quảng Ninh",
+                "Quảng Trị",
+                "Sóc Trăng",
+                "Sơn La",
+                "Tây Ninh",
+                "Thái Bình",
+                "Thái Nguyên",
+                "Thanh Hóa",
+                "Thừa Thiên Huế",
+                "Tiền Giang",
+                "Trà Vinh",
+                "Tuyên Quang",
+                "Vĩnh Long",
+                "Vĩnh Phúc",
+                "Yên Bái",
+                "Toàn quốc",
+                "Khác"
+              ]
+            }
+          },
+          {
+            "name": "experienceLevel",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Intern",
+                "Fresher",
+                "Junior",
+                "Middle",
+                "Senior",
+                "Lead",
+                "Manager",
+                "Director",
+                "Not specified"
+              ]
+            }
+          },
+          { "name": "level", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "source", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "industry",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IT - Phần mềm",
+                "Tài chính - Ngân hàng",
+                "Kinh doanh - Marketing",
+                "Sản xuất",
+                "Giáo dục",
+                "Y tế",
+                "Bán lẻ",
+                "Vận tải - Logistics",
+                "Xây dựng",
+                "Khác"
+              ]
+            }
+          },
+          { "name": "category", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "minSalary", "required": false, "in": "query", "schema": { "type": "number" } },
+          { "name": "maxSalary", "required": false, "in": "query", "schema": { "type": "number" } },
+          {
+            "name": "jobType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Full-time",
+                "Part-time",
+                "Contract",
+                "Freelance",
+                "Internship",
+                "Remote",
+                "Hybrid",
+                "Other"
+              ]
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "postedAt",
+              "type": "string",
+              "enum": ["createdAt", "postedAt", "salaryMax", "deadline"]
+            }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "summary": "Search jobs with full-text search",
+        "tags": ["jobs"]
+      }
+    },
+    "/api/jobs/saved": {
+      "get": {
+        "operationId": "JobsController_getSavedJobs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 10, "type": "number" }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get saved/bookmarked jobs",
+        "tags": ["jobs"]
+      }
+    },
+    "/api/jobs/{id}": {
+      "get": {
+        "operationId": "JobsController_findOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "summary": "Get job detail",
+        "tags": ["jobs"]
+      }
+    },
+    "/api/jobs/{id}/save": {
+      "post": {
+        "operationId": "JobsController_saveJob",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SavedJob" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Save/Bookmark a job",
+        "tags": ["jobs"]
+      },
+      "delete": {
+        "operationId": "JobsController_unsaveJob",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "204": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Unsave/Remove bookmark from job",
+        "tags": ["jobs"]
+      }
+    },
+    "/api/crawler/health": {
+      "get": {
+        "operationId": "JobCrawlerController_getHealth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get crawler health status (Admin only)",
+        "tags": ["Crawler"]
+      }
+    },
+    "/api/crawler/configs": {
+      "get": {
+        "operationId": "JobCrawlerController_getConfigs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CrawlerConfig" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all crawler configurations (Admin only)",
+        "tags": ["Crawler"]
+      }
+    },
+    "/api/crawler/configs/{source}": {
+      "patch": {
+        "operationId": "JobCrawlerController_updateConfig",
+        "parameters": [
+          { "name": "source", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCrawlerConfigDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CrawlerConfig" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a specific crawler configuration (Admin only)",
+        "tags": ["Crawler"]
+      }
+    },
+    "/api/crawler/trigger": {
+      "post": {
+        "operationId": "JobCrawlerController_triggerCrawl",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Trigger job crawler manually (Admin only)",
+        "tags": ["Crawler"]
+      }
+    },
+    "/api/crawler/test": {
+      "post": {
+        "operationId": "JobCrawlerController_testCrawl",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Test crawler with specific URL",
+        "tags": ["Crawler"]
+      }
+    },
+    "/api/tracker": {
+      "post": {
+        "operationId": "TrackerController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateTrackerDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobTracker" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Track a new job",
+        "tags": ["tracker"]
+      },
+      "get": {
+        "operationId": "TrackerController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["saved", "applied", "interview", "offer", "rejected"],
+              "type": "string"
+            }
+          },
+          { "name": "company", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "title", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "updatedAt", "type": "string" }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": { "enum": ["ASC", "DESC"], "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/JobTracker" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all tracked jobs with filtering and sorting",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/interviews/calendar": {
+      "get": {
+        "operationId": "TrackerController_getCalendar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/InterviewSchedule" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all scheduled interviews",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/interviews/{id}/prep-tips": {
+      "get": {
+        "operationId": "TrackerController_getPrepTips",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get AI preparation tips for an interview",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/stats": {
+      "get": {
+        "operationId": "TrackerController_getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get application statistics",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/{id}/interviews": {
+      "post": {
+        "operationId": "TrackerController_addInterview",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateInterviewDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/InterviewSchedule" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Schedule an interview for a tracked job",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/bulk-status": {
+      "post": {
+        "operationId": "TrackerController_bulkUpdateStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BulkUpdateStatusDto" } }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Bulk update status for multiply trackers",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/{id}/notes": {
+      "post": {
+        "operationId": "TrackerController_addNote",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateNoteDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TrackerNote" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Add a note to a tracker",
+        "tags": ["tracker"]
+      },
+      "get": {
+        "operationId": "TrackerController_getNotes",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TrackerNote" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all notes for a tracker",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/notes/{noteId}": {
+      "patch": {
+        "operationId": "TrackerController_updateNote",
+        "parameters": [
+          { "name": "noteId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateNoteDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TrackerNote" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a note",
+        "tags": ["tracker"]
+      },
+      "delete": {
+        "operationId": "TrackerController_deleteNote",
+        "parameters": [
+          { "name": "noteId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TrackerNote" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a note",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/tracker/{id}": {
+      "patch": {
+        "operationId": "TrackerController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateTrackerDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobTracker" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update tracker entry (status, notes, cv, etc.)",
+        "tags": ["tracker"]
+      },
+      "delete": {
+        "operationId": "TrackerController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobTracker" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Remove a job from tracking list",
+        "tags": ["tracker"]
+      }
+    },
+    "/api/cv/generate": {
+      "post": {
+        "operationId": "CvController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateCvDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Generate a CV for a specific job",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv": {
+      "get": {
+        "operationId": "CvController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/CV" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List my generated CVs",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/templates": {
+      "get": {
+        "operationId": "CvController_getTemplates",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "List available CV templates",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/{id}": {
+      "get": {
+        "operationId": "CvController_findOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get CV detail",
+        "tags": ["cv"]
+      },
+      "patch": {
+        "operationId": "CvController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateCvDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update CV content and name",
+        "tags": ["cv"]
+      },
+      "delete": {
+        "operationId": "CvController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a CV",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/{id}/tailor": {
+      "post": {
+        "operationId": "CvController_tailor",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TailorCvDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Re-tailor an existing CV for a new job",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/{id}/versions": {
+      "get": {
+        "operationId": "CvController_getVersions",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/CvVersion" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get version history of a CV",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/{id}/versions/{versionId}/restore": {
+      "post": {
+        "operationId": "CvController_restoreVersion",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } },
+          { "name": "versionId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CV" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Restore a previous version",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cv/{id}/html": {
+      "get": {
+        "operationId": "CvController_getHtml",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get CV HTML for client-side rendering/printing",
+        "tags": ["cv"]
+      }
+    },
+    "/api/cover-letter/generate": {
+      "post": {
+        "operationId": "CoverLetterController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenerateCoverLetterDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CoverLetter" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Generate a Cover Letter",
+        "tags": ["cover-letter"]
+      }
+    },
+    "/api/cover-letter": {
+      "get": {
+        "operationId": "CoverLetterController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CoverLetter" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List my cover letters",
+        "tags": ["cover-letter"]
+      }
+    },
+    "/api/cover-letter/{id}": {
+      "get": {
+        "operationId": "CoverLetterController_findOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CoverLetter" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get Cover Letter detail",
+        "tags": ["cover-letter"]
+      },
+      "patch": {
+        "operationId": "CoverLetterController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateCoverLetterDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/CoverLetter" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update Cover Letter",
+        "tags": ["cover-letter"]
+      },
+      "delete": {
+        "operationId": "CoverLetterController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete Cover Letter",
+        "tags": ["cover-letter"]
+      }
+    },
+    "/api/follow-up/generate": {
+      "post": {
+        "operationId": "FollowUpController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GenerateFollowUpDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FollowUp" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Generate a follow-up email draft",
+        "tags": ["follow-up"]
+      }
+    },
+    "/api/follow-up/{id}": {
+      "patch": {
+        "operationId": "FollowUpController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateFollowUpDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FollowUp" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a follow-up draft content",
+        "tags": ["follow-up"]
+      }
+    },
+    "/api/follow-up/send": {
+      "post": {
+        "operationId": "FollowUpController_send",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SendFollowUpDto" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FollowUp" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Send or schedule a follow-up email",
+        "tags": ["follow-up"]
+      }
+    },
+    "/api/follow-up/track/{token}": {
+      "get": {
+        "operationId": "FollowUpController_track",
+        "parameters": [
+          { "name": "token", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "summary": "Track email open",
+        "tags": ["follow-up"]
+      }
+    },
+    "/api/matching/jobs": {
+      "get": {
+        "operationId": "MatchingController_getMatchedJobs",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get jobs matched to user profile (rule-based)",
+        "tags": ["matching"]
+      }
+    },
+    "/api/matching/ai-recommendations": {
+      "get": {
+        "operationId": "MatchingController_getAIRecommendations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get AI-powered job recommendations based on profile",
+        "tags": ["matching"]
+      }
+    },
+    "/api/matching/feed": {
+      "get": {
+        "operationId": "MatchingController_getFeed",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get personalized job feed (AI + Rule-based)",
+        "tags": ["matching"]
+      }
+    },
+    "/api/matching/job/{jobId}/semantic": {
+      "get": {
+        "operationId": "MatchingController_getSemanticMatch",
+        "parameters": [
+          { "name": "jobId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get detailed AI semantic matching analysis",
+        "tags": ["matching"]
+      }
+    },
+    "/api/matching/job/{jobId}": {
+      "get": {
+        "operationId": "MatchingController_getJobDetail",
+        "parameters": [
+          { "name": "jobId", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get detailed rule-based matching analysis",
+        "tags": ["matching"]
+      }
+    },
+    "/api/analytics/overview": {
+      "get": {
+        "operationId": "AnalyticsController_getOverview",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Timeline period (default: 7d)",
+            "schema": { "enum": ["7d", "30d", "90d"], "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get application analytics overview",
+        "tags": ["analytics"]
+      }
+    },
+    "/api/export/cv": {
+      "post": {
+        "operationId": "ExportController_exportCv",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ExportCvDto" } }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Export CV to PDF/DOCX",
+        "tags": ["export"]
+      }
+    },
+    "/api/export/cover-letter": {
+      "post": {
+        "operationId": "ExportController_exportCoverLetter",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExportCoverLetterDto" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Export Cover Letter to PDF/DOCX",
+        "tags": ["export"]
+      }
+    },
+    "/api/export/tracker/csv": {
+      "get": {
+        "operationId": "ExportController_exportTrackerCsv",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Export Job Tracker to CSV",
+        "tags": ["export"]
+      }
+    },
+    "/api/job-alerts/me": {
+      "get": {
+        "operationId": "JobAlertController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobAlert" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get my job alert settings",
+        "tags": ["job-alerts"]
+      },
+      "patch": {
+        "operationId": "JobAlertController_updateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateJobAlertDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/JobAlert" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update my job alert settings",
+        "tags": ["job-alerts"]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "operationId": "AdminUsersController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 10, "type": "number" }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all users",
+        "tags": ["admin/users"]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "operationId": "AdminUsersController_findOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get user detail",
+        "tags": ["admin/users"]
+      }
+    },
+    "/api/admin/users/{id}/role": {
+      "patch": {
+        "operationId": "AdminUsersController_updateRole",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateUserRoleDto" } }
+          }
+        },
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Update user role",
+        "tags": ["admin/users"]
+      }
+    },
+    "/api/admin/jobs": {
+      "get": {
+        "operationId": "AdminJobsController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 1, "type": "number" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "minimum": 1, "default": 10, "type": "number" }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": { "default": "DESC", "type": "string", "enum": ["ASC", "DESC"] }
+          },
+          { "name": "keyword", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "location", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "An Giang",
+                "Bà Rịa - Vũng Tàu",
+                "Bắc Giang",
+                "Bắc Kạn",
+                "Bạc Liêu",
+                "Bắc Ninh",
+                "Bến Tre",
+                "Bình Định",
+                "Bình Dương",
+                "Bình Phước",
+                "Bình Thuận",
+                "Cà Mau",
+                "Cần Thơ",
+                "Cao Bằng",
+                "Đà Nẵng",
+                "Đắk Lắk",
+                "Đắk Nông",
+                "Điện Biên",
+                "Đồng Nai",
+                "Đồng Tháp",
+                "Gia Lai",
+                "Hà Giang",
+                "Hà Nam",
+                "Hà Nội",
+                "Hà Tĩnh",
+                "Hải Dương",
+                "Hải Phòng",
+                "Hậu Giang",
+                "Hòa Bình",
+                "Hồ Chí Minh",
+                "Hưng Yên",
+                "Khánh Hòa",
+                "Kiên Giang",
+                "Kon Tum",
+                "Lai Châu",
+                "Lâm Đồng",
+                "Lạng Sơn",
+                "Lào Cai",
+                "Long An",
+                "Nam Định",
+                "Nghệ An",
+                "Ninh Bình",
+                "Ninh Thuận",
+                "Phú Thọ",
+                "Phú Yên",
+                "Quảng Bình",
+                "Quảng Nam",
+                "Quảng Ngãi",
+                "Quảng Ninh",
+                "Quảng Trị",
+                "Sóc Trăng",
+                "Sơn La",
+                "Tây Ninh",
+                "Thái Bình",
+                "Thái Nguyên",
+                "Thanh Hóa",
+                "Thừa Thiên Huế",
+                "Tiền Giang",
+                "Trà Vinh",
+                "Tuyên Quang",
+                "Vĩnh Long",
+                "Vĩnh Phúc",
+                "Yên Bái",
+                "Toàn quốc",
+                "Khác"
+              ]
+            }
+          },
+          {
+            "name": "experienceLevel",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Intern",
+                "Fresher",
+                "Junior",
+                "Middle",
+                "Senior",
+                "Lead",
+                "Manager",
+                "Director",
+                "Not specified"
+              ]
+            }
+          },
+          { "name": "level", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "source", "required": false, "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "industry",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IT - Phần mềm",
+                "Tài chính - Ngân hàng",
+                "Kinh doanh - Marketing",
+                "Sản xuất",
+                "Giáo dục",
+                "Y tế",
+                "Bán lẻ",
+                "Vận tải - Logistics",
+                "Xây dựng",
+                "Khác"
+              ]
+            }
+          },
+          { "name": "category", "required": false, "in": "query", "schema": { "type": "string" } },
+          { "name": "minSalary", "required": false, "in": "query", "schema": { "type": "number" } },
+          { "name": "maxSalary", "required": false, "in": "query", "schema": { "type": "number" } },
+          {
+            "name": "jobType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Full-time",
+                "Part-time",
+                "Contract",
+                "Freelance",
+                "Internship",
+                "Remote",
+                "Hybrid",
+                "Other"
+              ]
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "postedAt",
+              "type": "string",
+              "enum": ["createdAt", "postedAt", "salaryMax", "deadline"]
+            }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all jobs (with filters)",
+        "tags": ["admin/jobs"]
+      },
+      "post": {
+        "operationId": "AdminJobsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Create new job",
+        "tags": ["admin/jobs"]
+      }
+    },
+    "/api/admin/jobs/{id}": {
+      "patch": {
+        "operationId": "AdminJobsController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Update job",
+        "tags": ["admin/jobs"]
+      },
+      "delete": {
+        "operationId": "AdminJobsController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete job",
+        "tags": ["admin/jobs"]
+      }
+    },
+    "/api/admin/crawler/trigger": {
+      "post": {
+        "operationId": "AdminCrawlerController_triggerCrawler",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Trigger job crawler manually",
+        "tags": ["admin/crawler"]
+      }
+    },
+    "/api/admin/dashboard/stats": {
+      "get": {
+        "operationId": "AdminDashboardController_getStats",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get dashboard statistics",
+        "tags": ["admin/dashboard"]
+      }
+    },
+    "/api/admin/dashboard/chart/users": {
+      "get": {
+        "operationId": "AdminDashboardController_getUserGrowth",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get user growth chart data (last 30 days)",
+        "tags": ["admin/dashboard"]
+      }
+    },
+    "/api/admin/dashboard/maintenance": {
+      "post": {
+        "operationId": "AdminDashboardController_toggleMaintenance",
+        "parameters": [],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Toggle maintenance mode",
+        "tags": ["admin/dashboard"]
+      }
+    },
+    "/api/admin/dashboard/transactions": {
+      "get": {
+        "operationId": "AdminDashboardController_getTransactions",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Get recent transactions (charges)",
+        "tags": ["admin/dashboard"]
+      }
+    },
+    "/api/admin/plans": {
+      "get": {
+        "operationId": "AdminPlanController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Plan" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get all subscription plans",
+        "tags": ["admin/plans"]
+      },
+      "post": {
+        "operationId": "AdminPlanController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Plan" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Create new plan",
+        "tags": ["admin/plans"]
+      }
+    },
+    "/api/admin/plans/{id}": {
+      "get": {
+        "operationId": "AdminPlanController_findOne",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Plan" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get plan detail",
+        "tags": ["admin/plans"]
+      },
+      "patch": {
+        "operationId": "AdminPlanController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Plan" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update plan (e.g., changes limits)",
+        "tags": ["admin/plans"]
+      }
+    },
+    "/api/admin/prompts": {
+      "post": {
+        "operationId": "AdminPromptController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Prompt" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Create a new prompt",
+        "tags": ["Admin Prompts"]
+      },
+      "get": {
+        "operationId": "AdminPromptController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Prompt" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List all prompts",
+        "tags": ["Admin Prompts"]
+      }
+    },
+    "/api/admin/prompts/{id}": {
+      "patch": {
+        "operationId": "AdminPromptController_update",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Prompt" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update a prompt",
+        "tags": ["Admin Prompts"]
+      },
+      "delete": {
+        "operationId": "AdminPromptController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a prompt",
+        "tags": ["Admin Prompts"]
+      }
+    },
+    "/api/admin/ai/features": {
+      "get": {
+        "operationId": "AdminAiController_listFeatures",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AiFeatureConfig" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List all AI feature configs",
+        "tags": ["Admin AI"]
+      }
+    },
+    "/api/admin/ai/features/{id}": {
+      "get": {
+        "operationId": "AdminAiController_getFeature",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AiFeatureConfig" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get a single AI feature config",
+        "tags": ["Admin AI"]
+      },
+      "patch": {
+        "operationId": "AdminAiController_updateFeature",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateAiFeatureDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AiFeatureConfig" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update AI feature config",
+        "tags": ["Admin AI"]
+      }
+    },
+    "/api/admin/ai/features/{id}/toggle": {
+      "patch": {
+        "operationId": "AdminAiController_toggleFeature",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ToggleAiFeatureDto" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AiFeatureConfig" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Toggle AI feature enabled/disabled",
+        "tags": ["Admin AI"]
+      }
+    },
+    "/api/admin/ai/usage": {
+      "get": {
+        "operationId": "AdminAiController_getUsageStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OverallUsageStatsResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get overall AI usage analytics",
+        "tags": ["Admin AI"]
+      }
+    },
+    "/api/admin/ai/usage/{featureKey}": {
+      "get": {
+        "operationId": "AdminAiController_getFeatureUsageStats",
+        "parameters": [
+          { "name": "featureKey", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FeatureUsageStatsResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get usage analytics for a specific AI feature",
+        "tags": ["Admin AI"]
+      }
+    },
+    "/api/admin/moderation/jobs": {
+      "get": {
+        "operationId": "AdminModerationController_listJobs",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "enum": ["Pending", "Approved", "Rejected"], "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List jobs for moderation",
+        "tags": ["Admin Moderation"]
+      }
+    },
+    "/api/admin/moderation/jobs/{id}/status": {
+      "patch": {
+        "operationId": "AdminModerationController_updateJobStatus",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Approve or Reject a job",
+        "tags": ["Admin Moderation"]
+      }
+    },
+    "/api/admin/moderation/users/{id}/ban": {
+      "patch": {
+        "operationId": "AdminModerationController_banUser",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Ban or Unban a user",
+        "tags": ["Admin Moderation"]
+      }
+    },
+    "/api/admin/support/users/{id}/impersonate": {
+      "post": {
+        "operationId": "AdminSupportController_impersonateUser",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "201": { "description": "" } },
+        "security": [{ "bearer": [] }],
+        "summary": "Impersonate a user (get access token)",
+        "tags": ["Admin Support"]
+      }
+    },
+    "/api/admin/coupons": {
+      "get": {
+        "operationId": "AdminCouponController_listCoupons",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List all coupons",
+        "tags": ["admin/coupons"]
+      },
+      "post": {
+        "operationId": "AdminCouponController_createCoupon",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "percent_off": { "type": "number" },
+                  "amount_off": { "type": "number" },
+                  "currency": { "type": "string" },
+                  "duration": { "type": "string", "enum": ["once", "repeating", "forever"] },
+                  "duration_in_months": { "type": "number" },
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Create a new coupon",
+        "tags": ["admin/coupons"]
+      }
+    },
+    "/api/admin/coupons/{id}": {
+      "delete": {
+        "operationId": "AdminCouponController_deleteCoupon",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Delete a coupon",
+        "tags": ["admin/coupons"]
+      }
+    },
+    "/api/admin/settings": {
+      "get": {
+        "operationId": "AdminSettingsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SystemSetting" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "List all system settings",
+        "tags": ["Admin Settings"]
+      }
+    },
+    "/api/admin/settings/{key}": {
+      "get": {
+        "operationId": "AdminSettingsController_findOne",
+        "parameters": [
+          { "name": "key", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SystemSetting" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get a single system setting",
+        "tags": ["Admin Settings"]
+      },
+      "patch": {
+        "operationId": "AdminSettingsController_update",
+        "parameters": [
+          { "name": "key", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSystemSettingDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SystemSetting" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update or create a system setting",
+        "tags": ["Admin Settings"]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Notification" }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Notifications"]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markAsRead",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Notification" } }
+            }
+          }
+        },
+        "tags": ["Notifications"]
+      }
+    },
+    "/api/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationsController_markAllAsRead",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Notifications"]
+      }
+    },
+    "/api/notifications/{id}": {
+      "delete": {
+        "operationId": "NotificationsController_remove",
+        "parameters": [
+          { "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Notifications"]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        },
+        "tags": ["Health"]
+      }
+    },
+    "/api/admin/audit-logs": {
+      "get": {
+        "operationId": "AuditController_findAll",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Audit"]
+      }
+    }
+  },
+  "info": {
+    "title": "AI Job Application Context API",
+    "description": "The AI Job Application API description",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": { "bearer": { "scheme": "bearer", "bearerFormat": "JWT", "type": "http" } },
+    "schemas": {
+      "CreateCheckoutSessionDto": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "type": "string",
+            "description": "Plan slug from the plans table (e.g., \"premium_monthly\", \"premium_yearly\")",
+            "example": "premium_monthly"
+          },
+          "promoCode": { "type": "string" }
+        },
+        "required": ["plan"]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "user@example.com" },
+          "password": { "type": "string", "minLength": 6, "example": "password123" }
+        },
+        "required": ["email", "password"]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "user@example.com" },
+          "password": { "type": "string", "example": "password123" }
+        },
+        "required": ["email", "password"]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string" } },
+        "required": ["refreshToken"]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "oldPassword": { "type": "string" },
+          "newPassword": { "type": "string", "minLength": 6 }
+        },
+        "required": ["oldPassword", "newPassword"]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "user@example.com" }
+        },
+        "required": ["email"]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "newPassword": { "type": "string", "minLength": 6, "example": "newPassword123" },
+          "token": { "type": "string" }
+        },
+        "required": ["newPassword", "token"]
+      },
+      "ProfileSkill": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "name": { "type": "string" },
+          "category": {
+            "enum": ["professional", "technical", "interpersonal", "domain", "language", "tool"],
+            "type": "string"
+          },
+          "level": { "enum": ["strong", "used_before", "learning"], "type": "string" },
+          "contexts": { "type": "array", "items": { "type": "object" } },
+          "evidence": { "type": "array", "items": { "type": "object" } },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "confidence": { "type": "number" },
+          "lastUsedYear": { "type": "number", "nullable": true },
+          "possibleDuplicate": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "name",
+          "category",
+          "level",
+          "contexts",
+          "evidence",
+          "source",
+          "confidence",
+          "lastUsedYear",
+          "possibleDuplicate",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ProfileExperience": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "organization": { "type": "string" },
+          "role": { "type": "string" },
+          "employmentType": {
+            "enum": ["full_time", "part_time", "freelance", "internship"],
+            "type": "string"
+          },
+          "startDate": { "format": "date-time", "type": "string", "nullable": true },
+          "endDate": { "format": "date-time", "type": "string", "nullable": true },
+          "responsibilities": { "type": "array", "items": { "type": "object" } },
+          "scope": {
+            "enum": ["individual", "team", "multi_team", "organization"],
+            "type": "string"
+          },
+          "skillsUsed": { "type": "array", "items": { "type": "string" } },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "confidence": { "type": "number" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "organization",
+          "role",
+          "employmentType",
+          "startDate",
+          "endDate",
+          "responsibilities",
+          "scope",
+          "skillsUsed",
+          "source",
+          "confidence",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ProfileProject": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "name": { "type": "string" },
+          "context": {
+            "enum": ["academic", "personal", "freelance", "internal", "volunteer"],
+            "type": "string"
+          },
+          "description": { "type": "string", "nullable": true },
+          "role": { "type": "string", "nullable": true },
+          "skillsUsed": { "type": "array", "items": { "type": "string" } },
+          "outcomes": { "type": "array", "items": { "type": "string" } },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "confidence": { "type": "number" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "name",
+          "context",
+          "description",
+          "role",
+          "skillsUsed",
+          "outcomes",
+          "source",
+          "confidence",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CareerIntent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "applyNowRoles": { "type": "array", "items": { "type": "string" } },
+          "targetRoles": { "type": "array", "items": { "type": "string" } },
+          "desiredSeniority": {
+            "nullable": true,
+            "enum": ["entry", "junior", "mid", "senior", "lead", "manager"],
+            "type": "string"
+          },
+          "salaryExpectation": { "type": "object", "nullable": true },
+          "companyPreferences": { "type": "array", "items": { "type": "string" } },
+          "industries": { "type": "array", "items": { "type": "string" } },
+          "avoid": { "type": "object" },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "confidence": { "type": "number" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "applyNowRoles",
+          "targetRoles",
+          "desiredSeniority",
+          "salaryExpectation",
+          "companyPreferences",
+          "industries",
+          "avoid",
+          "source",
+          "confidence",
+          "updatedAt"
+        ]
+      },
+      "WorkPreferences": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "locations": { "type": "array", "items": { "type": "string" } },
+          "workMode": { "enum": ["remote", "onsite", "hybrid", "flexible"], "type": "string" },
+          "workingHours": { "enum": ["fixed", "flexible", "shift"], "type": "string" },
+          "languages": { "type": "array", "items": { "type": "string" } },
+          "dealBreakers": { "type": "array", "items": { "type": "string" } },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "locations",
+          "workMode",
+          "workingHours",
+          "languages",
+          "dealBreakers",
+          "source",
+          "updatedAt"
+        ]
+      },
+      "CvImportSession": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "rawText": { "type": "string" },
+          "parsedFields": { "type": "object" },
+          "lowConfidenceFields": { "type": "array", "items": { "type": "string" } },
+          "status": { "enum": ["parsed", "confirmed", "discarded"], "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "confirmedAt": { "format": "date-time", "type": "string", "nullable": true }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "rawText",
+          "parsedFields",
+          "lowConfidenceFields",
+          "status",
+          "createdAt",
+          "confirmedAt"
+        ]
+      },
+      "ProfileMetadata": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "usedFor": { "type": "object" },
+          "lastAiAnalysis": { "format": "date-time", "type": "string", "nullable": true },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": ["id", "profileId", "profile", "usedFor", "lastAiAnalysis", "updatedAt"]
+      },
+      "ProfileInsight": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "trigger": {
+            "enum": [
+              "cv_rejected",
+              "job_saved",
+              "interview_failed",
+              "profile_incomplete",
+              "skill_gap_detected"
+            ],
+            "type": "string"
+          },
+          "insight": { "type": "string" },
+          "suggestedAction": { "type": "string" },
+          "relatedProfileFields": { "type": "array", "items": { "type": "string" } },
+          "isRead": { "type": "boolean" },
+          "isActioned": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "profile",
+          "trigger",
+          "insight",
+          "suggestedAction",
+          "relatedProfileFields",
+          "isRead",
+          "isActioned",
+          "createdAt"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "fullName": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "currentRole": { "type": "string" },
+          "seniorityLevel": {
+            "nullable": true,
+            "enum": ["entry", "junior", "mid", "senior", "lead", "manager"],
+            "type": "string"
+          },
+          "yearsOfExperience": { "type": "number", "nullable": true },
+          "location": { "type": "string", "nullable": true },
+          "workPreference": {
+            "nullable": true,
+            "enum": ["remote", "onsite", "hybrid", "flexible"],
+            "type": "string"
+          },
+          "source": { "enum": ["user", "cv_parse", "ai_suggest"], "type": "string" },
+          "confidence": { "type": "number" },
+          "linkedin": { "type": "string" },
+          "portfolio": { "type": "string" },
+          "cvUrl": { "type": "string", "nullable": true },
+          "cvFileName": { "type": "string", "nullable": true },
+          "cvS3Key": { "type": "string", "nullable": true },
+          "isPublic": { "type": "boolean" },
+          "visibilitySettings": { "type": "object" },
+          "profileSkills": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileSkill" }
+          },
+          "profileExperiences": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileExperience" }
+          },
+          "profileProjects": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileProject" }
+          },
+          "careerIntent": { "$ref": "#/components/schemas/CareerIntent" },
+          "workPreferences": { "$ref": "#/components/schemas/WorkPreferences" },
+          "cvImportSessions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CvImportSession" }
+          },
+          "metadata": { "$ref": "#/components/schemas/ProfileMetadata" },
+          "insights": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProfileInsight" }
+          },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "experience": { "type": "array", "items": { "type": "object" } },
+          "education": { "type": "array", "items": { "type": "object" } },
+          "preferredIndustries": { "type": "array", "items": { "type": "string" } },
+          "preferredJobTypes": { "type": "array", "items": { "type": "string" } },
+          "preferredLocations": { "type": "array", "items": { "type": "string" } },
+          "minSalaryExpectation": { "type": "number" },
+          "completenessScore": { "type": "number" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "fullName",
+          "phone",
+          "address",
+          "currentRole",
+          "seniorityLevel",
+          "yearsOfExperience",
+          "location",
+          "workPreference",
+          "source",
+          "confidence",
+          "linkedin",
+          "portfolio",
+          "cvUrl",
+          "cvFileName",
+          "cvS3Key",
+          "isPublic",
+          "visibilitySettings",
+          "profileSkills",
+          "profileExperiences",
+          "profileProjects",
+          "careerIntent",
+          "workPreferences",
+          "cvImportSessions",
+          "metadata",
+          "insights",
+          "createdAt",
+          "updatedAt",
+          "skills",
+          "experience",
+          "education",
+          "preferredIndustries",
+          "preferredJobTypes",
+          "preferredLocations",
+          "minSalaryExpectation",
+          "completenessScore"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "source": { "type": "string" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "location": { "type": "string" },
+          "logoUrl": { "type": "string" },
+          "companyAddress": { "type": "string" },
+          "companySize": { "type": "string" },
+          "workingTime": { "type": "string" },
+          "companyType": { "type": "string" },
+          "salaryMin": { "type": "number" },
+          "salaryMax": { "type": "number" },
+          "currency": { "enum": ["VND", "USD", "EUR", "JPY", "Other"], "type": "string" },
+          "jobType": {
+            "enum": [
+              "Full-time",
+              "Part-time",
+              "Contract",
+              "Freelance",
+              "Internship",
+              "Remote",
+              "Hybrid",
+              "Other"
+            ],
+            "type": "string"
+          },
+          "experienceLevel": {
+            "enum": [
+              "Intern",
+              "Fresher",
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead",
+              "Manager",
+              "Director",
+              "Not specified"
+            ],
+            "type": "string"
+          },
+          "level": { "type": "string" },
+          "category": { "type": "string" },
+          "categories": { "type": "array", "items": { "type": "string" } },
+          "education": {
+            "enum": [
+              "Không yêu cầu",
+              "THPT",
+              "Trung cấp",
+              "Cao đẳng",
+              "Đại học",
+              "Thạc sĩ",
+              "Tiến sĩ",
+              "Khác"
+            ],
+            "type": "string"
+          },
+          "city": {
+            "enum": [
+              "An Giang",
+              "Bà Rịa - Vũng Tàu",
+              "Bắc Giang",
+              "Bắc Kạn",
+              "Bạc Liêu",
+              "Bắc Ninh",
+              "Bến Tre",
+              "Bình Định",
+              "Bình Dương",
+              "Bình Phước",
+              "Bình Thuận",
+              "Cà Mau",
+              "Cần Thơ",
+              "Cao Bằng",
+              "Đà Nẵng",
+              "Đắk Lắk",
+              "Đắk Nông",
+              "Điện Biên",
+              "Đồng Nai",
+              "Đồng Tháp",
+              "Gia Lai",
+              "Hà Giang",
+              "Hà Nam",
+              "Hà Nội",
+              "Hà Tĩnh",
+              "Hải Dương",
+              "Hải Phòng",
+              "Hậu Giang",
+              "Hòa Bình",
+              "Hồ Chí Minh",
+              "Hưng Yên",
+              "Khánh Hòa",
+              "Kiên Giang",
+              "Kon Tum",
+              "Lai Châu",
+              "Lâm Đồng",
+              "Lạng Sơn",
+              "Lào Cai",
+              "Long An",
+              "Nam Định",
+              "Nghệ An",
+              "Ninh Bình",
+              "Ninh Thuận",
+              "Phú Thọ",
+              "Phú Yên",
+              "Quảng Bình",
+              "Quảng Nam",
+              "Quảng Ngãi",
+              "Quảng Ninh",
+              "Quảng Trị",
+              "Sóc Trăng",
+              "Sơn La",
+              "Tây Ninh",
+              "Thái Bình",
+              "Thái Nguyên",
+              "Thanh Hóa",
+              "Thừa Thiên Huế",
+              "Tiền Giang",
+              "Trà Vinh",
+              "Tuyên Quang",
+              "Vĩnh Long",
+              "Vĩnh Phúc",
+              "Yên Bái",
+              "Toàn quốc",
+              "Khác"
+            ],
+            "type": "string"
+          },
+          "isBranded": { "type": "boolean" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "quantity": { "type": "number" },
+          "gender": { "enum": ["Nam", "Nữ", "Không yêu cầu"], "type": "string" },
+          "deadline": { "format": "date-time", "type": "string", "nullable": true },
+          "allowance": { "type": "string" },
+          "equipment": { "type": "string" },
+          "industry": {
+            "enum": [
+              "IT - Phần mềm",
+              "Tài chính - Ngân hàng",
+              "Kinh doanh - Marketing",
+              "Sản xuất",
+              "Giáo dục",
+              "Y tế",
+              "Bán lẻ",
+              "Vận tải - Logistics",
+              "Xây dựng",
+              "Khác"
+            ],
+            "type": "string"
+          },
+          "salary": { "type": "string" },
+          "description": { "type": "string" },
+          "requirements": { "type": "string" },
+          "benefits": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "originalData": { "type": "object" },
+          "expired": { "type": "boolean" },
+          "externalId": { "type": "string", "nullable": true },
+          "url": { "type": "string" },
+          "postedAt": { "format": "date-time", "type": "string", "nullable": true },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "isVerified": { "type": "boolean" },
+          "isAlertSent": { "type": "boolean" },
+          "status": { "enum": ["Pending", "Approved", "Rejected"], "type": "string" },
+          "searchVector": { "type": "string" },
+          "expiresAt": { "format": "date-time", "type": "string", "nullable": true },
+          "contentHash": { "type": "string", "nullable": true },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "source",
+          "title",
+          "company",
+          "location",
+          "logoUrl",
+          "companyAddress",
+          "companySize",
+          "workingTime",
+          "companyType",
+          "salaryMin",
+          "salaryMax",
+          "currency",
+          "jobType",
+          "experienceLevel",
+          "level",
+          "category",
+          "categories",
+          "education",
+          "city",
+          "isBranded",
+          "tags",
+          "quantity",
+          "gender",
+          "deadline",
+          "allowance",
+          "equipment",
+          "industry",
+          "salary",
+          "description",
+          "requirements",
+          "benefits",
+          "skills",
+          "originalData",
+          "expired",
+          "externalId",
+          "url",
+          "postedAt",
+          "createdAt",
+          "isVerified",
+          "isAlertSent",
+          "status",
+          "searchVector",
+          "expiresAt",
+          "contentHash",
+          "updatedAt"
+        ]
+      },
+      "CV": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "jobId": { "type": "string" },
+          "job": { "$ref": "#/components/schemas/Job" },
+          "name": { "type": "string" },
+          "content": { "type": "object" },
+          "template": { "type": "string" },
+          "score": { "type": "number" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "jobId",
+          "job",
+          "name",
+          "content",
+          "template",
+          "score",
+          "createdAt"
+        ]
+      },
+      "InterviewSchedule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "trackerId": { "type": "string" },
+          "tracker": { "$ref": "#/components/schemas/JobTracker" },
+          "roundName": { "type": "string" },
+          "scheduledAt": { "format": "date-time", "type": "string" },
+          "type": {
+            "enum": ["technical", "hr", "cultural", "system_design", "coding", "other"],
+            "type": "string"
+          },
+          "locationUrl": { "type": "string" },
+          "notes": { "type": "string" },
+          "prepTips": { "type": "object", "nullable": true },
+          "googleEventId": { "type": "string", "nullable": true },
+          "calendarSyncedAt": { "format": "date-time", "type": "string", "nullable": true },
+          "durationMinutes": { "type": "number" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "trackerId",
+          "tracker",
+          "roundName",
+          "scheduledAt",
+          "type",
+          "locationUrl",
+          "notes",
+          "prepTips",
+          "googleEventId",
+          "calendarSyncedAt",
+          "durationMinutes",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "JobTracker": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "jobId": { "type": "string" },
+          "job": { "$ref": "#/components/schemas/Job" },
+          "manualTitle": { "type": "string" },
+          "manualCompany": { "type": "string" },
+          "manualUrl": { "type": "string" },
+          "status": {
+            "enum": ["saved", "applied", "interview", "offer", "rejected"],
+            "type": "string"
+          },
+          "appliedAt": { "format": "date-time", "type": "string" },
+          "cvId": { "type": "string" },
+          "cv": { "$ref": "#/components/schemas/CV" },
+          "notes": { "type": "string" },
+          "nextActionDate": { "format": "date-time", "type": "string" },
+          "isReminderSent": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" },
+          "interviews": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/InterviewSchedule" }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "jobId",
+          "job",
+          "manualTitle",
+          "manualCompany",
+          "manualUrl",
+          "status",
+          "appliedAt",
+          "cvId",
+          "cv",
+          "notes",
+          "nextActionDate",
+          "isReminderSent",
+          "createdAt",
+          "updatedAt",
+          "interviews"
+        ]
+      },
+      "RefreshToken": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "tokenHash": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "isRevoked": { "type": "boolean" },
+          "expiresAt": { "format": "date-time", "type": "string" },
+          "replacedBy": { "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "tokenHash",
+          "userId",
+          "user",
+          "isRevoked",
+          "expiresAt",
+          "replacedBy",
+          "createdAt"
+        ]
+      },
+      "CoverLetter": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "jobId": { "type": "string" },
+          "job": { "$ref": "#/components/schemas/Job" },
+          "content": { "type": "string" },
+          "tone": { "type": "string" },
+          "language": { "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "jobId",
+          "job",
+          "content",
+          "tone",
+          "language",
+          "createdAt"
+        ]
+      },
+      "JobAlert": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "isActive": { "type": "boolean" },
+          "frequency": { "enum": ["daily", "weekly"], "type": "string" },
+          "channels": { "type": "array", "items": { "type": "string", "enum": ["email"] } },
+          "lastSentAt": { "format": "date-time", "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "isActive",
+          "frequency",
+          "channels",
+          "lastSentAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UserCredits": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "balance": { "type": "number" },
+          "lastRefillDate": { "format": "date-time", "type": "string", "nullable": true },
+          "updatedAt": { "format": "date-time", "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" }
+        },
+        "required": ["id", "userId", "balance", "lastRefillDate", "updatedAt", "user"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string" },
+          "passwordHash": { "type": "string", "nullable": true },
+          "isVerified": { "type": "boolean" },
+          "isBanned": { "type": "boolean" },
+          "verificationToken": { "type": "string", "nullable": true },
+          "resetPasswordToken": { "type": "string", "nullable": true },
+          "resetPasswordExpires": { "format": "date-time", "type": "string", "nullable": true },
+          "role": { "enum": ["user", "admin"], "type": "string" },
+          "googleId": { "type": "string", "nullable": true },
+          "githubId": { "type": "string", "nullable": true },
+          "appleId": { "type": "string", "nullable": true },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" },
+          "profile": { "$ref": "#/components/schemas/Profile" },
+          "trackers": { "type": "array", "items": { "$ref": "#/components/schemas/JobTracker" } },
+          "cvs": { "type": "array", "items": { "$ref": "#/components/schemas/CV" } },
+          "refreshTokens": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RefreshToken" }
+          },
+          "coverLetters": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CoverLetter" }
+          },
+          "jobAlert": { "$ref": "#/components/schemas/JobAlert" },
+          "credits": { "$ref": "#/components/schemas/UserCredits" }
+        },
+        "required": [
+          "id",
+          "email",
+          "passwordHash",
+          "isVerified",
+          "isBanned",
+          "verificationToken",
+          "resetPasswordToken",
+          "resetPasswordExpires",
+          "role",
+          "googleId",
+          "githubId",
+          "appleId",
+          "avatarUrl",
+          "createdAt",
+          "updatedAt",
+          "profile",
+          "trackers",
+          "cvs",
+          "refreshTokens",
+          "coverLetters",
+          "jobAlert",
+          "credits"
+        ]
+      },
+      "EmailPreference": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "jobAlerts": { "type": "boolean" },
+          "applicationReminders": { "type": "boolean" },
+          "marketing": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "jobAlerts",
+          "applicationReminders",
+          "marketing",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateMailPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "jobAlerts": { "type": "boolean", "description": "Receive job alert emails" },
+          "applicationReminders": {
+            "type": "boolean",
+            "description": "Receive application reminders"
+          },
+          "marketing": { "type": "boolean", "description": "Receive marketing and tip emails" }
+        }
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "description": "Full name", "example": "Nguyen Van A" },
+          "phone": { "type": "string", "description": "Phone number", "example": "+84912345678" },
+          "address": { "type": "string", "description": "Address", "example": "Ha Noi, Vietnam" },
+          "currentRole": {
+            "type": "string",
+            "description": "Current job role",
+            "example": "Senior Frontend Developer"
+          },
+          "seniorityLevel": {
+            "enum": ["entry", "junior", "mid", "senior", "lead", "manager"],
+            "type": "string",
+            "description": "Seniority level"
+          },
+          "yearsOfExperience": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50,
+            "description": "Years of experience",
+            "example": 5
+          },
+          "location": {
+            "type": "string",
+            "description": "Current location",
+            "example": "Ho Chi Minh City"
+          },
+          "workPreference": {
+            "enum": ["remote", "onsite", "hybrid", "flexible"],
+            "type": "string",
+            "description": "Preferred work mode"
+          },
+          "linkedin": {
+            "type": "string",
+            "description": "LinkedIn profile URL",
+            "example": "https://linkedin.com/in/johndoe"
+          },
+          "portfolio": {
+            "type": "string",
+            "description": "Portfolio website URL",
+            "example": "https://johndoe.dev"
+          }
+        }
+      },
+      "VisibilitySettingsDto": {
+        "type": "object",
+        "properties": {
+          "showEmail": {
+            "type": "boolean",
+            "description": "Show email in public profile",
+            "default": false
+          },
+          "showPhone": {
+            "type": "boolean",
+            "description": "Show phone in public profile",
+            "default": false
+          },
+          "showSalary": {
+            "type": "boolean",
+            "description": "Show salary expectation",
+            "default": false
+          },
+          "showSocials": {
+            "type": "boolean",
+            "description": "Show social links (LinkedIn, Portfolio)",
+            "default": true
+          }
+        }
+      },
+      "UpdateVisibilityDto": {
+        "type": "object",
+        "properties": {
+          "isPublic": {
+            "type": "boolean",
+            "description": "Make profile public/private",
+            "default": true
+          },
+          "visibilitySettings": { "$ref": "#/components/schemas/VisibilitySettingsDto" }
+        }
+      },
+      "SkillContextDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["experience", "project", "education", "certification"]
+          },
+          "referenceId": { "type": "string", "nullable": true }
+        },
+        "required": ["type"]
+      },
+      "SkillEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["achievement", "metric", "interview_answer", "cv_bullet"]
+          },
+          "description": { "type": "string" }
+        },
+        "required": ["type", "description"]
+      },
+      "CreateSkillDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "React" },
+          "category": {
+            "enum": ["professional", "technical", "interpersonal", "domain", "language", "tool"],
+            "type": "string"
+          },
+          "level": { "enum": ["strong", "used_before", "learning"], "type": "string" },
+          "contexts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SkillContextDto" }
+          },
+          "evidence": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SkillEvidenceDto" }
+          },
+          "lastUsedYear": { "type": "number", "example": 2024 }
+        },
+        "required": ["name"]
+      },
+      "UpdateSkillDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "category": {
+            "enum": ["professional", "technical", "interpersonal", "domain", "language", "tool"],
+            "type": "string"
+          },
+          "level": { "enum": ["strong", "used_before", "learning"], "type": "string" },
+          "contexts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SkillContextDto" }
+          },
+          "evidence": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SkillEvidenceDto" }
+          },
+          "lastUsedYear": { "type": "number" }
+        }
+      },
+      "MergeSkillsDto": {
+        "type": "object",
+        "properties": {
+          "skillIds": {
+            "description": "IDs of skills to merge",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "targetName": { "type": "string", "description": "Name for merged skill" }
+        },
+        "required": ["skillIds", "targetName"]
+      },
+      "ResponsibilityDto": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "impact": { "type": "string", "nullable": true },
+          "metrics": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["description"]
+      },
+      "CreateExperienceDto": {
+        "type": "object",
+        "properties": {
+          "organization": { "type": "string", "example": "Google" },
+          "role": { "type": "string", "example": "Software Engineer" },
+          "employmentType": {
+            "enum": ["full_time", "part_time", "freelance", "internship"],
+            "type": "string"
+          },
+          "startDate": { "type": "string", "example": "2022-01-01" },
+          "endDate": { "type": "string", "example": "2024-01-01" },
+          "responsibilities": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResponsibilityDto" }
+          },
+          "scope": {
+            "enum": ["individual", "team", "multi_team", "organization"],
+            "type": "string"
+          },
+          "skillsUsed": {
+            "description": "Skill IDs",
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          }
+        },
+        "required": ["organization", "role"]
+      },
+      "UpdateExperienceDto": {
+        "type": "object",
+        "properties": {
+          "organization": { "type": "string" },
+          "role": { "type": "string" },
+          "employmentType": {
+            "enum": ["full_time", "part_time", "freelance", "internship"],
+            "type": "string"
+          },
+          "startDate": { "type": "string" },
+          "endDate": { "type": "string" },
+          "responsibilities": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResponsibilityDto" }
+          },
+          "scope": {
+            "enum": ["individual", "team", "multi_team", "organization"],
+            "type": "string"
+          },
+          "skillsUsed": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+        }
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "E-commerce Platform" },
+          "context": {
+            "enum": ["academic", "personal", "freelance", "internal", "volunteer"],
+            "type": "string"
+          },
+          "description": { "type": "string" },
+          "role": { "type": "string", "example": "Lead Developer" },
+          "skillsUsed": {
+            "description": "Skill IDs",
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "outcomes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["name"]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "context": {
+            "enum": ["academic", "personal", "freelance", "internal", "volunteer"],
+            "type": "string"
+          },
+          "description": { "type": "string" },
+          "role": { "type": "string" },
+          "skillsUsed": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "outcomes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "SalaryRangeDto": {
+        "type": "object",
+        "properties": {
+          "min": { "type": "number", "nullable": true },
+          "max": { "type": "number", "nullable": true },
+          "currency": { "type": "string", "example": "USD" }
+        },
+        "required": ["currency"]
+      },
+      "AvoidPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "roles": { "type": "array", "items": { "type": "string" } },
+          "industries": { "type": "array", "items": { "type": "string" } },
+          "skills": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "UpdateCareerIntentDto": {
+        "type": "object",
+        "properties": {
+          "applyNowRoles": {
+            "example": ["Frontend Developer", "React Developer"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "targetRoles": {
+            "example": ["Tech Lead", "Engineering Manager"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "desiredSeniority": {
+            "enum": ["entry", "junior", "mid", "senior", "lead", "manager"],
+            "type": "string"
+          },
+          "salaryExpectation": { "$ref": "#/components/schemas/SalaryRangeDto" },
+          "companyPreferences": {
+            "example": ["startup", "corporate"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "industries": {
+            "example": ["Technology", "Finance"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "avoid": { "$ref": "#/components/schemas/AvoidPreferencesDto" }
+        }
+      },
+      "UpdateWorkPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "locations": {
+            "example": ["San Francisco", "Remote"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "workMode": { "enum": ["remote", "onsite", "hybrid", "flexible"], "type": "string" },
+          "workingHours": { "enum": ["fixed", "flexible", "shift"], "type": "string" },
+          "languages": {
+            "example": ["English", "Vietnamese"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "dealBreakers": {
+            "example": ["No travel", "No weekend work"],
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "SavedJob": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "jobId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "job": { "$ref": "#/components/schemas/Job" },
+          "savedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": ["id", "userId", "jobId", "user", "job", "savedAt"]
+      },
+      "CrawlerConfig": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "source": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "config": { "type": "object" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": ["id", "source", "isActive", "config", "updatedAt"]
+      },
+      "UpdateCrawlerConfigDto": {
+        "type": "object",
+        "properties": {
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the crawler is currently active"
+          },
+          "config": {
+            "type": "object",
+            "description": "Specific configuration for this crawler as JSON"
+          }
+        }
+      },
+      "CreateTrackerDto": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string", "format": "uuid" },
+          "manualTitle": { "type": "string" },
+          "manualCompany": { "type": "string" },
+          "manualUrl": { "type": "string" },
+          "status": {
+            "enum": ["saved", "applied", "interview", "offer", "rejected"],
+            "type": "string",
+            "default": "saved"
+          }
+        }
+      },
+      "CreateInterviewDto": {
+        "type": "object",
+        "properties": {
+          "roundName": { "type": "string", "description": "Name of the interview round" },
+          "scheduledAt": { "type": "string", "description": "Scheduled date and time" },
+          "type": {
+            "enum": ["technical", "hr", "cultural", "system_design", "coding", "other"],
+            "type": "string",
+            "default": "other"
+          },
+          "locationUrl": { "type": "string", "description": "Meeting link or office address" },
+          "notes": { "type": "string", "description": "Additional notes" }
+        },
+        "required": ["roundName", "scheduledAt", "type"]
+      },
+      "BulkUpdateStatusDto": {
+        "type": "object",
+        "properties": {
+          "trackerIds": {
+            "description": "Array of tracker IDs to update",
+            "example": ["uuid-1", "uuid-2"],
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "status": {
+            "enum": ["saved", "applied", "interview", "offer", "rejected"],
+            "type": "string",
+            "description": "New status to apply",
+            "example": "applied"
+          }
+        },
+        "required": ["trackerIds", "status"]
+      },
+      "CreateNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Note content",
+            "example": "Follow up after phone screen"
+          }
+        },
+        "required": ["content"]
+      },
+      "TrackerNote": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "trackerId": { "type": "string" },
+          "tracker": { "$ref": "#/components/schemas/JobTracker" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "content": { "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "trackerId",
+          "tracker",
+          "userId",
+          "user",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Updated note content",
+            "example": "Completed phone screen, waiting for next steps"
+          }
+        },
+        "required": ["content"]
+      },
+      "UpdateTrackerDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": ["saved", "applied", "interview", "offer", "rejected"],
+            "type": "string"
+          },
+          "cvId": { "type": "string", "format": "uuid" },
+          "notes": { "type": "string" },
+          "nextActionDate": { "format": "date-time", "type": "string" }
+        }
+      },
+      "GenerateCvDto": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string", "format": "uuid" },
+          "template": { "type": "string" }
+        },
+        "required": ["jobId"]
+      },
+      "TailorCvDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The target job ID to tailor this CV for"
+          }
+        },
+        "required": ["jobId"]
+      },
+      "UpdateCvDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "New name for the CV" },
+          "content": { "type": "object", "description": "Updated CV content" },
+          "template": { "type": "string", "description": "Template to use" }
+        }
+      },
+      "CvVersion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "cvId": { "type": "string" },
+          "cv": { "$ref": "#/components/schemas/CV" },
+          "versionNumber": { "type": "number" },
+          "content": { "type": "object" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": ["id", "cvId", "cv", "versionNumber", "content", "createdAt"]
+      },
+      "GenerateCoverLetterDto": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string", "format": "uuid" },
+          "tone": {
+            "type": "string",
+            "description": "professional | concise | friendly",
+            "default": "professional"
+          },
+          "language": { "type": "string", "description": "en | vi", "default": "en" },
+          "fullName": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "experience": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["jobId"]
+      },
+      "UpdateCoverLetterDto": {
+        "type": "object",
+        "properties": {
+          "content": { "type": "string" },
+          "tone": { "type": "string" },
+          "language": { "type": "string" }
+        }
+      },
+      "GenerateFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "jobId": { "type": "string", "format": "uuid" },
+          "type": {
+            "enum": ["after_apply", "after_interview", "check_in", "offer"],
+            "type": "string",
+            "default": "after_apply"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Tone of the email (professional, casual, enthusiastic)",
+            "example": "professional"
+          }
+        },
+        "required": ["jobId"]
+      },
+      "FollowUp": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "jobId": { "type": "string" },
+          "job": { "$ref": "#/components/schemas/Job" },
+          "type": {
+            "enum": ["after_apply", "after_interview", "check_in", "offer"],
+            "type": "string"
+          },
+          "status": { "enum": ["draft", "scheduled", "sent"], "type": "string" },
+          "content": { "type": "string" },
+          "trackingToken": { "type": "string" },
+          "openedAt": { "format": "date-time", "type": "string" },
+          "scheduledAt": { "format": "date-time", "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "jobId",
+          "job",
+          "type",
+          "status",
+          "content",
+          "trackingToken",
+          "openedAt",
+          "scheduledAt",
+          "createdAt"
+        ]
+      },
+      "UpdateFollowUpDto": {
+        "type": "object",
+        "properties": { "content": { "type": "string", "example": "Subject: ...\n\nBody: ..." } },
+        "required": ["content"]
+      },
+      "SendFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "followUpId": { "type": "string", "format": "uuid" },
+          "scheduledAt": { "type": "string", "description": "If provided, schedules the email." }
+        },
+        "required": ["followUpId"]
+      },
+      "ExportCvDto": {
+        "type": "object",
+        "properties": {
+          "cvId": { "type": "string", "format": "uuid" },
+          "format": { "enum": ["pdf", "docx"], "type": "string", "default": "pdf" }
+        },
+        "required": ["cvId", "format"]
+      },
+      "ExportCoverLetterDto": {
+        "type": "object",
+        "properties": {
+          "coverLetterId": { "type": "string", "format": "uuid" },
+          "format": { "enum": ["pdf", "docx"], "type": "string" }
+        },
+        "required": ["coverLetterId", "format"]
+      },
+      "UpdateJobAlertDto": {
+        "type": "object",
+        "properties": {
+          "isActive": { "type": "boolean", "example": true },
+          "frequency": { "enum": ["daily", "weekly"], "type": "string" },
+          "channels": { "type": "array", "items": { "type": "string", "enum": ["email"] } }
+        }
+      },
+      "UpdateUserRoleDto": {
+        "type": "object",
+        "properties": { "role": { "enum": ["user", "admin"], "type": "string" } },
+        "required": ["role"]
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "number" },
+          "currency": { "type": "string" },
+          "interval": { "type": "object" },
+          "limits": { "type": "object" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "interval",
+          "limits",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Prompt": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "content": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "enum": ["CV", "JOB", "INTERVIEW", "OTHER"], "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "key",
+          "content",
+          "description",
+          "category",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AiFeatureConfig": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "featureKey": { "type": "string" },
+          "displayName": { "type": "string" },
+          "description": { "type": "string" },
+          "isEnabled": { "type": "boolean" },
+          "maxRequestsPerDay": { "type": "number" },
+          "tierQuotas": { "type": "object" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "featureKey",
+          "displayName",
+          "description",
+          "isEnabled",
+          "maxRequestsPerDay",
+          "tierQuotas",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateAiFeatureDto": {
+        "type": "object",
+        "properties": {
+          "displayName": { "type": "string", "example": "CV Parsing" },
+          "description": {
+            "type": "string",
+            "example": "Parse CV bằng AI để extract structured data"
+          },
+          "isEnabled": { "type": "boolean", "example": true },
+          "maxRequestsPerDay": {
+            "type": "number",
+            "minimum": 0,
+            "example": 100,
+            "description": "0 = unlimited"
+          },
+          "tierQuotas": { "type": "object", "example": { "free": 5, "premium_monthly": 50 } }
+        }
+      },
+      "ToggleAiFeatureDto": {
+        "type": "object",
+        "properties": { "isEnabled": { "type": "boolean", "example": true } },
+        "required": ["isEnabled"]
+      },
+      "FeatureUsageStatDto": {
+        "type": "object",
+        "properties": {
+          "feature": { "type": "string" },
+          "totalTokens": { "type": "number" },
+          "totalRequests": { "type": "number" },
+          "totalCost": { "type": "number" }
+        },
+        "required": ["feature", "totalTokens", "totalRequests", "totalCost"]
+      },
+      "ModelUsageStatDto": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" },
+          "totalTokens": { "type": "number" },
+          "totalRequests": { "type": "number" }
+        },
+        "required": ["model", "totalTokens", "totalRequests"]
+      },
+      "DailyUsageStatDto": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string" },
+          "totalTokens": { "type": "number" },
+          "totalRequests": { "type": "number" }
+        },
+        "required": ["date", "totalTokens", "totalRequests"]
+      },
+      "OverallUsageStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalTokens": { "type": "number" },
+          "totalRequests": { "type": "number" },
+          "totalCost": { "type": "number" },
+          "byFeature": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FeatureUsageStatDto" }
+          },
+          "byModel": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ModelUsageStatDto" }
+          },
+          "last7Days": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DailyUsageStatDto" }
+          }
+        },
+        "required": [
+          "totalTokens",
+          "totalRequests",
+          "totalCost",
+          "byFeature",
+          "byModel",
+          "last7Days"
+        ]
+      },
+      "TopUserStatDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "totalRequests": { "type": "number" },
+          "totalTokens": { "type": "number" }
+        },
+        "required": ["userId", "totalRequests", "totalTokens"]
+      },
+      "FeatureUsageStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "feature": { "type": "string" },
+          "totalTokens": { "type": "number" },
+          "totalRequests": { "type": "number" },
+          "totalCost": { "type": "number" },
+          "todayRequests": { "type": "number" },
+          "last7Days": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DailyUsageStatDto" }
+          },
+          "topUsers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TopUserStatDto" }
+          }
+        },
+        "required": [
+          "feature",
+          "totalTokens",
+          "totalRequests",
+          "totalCost",
+          "todayRequests",
+          "last7Days",
+          "topUsers"
+        ]
+      },
+      "SystemSetting": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "value": { "type": "object" },
+          "description": { "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" },
+          "updatedAt": { "format": "date-time", "type": "string" }
+        },
+        "required": ["id", "key", "value", "description", "createdAt", "updatedAt"]
+      },
+      "UpdateSystemSettingDto": {
+        "type": "object",
+        "properties": { "value": { "type": "object" }, "description": { "type": "string" } }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { "enum": ["info", "success", "warning", "error"], "type": "string" },
+          "read": { "type": "boolean" },
+          "link": { "type": "string" },
+          "createdAt": { "format": "date-time", "type": "string" }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "title",
+          "message",
+          "type",
+          "read",
+          "link",
+          "createdAt"
+        ]
+      }
+    }
+  }
+}

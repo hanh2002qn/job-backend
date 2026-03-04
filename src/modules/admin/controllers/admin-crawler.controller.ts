@@ -18,7 +18,9 @@ export class AdminCrawlerController {
 
   @Post('trigger')
   @ApiOperation({ summary: 'Trigger job crawler manually' })
-  async triggerCrawler(@Body('platform') platform: string) {
+  async triggerCrawler(
+    @Body('platform') platform: string,
+  ): Promise<{ message: string; triggered: boolean }> {
     const jobKey = `CRAWL_${platform.toUpperCase()}` as keyof typeof JOB_TYPES;
     const jobName = JOB_TYPES[jobKey];
 

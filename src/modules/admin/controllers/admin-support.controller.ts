@@ -5,7 +5,7 @@ import { UsersService } from '../../users/users.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { UserRole } from '../../users/entities/user.entity';
+import { User, UserRole } from '../../users/entities/user.entity';
 import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 
 @ApiTags('Admin Support')
@@ -22,7 +22,9 @@ export class AdminSupportController {
   @Post('users/:id/impersonate')
   @AuditAction({ action: 'IMPERSONATE_USER', module: 'SUPPORT' })
   @ApiOperation({ summary: 'Impersonate a user (get access token)' })
-  async impersonateUser(@Param('id') userId: string) {
+  async impersonateUser(
+    @Param('id') userId: string,
+  ): Promise<{ accessToken: string; refreshToken: string; user: Omit<User, 'passwordHash'> }> {
     const user = await this.usersService.findOneById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');

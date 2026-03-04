@@ -9,6 +9,7 @@ import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
 import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { CoverLetter } from './entities/cover-letter.entity';
 
 @ApiTags('cover-letter')
 @ApiBearerAuth()
@@ -22,18 +23,21 @@ export class CoverLetterController {
   @AiFeature('cover_letter')
   @Post('generate')
   @ApiOperation({ summary: 'Generate a Cover Letter' })
-  generate(@CurrentUser() user: User, @Body() generateDto: GenerateCoverLetterDto) {
+  generate(
+    @CurrentUser() user: User,
+    @Body() generateDto: GenerateCoverLetterDto,
+  ): Promise<CoverLetter> {
     return this.coverLetterService.generate(user.id, generateDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List my cover letters' })
-  findAll(@CurrentUser() user: User) {
+  findAll(@CurrentUser() user: User): Promise<CoverLetter[]> {
     return this.coverLetterService.findAll(user.id);
   }
   @Get(':id')
   @ApiOperation({ summary: 'Get Cover Letter detail' })
-  findOne(@CurrentUser() user: User, @Param('id') id: string) {
+  findOne(@CurrentUser() user: User, @Param('id') id: string): Promise<CoverLetter> {
     return this.coverLetterService.findOne(user.id, id);
   }
 
@@ -43,13 +47,13 @@ export class CoverLetterController {
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Body() updateDto: UpdateCoverLetterDto,
-  ) {
+  ): Promise<CoverLetter> {
     return this.coverLetterService.update(user.id, id, updateDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Cover Letter' })
-  remove(@CurrentUser() user: User, @Param('id') id: string) {
+  remove(@CurrentUser() user: User, @Param('id') id: string): Promise<void> {
     return this.coverLetterService.remove(user.id, id);
   }
 }

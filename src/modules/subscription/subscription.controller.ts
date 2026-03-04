@@ -15,6 +15,7 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { Subscription } from './entities/subscription.entity';
 
 @ApiTags('subscription')
 @Controller('subscription')
@@ -25,13 +26,19 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create Stripe Checkout Session' })
-  createCheckoutSession(@CurrentUser() user: User, @Body() createDto: CreateCheckoutSessionDto) {
+  createCheckoutSession(
+    @CurrentUser() user: User,
+    @Body() createDto: CreateCheckoutSessionDto,
+  ): Promise<{ sessionId: string; url: string }> {
     return this.subscriptionService.createCheckoutSession(user.id, user.email, createDto);
   }
 
   @Post('webhook')
   @ApiOperation({ summary: 'Stripe Webhook Handler' })
-  async handleWebhook(@Req() req: Request, @Headers('stripe-signature') signature: string) {
+  async handleWebhook(
+    @Req() req: Request,
+    @Headers('stripe-signature') signature: string,
+  ): Promise<{ received: boolean }> {
     if (!signature) {
       throw new BadRequestException('Missing stripe-signature header');
     }
@@ -44,7 +51,7 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cancel subscription at period end' })
-  cancelSubscription(@CurrentUser() user: User) {
+  cancelSubscription(@CurrentUser() user: User): Promise<{ message: string; sub: Subscription }> {
     return this.subscriptionService.cancelSubscription(user.id);
   }
 
@@ -52,7 +59,7 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current subscription status' })
-  getMySubscription(@CurrentUser() user: User) {
+  getMySubscription(@CurrentUser() user: User): Promise<Subscription | null> {
     return this.subscriptionService.getSubscription(user.id);
   }
 }

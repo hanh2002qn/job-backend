@@ -9,7 +9,7 @@ export class HealthController {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
   @Get()
-  async check() {
+  async check(): Promise<Record<string, unknown>> {
     const result: Record<string, unknown> = {
       status: 'ok',
       timestamp: new Date().toISOString(),

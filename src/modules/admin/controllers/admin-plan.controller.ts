@@ -17,25 +17,25 @@ export class AdminPlanController {
 
   @Get()
   @ApiOperation({ summary: 'Get all subscription plans' })
-  async findAll() {
+  async findAll(): Promise<Plan[]> {
     return this.planService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get plan detail' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<Plan> {
     return this.planService.findOne(id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create new plan' })
-  async create(@Body() createData: Partial<Plan>) {
+  async create(@Body() createData: Partial<Plan>): Promise<Plan> {
     return this.planService.create(createData);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update plan (e.g., changes limits)' })
-  async update(@Param('id') id: string, @Body() updateData: Partial<Plan>) {
+  async update(@Param('id') id: string, @Body() updateData: Partial<Plan>): Promise<Plan> {
     return this.planService.update(id, updateData);
   }
 }

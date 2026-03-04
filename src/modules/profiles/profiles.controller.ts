@@ -33,7 +33,10 @@ import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { CompletenessQueryDto } from './dto/completeness-query.dto';
-import { ProfileCompletenessService } from './services/profile-completeness.service';
+import {
+  ProfileCompletenessService,
+  CompletenessResult,
+} from './services/profile-completeness.service';
 import { CvImportSessionService } from './services/cv-import-session.service';
 import { ProfileInsightsService } from './services/profile-insights.service';
 import { FileUploadService } from '../../common/services/file-upload.service';
@@ -47,6 +50,14 @@ import { CreateExperienceDto, UpdateExperienceDto } from './dto/experience.dto';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { UpdateCareerIntentDto } from './dto/career-intent.dto';
 import { UpdateWorkPreferencesDto } from './dto/work-preferences.dto';
+import { Profile } from './entities/profile.entity';
+import { CvImportSession } from './entities/cv-import-session.entity';
+import { ProfileInsight } from './entities/profile-insight.entity';
+import { ProfileSkill } from './entities/profile-skill.entity';
+import { ProfileExperience } from './entities/profile-experience.entity';
+import { ProfileProject } from './entities/profile-project.entity';
+import { CareerIntent } from './entities/career-intent.entity';
+import { WorkPreferences } from './entities/work-preferences.entity';
 
 @ApiTags('profiles')
 @Controller('profiles')
@@ -70,7 +81,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user profile with completeness score' })
-  async getMyProfile(@CurrentUser() user: User) {
+  async getMyProfile(@CurrentUser() user: User): Promise<Profile | null> {
     return this.profilesService.findByUserId(user.id);
   }
 
@@ -78,7 +89,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update current user profile' })
-  async updateMyProfile(@CurrentUser() user: User, @Body() updateProfileDto: UpdateProfileDto) {
+  async updateMyProfile(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ): Promise<Profile> {
     return this.profilesService.updateByUserId(user.id, updateProfileDto);
   }
 
@@ -104,7 +118,7 @@ export class ProfilesController {
       }),
     )
     file: Express.Multer.File,
-  ) {
+  ): Promise<{ url: string; session?: CvImportSession; parseError?: string }> {
     return this.profilesService.uploadCv(user.id, file);
   }
 
@@ -130,7 +144,7 @@ export class ProfilesController {
       }),
     )
     file: Express.Multer.File,
-  ) {
+  ): Promise<{ url: string }> {
     return this.profilesService.uploadAvatar(user.id, file);
   }
 
@@ -138,7 +152,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update profile visibility settings' })
-  async updateVisibility(@CurrentUser() user: User, @Body() dto: UpdateVisibilityDto) {
+  async updateVisibility(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateVisibilityDto,
+  ): Promise<Profile> {
     return this.profilesService.updateVisibility(user.id, dto);
   }
 
@@ -147,7 +164,10 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard, AiFeatureGuard)
   @AiFeature('profile_completeness')
   @ApiOperation({ summary: 'Get profile completeness score for target role' })
-  async getCompleteness(@CurrentUser() user: User, @Query() query: CompletenessQueryDto) {
+  async getCompleteness(
+    @CurrentUser() user: User,
+    @Query() query: CompletenessQueryDto,
+  ): Promise<CompletenessResult> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -161,7 +181,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get CV import sessions for current user' })
-  async getCvSessions(@CurrentUser() user: User) {
+  async getCvSessions(@CurrentUser() user: User): Promise<CvImportSession[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -174,7 +194,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Confirm CV import session and merge to profile' })
-  async confirmCvImport(@CurrentUser() user: User, @Param('sessionId') sessionId: string) {
+  async confirmCvImport(
+    @CurrentUser() user: User,
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ skills: number; experiences: number; projects: number }> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -187,7 +210,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Discard CV import session' })
-  async discardCvImport(@CurrentUser() user: User, @Param('sessionId') sessionId: string) {
+  async discardCvImport(
+    @CurrentUser() user: User,
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ message: string }> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -203,7 +229,10 @@ export class ProfilesController {
   @AiFeature('profile_insights')
   @ApiOperation({ summary: 'Get AI insights for current user profile' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
-  async getInsights(@CurrentUser() user: User, @Query('unreadOnly') unreadOnly?: string) {
+  async getInsights(
+    @CurrentUser() user: User,
+    @Query('unreadOnly') unreadOnly?: string,
+  ): Promise<ProfileInsight[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -217,7 +246,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark insight as read' })
-  async markInsightAsRead(@CurrentUser() user: User, @Param('insightId') insightId: string) {
+  async markInsightAsRead(
+    @CurrentUser() user: User,
+    @Param('insightId') insightId: string,
+  ): Promise<ProfileInsight> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -230,7 +262,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark insight as actioned' })
-  async markInsightAsActioned(@CurrentUser() user: User, @Param('insightId') insightId: string) {
+  async markInsightAsActioned(
+    @CurrentUser() user: User,
+    @Param('insightId') insightId: string,
+  ): Promise<ProfileInsight> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -245,7 +280,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all skills for current user' })
-  async getSkills(@CurrentUser() user: User) {
+  async getSkills(@CurrentUser() user: User): Promise<ProfileSkill[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -257,7 +292,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new skill' })
-  async createSkill(@CurrentUser() user: User, @Body() dto: CreateSkillDto) {
+  async createSkill(@CurrentUser() user: User, @Body() dto: CreateSkillDto): Promise<ProfileSkill> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -273,7 +308,7 @@ export class ProfilesController {
     @CurrentUser() user: User,
     @Param('skillId') skillId: string,
     @Body() dto: UpdateSkillDto,
-  ) {
+  ): Promise<ProfileSkill> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -285,7 +320,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a skill' })
-  async deleteSkill(@CurrentUser() user: User, @Param('skillId') skillId: string) {
+  async deleteSkill(
+    @CurrentUser() user: User,
+    @Param('skillId') skillId: string,
+  ): Promise<{ message: string }> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -298,7 +336,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Merge duplicate skills' })
-  async mergeSkills(@CurrentUser() user: User, @Body() dto: MergeSkillsDto) {
+  async mergeSkills(@CurrentUser() user: User, @Body() dto: MergeSkillsDto): Promise<ProfileSkill> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -312,7 +350,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all experiences for current user' })
-  async getExperiences(@CurrentUser() user: User) {
+  async getExperiences(@CurrentUser() user: User): Promise<ProfileExperience[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -324,7 +362,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new experience' })
-  async createExperience(@CurrentUser() user: User, @Body() dto: CreateExperienceDto) {
+  async createExperience(
+    @CurrentUser() user: User,
+    @Body() dto: CreateExperienceDto,
+  ): Promise<ProfileExperience> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -340,7 +381,7 @@ export class ProfilesController {
     @CurrentUser() user: User,
     @Param('experienceId') experienceId: string,
     @Body() dto: UpdateExperienceDto,
-  ) {
+  ): Promise<ProfileExperience> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -352,7 +393,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete an experience' })
-  async deleteExperience(@CurrentUser() user: User, @Param('experienceId') experienceId: string) {
+  async deleteExperience(
+    @CurrentUser() user: User,
+    @Param('experienceId') experienceId: string,
+  ): Promise<{ message: string }> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -367,7 +411,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all projects for current user' })
-  async getProjects(@CurrentUser() user: User) {
+  async getProjects(@CurrentUser() user: User): Promise<ProfileProject[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -379,7 +423,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new project' })
-  async createProject(@CurrentUser() user: User, @Body() dto: CreateProjectDto) {
+  async createProject(
+    @CurrentUser() user: User,
+    @Body() dto: CreateProjectDto,
+  ): Promise<ProfileProject> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -395,7 +442,7 @@ export class ProfilesController {
     @CurrentUser() user: User,
     @Param('projectId') projectId: string,
     @Body() dto: UpdateProjectDto,
-  ) {
+  ): Promise<ProfileProject> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -407,7 +454,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a project' })
-  async deleteProject(@CurrentUser() user: User, @Param('projectId') projectId: string) {
+  async deleteProject(
+    @CurrentUser() user: User,
+    @Param('projectId') projectId: string,
+  ): Promise<{ message: string }> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -422,7 +472,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get career intent for current user' })
-  async getCareerIntent(@CurrentUser() user: User) {
+  async getCareerIntent(@CurrentUser() user: User): Promise<CareerIntent | null> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -434,7 +484,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update career intent' })
-  async updateCareerIntent(@CurrentUser() user: User, @Body() dto: UpdateCareerIntentDto) {
+  async updateCareerIntent(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateCareerIntentDto,
+  ): Promise<CareerIntent> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -448,7 +501,7 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get work preferences for current user' })
-  async getWorkPreferences(@CurrentUser() user: User) {
+  async getWorkPreferences(@CurrentUser() user: User): Promise<WorkPreferences | null> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -460,7 +513,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update work preferences' })
-  async updateWorkPreferences(@CurrentUser() user: User, @Body() dto: UpdateWorkPreferencesDto) {
+  async updateWorkPreferences(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateWorkPreferencesDto,
+  ): Promise<WorkPreferences> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -473,7 +529,7 @@ export class ProfilesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get public profile by ID' })
   @ApiParam({ name: 'id', description: 'Profile ID (UUID)' })
-  async getPublicProfile(@Param('id') id: string) {
+  async getPublicProfile(@Param('id') id: string): Promise<Partial<Profile>> {
     const profile = await this.profilesService.findPublicProfile(id);
     if (!profile) {
       throw new NotFoundException('Profile not found or is not public');

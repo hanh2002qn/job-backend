@@ -11,6 +11,7 @@ import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
 import { AiFeature } from '../../common/decorators/ai-feature.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { FollowUp } from './entities/follow-up.entity';
 
 @ApiTags('follow-up')
 @Controller('follow-up')
@@ -23,7 +24,7 @@ export class FollowUpController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('generate')
   @ApiOperation({ summary: 'Generate a follow-up email draft' })
-  generate(@CurrentUser() user: User, @Body() generateDto: GenerateFollowUpDto) {
+  generate(@CurrentUser() user: User, @Body() generateDto: GenerateFollowUpDto): Promise<FollowUp> {
     return this.followUpService.generate(user.id, generateDto);
   }
 
@@ -31,7 +32,11 @@ export class FollowUpController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a follow-up draft content' })
-  update(@CurrentUser() user: User, @Param('id') id: string, @Body() updateDto: UpdateFollowUpDto) {
+  update(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateFollowUpDto,
+  ): Promise<FollowUp> {
     return this.followUpService.update(user.id, id, updateDto);
   }
 
@@ -39,13 +44,13 @@ export class FollowUpController {
   @UseGuards(JwtAuthGuard)
   @Post('send')
   @ApiOperation({ summary: 'Send or schedule a follow-up email' })
-  send(@CurrentUser() user: User, @Body() sendDto: SendFollowUpDto) {
+  send(@CurrentUser() user: User, @Body() sendDto: SendFollowUpDto): Promise<FollowUp> {
     return this.followUpService.sendOrSchedule(user.id, sendDto);
   }
 
   @Get('track/:token')
   @ApiOperation({ summary: 'Track email open' })
-  async track(@Param('token') token: string, @Res() res: Response) {
+  async track(@Param('token') token: string, @Res() res: Response): Promise<void> {
     await this.followUpService.markAsOpened(token);
 
     // Return 1x1 transparent PNG

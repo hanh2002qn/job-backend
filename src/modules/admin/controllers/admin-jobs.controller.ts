@@ -28,25 +28,28 @@ export class AdminJobsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all jobs (with filters)' })
-  async findAll(@Query() query: JobSearchDto) {
+  async findAll(@Query() query: JobSearchDto): Promise<{
+    data: Job[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
     return this.jobsService.findAll(query);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create new job' })
-  async create(@Body() jobData: Partial<Job>) {
+  async create(@Body() jobData: Partial<Job>): Promise<Job> {
     return this.jobsService.create(jobData);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update job' })
-  async update(@Param('id') id: string, @Body() jobData: Partial<Job>) {
+  async update(@Param('id') id: string, @Body() jobData: Partial<Job>): Promise<void> {
     return this.jobsService.update(id, jobData);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete job' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.jobsService.remove(id);
   }
 }
