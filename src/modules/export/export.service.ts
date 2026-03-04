@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CvService } from '../cv/cv.service';
+import { CoverLetterService } from '../cover-letter/cover-letter.service';
 import { ExportCvDto, ExportFormat } from './dto/export-cv.dto';
+import { ExportCoverLetterDto } from '../cover-letter/dto/export-cover-letter.dto';
 import { CvRendererService } from '../cv/services/cv-renderer.service';
+import { CoverLetterRendererService } from '../cover-letter/services/cover-letter-renderer.service';
 import { TrackerService } from '../tracker/tracker.service';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import type { CvContent } from '../cv/interfaces/cv.interface';
@@ -16,7 +19,9 @@ interface CvForExport {
 export class ExportService {
   constructor(
     private readonly cvService: CvService,
+    private readonly coverLetterService: CoverLetterService,
     private readonly cvRendererService: CvRendererService,
+    private readonly coverLetterRendererService: CoverLetterRendererService,
     private readonly trackerService: TrackerService,
   ) {}
 
@@ -35,6 +40,26 @@ export class ExportService {
       return {
         buffer,
         filename: `cv-${cv.id}.docx`,
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      };
+    }
+  }
+
+  async exportCoverLetter(userId: string, exportDto: ExportCoverLetterDto) {
+    const coverLetter = await this.coverLetterService.findOne(userId, exportDto.coverLetterId);
+
+    if (exportDto.format === ExportFormat.PDF) {
+      const html = this.coverLetterRendererService.render(coverLetter.content);
+      return {
+        buffer: Buffer.from(html),
+        filename: `cover-letter-${coverLetter.id}.html`,
+        contentType: 'text/html',
+      };
+    } else {
+      const buffer = await this.generateCoverLetterDocx(coverLetter.content);
+      return {
+        buffer,
+        filename: `cover-letter-${coverLetter.id}.docx`,
         contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       };
     }
@@ -126,6 +151,18 @@ export class ExportService {
               text: (content.skills ?? []).join(', '),
             }),
           ],
+        },
+      ],
+    });
+
+    return await Packer.toBuffer(doc);
+  }
+
+  private async generateCoverLetterDocx(content: string): Promise<Buffer> {
+    const doc = new Document({
+      sections: [
+        {
+          children: content.split('\n').map((line) => new Paragraph({ text: line })),
         },
       ],
     });

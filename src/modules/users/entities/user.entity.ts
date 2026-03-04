@@ -11,7 +11,6 @@ import { Profile } from '../../profiles/entities/profile.entity';
 import { JobTracker } from '../../tracker/entities/job-tracker.entity';
 import { CV } from '../../cv/entities/cv.entity';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
-import { SkillRoadmap } from '../../skill-roadmap/entities/skill-roadmap.entity';
 import { JobAlert } from '../../job-alert/entities/job-alert.entity';
 import { UserCredits } from './user-credits.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
@@ -87,9 +86,6 @@ export class User {
 
   @OneToMany(() => CoverLetter, (cl) => cl.user)
   coverLetters: CoverLetter[];
-
-  @OneToMany(() => SkillRoadmap, (roadmap) => roadmap.user)
-  skillRoadmaps: SkillRoadmap[];
 
   @OneToOne(() => JobAlert, (alert) => alert.user)
   jobAlert: JobAlert;

@@ -25,38 +25,60 @@ export class CoverLetterService {
     }
 
     const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
-    }
+    // Profile is still required if overrides are not fully provided,
+    // but let's allow partial overrides or fallback to profile.
+
+    const candidateName = generateDto.fullName || profile?.fullName || 'Candidate';
+    const skills = generateDto.skills || profile?.skills || [];
+    const experience = (generateDto.experience || profile?.experience || []) as unknown[];
 
     const tone = generateDto.tone || 'professional';
     const language = generateDto.language || 'en';
-    const candidateName = profile.fullName || 'Candidate';
 
-    const prompt = `
+    const defaultPrompt = `
       You are an expert professional writer.
       Task: Write a compelling cover letter for a job application.
       
       Candidate:
-      Name: ${candidateName}
-      Skills: ${profile.skills?.join(', ')}
-      Experience: ${JSON.stringify(profile.experience || [])}
+      Name: {{candidateName}}
+      Skills: {{skills}}
+      Experience: {{experience}}
       
       Job:
-      Title: ${job.title}
-      Company: ${job.company}
-      Description: ${job.description}
+      Title: {{jobTitle}}
+      Company: {{jobCompany}}
+      Description: {{jobDescription}}
       
       Requirements:
-      Tone: ${tone}
-      Language: ${language === 'vi' ? 'Vietnamese' : 'English'}
+      Tone: {{tone}}
+      Language: {{language}}
       
       Output only the body of the cover letter (no placeholders like [Your Name]).
       Start with "Dear Hiring Manager," or similar professional greeting appropriate for the language.
       Keep it concise (300-400 words).
     `;
 
-    const content = await this.llmService.generateContent(prompt);
+    const promptTemplate = await this.llmService.getPromptContent(
+      'COVER_LETTER_GENERATION',
+      defaultPrompt,
+    );
+
+    const prompt = promptTemplate
+      .replace('{{candidateName}}', candidateName)
+      .replace('{{skills}}', skills.join(', '))
+      .replace('{{experience}}', JSON.stringify(experience))
+      .replace('{{jobTitle}}', job.title)
+      .replace('{{jobCompany}}', job.company)
+      .replace('{{jobDescription}}', job.description)
+      .replace('{{tone}}', tone)
+      .replace('{{language}}', language === 'vi' ? 'Vietnamese' : 'English');
+
+    const content = await this.llmService.generateContent(
+      prompt,
+      undefined,
+      userId,
+      'cover_letter',
+    );
 
     const coverLetter = this.coverLettersRepository.create({
       userId,

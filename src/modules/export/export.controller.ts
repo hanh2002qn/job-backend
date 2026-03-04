@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { ExportCvDto } from './dto/export-cv.dto';
+import { ExportCoverLetterDto } from '../cover-letter/dto/export-cover-letter.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -18,6 +19,22 @@ export class ExportController {
   @ApiOperation({ summary: 'Export CV to PDF/DOCX' })
   async exportCv(@CurrentUser() user: User, @Body() exportDto: ExportCvDto, @Res() res: Response) {
     const result = await this.exportService.exportCv(user.id, exportDto);
+    res.set({
+      'Content-Type': result.contentType,
+      'Content-Disposition': `attachment; filename="${result.filename}"`,
+      'Content-Length': result.buffer.length,
+    });
+    res.end(result.buffer);
+  }
+
+  @Post('cover-letter')
+  @ApiOperation({ summary: 'Export Cover Letter to PDF/DOCX' })
+  async exportCoverLetter(
+    @CurrentUser() user: User,
+    @Body() exportDto: ExportCoverLetterDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.exportService.exportCoverLetter(user.id, exportDto);
     res.set({
       'Content-Type': result.contentType,
       'Content-Disposition': `attachment; filename="${result.filename}"`,

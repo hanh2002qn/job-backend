@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsUUID, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsUUID, IsString, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GenerateCoverLetterDto {
@@ -22,4 +22,20 @@ export class GenerateCoverLetterDto {
   @IsOptional()
   @IsString()
   language?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
+
+  @ApiProperty({ required: false, type: [Object] })
+  @IsOptional()
+  @IsArray()
+  experience?: Record<string, unknown>[];
 }
