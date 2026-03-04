@@ -1,13 +1,12 @@
 import { Controller, Get, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Job } from '../../jobs/entities/job.entity';
-import { User, UserRole } from '../../users/entities/user.entity';
+import { UserRole } from '../../users/entities/user.entity';
 import { JobStatus } from '../../jobs/enums/job.enums';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import { AdminModerationService } from '../services/admin-moderation.service';
 
 @ApiTags('Admin Moderation')
 @ApiBearerAuth()
@@ -15,39 +14,26 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 @Roles(UserRole.ADMIN)
 @Controller('admin/moderation')
 export class AdminModerationController {
-  constructor(
-    @InjectRepository(Job)
-    private jobRepository: Repository<Job>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(private readonly moderationService: AdminModerationService) {}
 
   @Get('jobs')
   @ApiOperation({ summary: 'List jobs for moderation' })
   @ApiQuery({ name: 'status', enum: JobStatus, required: false })
   async listJobs(@Query('status') status?: JobStatus) {
-    const query = this.jobRepository.createQueryBuilder('job');
-    if (status) {
-      query.where('job.status = :status', { status });
-    } else {
-      // Default to PENDING if not specified, or all?
-      // Let's return PENDING by default for moderation queue.
-      query.where('job.status = :status', { status: JobStatus.PENDING });
-    }
-    return query.orderBy('job.createdAt', 'DESC').getMany();
+    return this.moderationService.listJobsForModeration(status);
   }
 
   @Patch('jobs/:id/status')
+  @AuditAction({ action: 'MODERATE_JOB', module: 'MODERATION' })
   @ApiOperation({ summary: 'Approve or Reject a job' })
   async updateJobStatus(@Param('id') id: string, @Body('status') status: JobStatus) {
-    await this.jobRepository.update(id, { status });
-    return this.jobRepository.findOne({ where: { id } });
+    return this.moderationService.updateJobStatus(id, status);
   }
 
   @Patch('users/:id/ban')
+  @AuditAction({ action: 'BAN_USER', module: 'MODERATION' })
   @ApiOperation({ summary: 'Ban or Unban a user' })
   async banUser(@Param('id') id: string, @Body('isBanned') isBanned: boolean) {
-    await this.userRepository.update(id, { isBanned });
-    return this.userRepository.findOne({ where: { id } });
+    return this.moderationService.banUser(id, isBanned);
   }
 }

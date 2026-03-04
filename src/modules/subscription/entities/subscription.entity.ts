@@ -11,12 +11,6 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Plan } from './plan.entity';
 
-export enum SubscriptionPlan {
-  FREE = 'free',
-  PREMIUM_MONTHLY = 'premium_monthly',
-  PREMIUM_YEARLY = 'premium_yearly',
-}
-
 export enum SubscriptionStatus {
   ACTIVE = 'active',
   CANCELED = 'canceled',
@@ -40,16 +34,9 @@ export class Subscription {
   @Column({ nullable: true })
   planId: string | null;
 
-  @ManyToOne(() => Plan)
+  @ManyToOne(() => Plan, { eager: true })
   @JoinColumn({ name: 'planId' })
   planDetails: Plan;
-
-  @Column({
-    type: 'enum',
-    enum: SubscriptionPlan,
-    default: SubscriptionPlan.FREE,
-  })
-  plan: SubscriptionPlan;
 
   @Column({
     type: 'enum',
@@ -75,4 +62,18 @@ export class Subscription {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /**
+   * Helper: get the plan slug (e.g., 'free', 'premium_monthly', 'premium_yearly')
+   */
+  get planSlug(): string {
+    return this.planDetails?.slug || 'free';
+  }
+
+  /**
+   * Helper: check if this subscription is on a premium plan
+   */
+  get isPremiumPlan(): boolean {
+    return this.planSlug.startsWith('premium_');
+  }
 }

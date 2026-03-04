@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   Subscription as SubscriptionEntity,
-  SubscriptionPlan,
   SubscriptionStatus,
 } from './entities/subscription.entity';
 import { Plan } from './entities/plan.entity';
@@ -51,7 +50,7 @@ const mockConfigService = {
 
 const mockPlan = {
   id: 'plan-uuid-1',
-  slug: SubscriptionPlan.PREMIUM_MONTHLY,
+  slug: 'premium_monthly',
   name: 'Premium Monthly',
   limits: { monthly_credits: 100 },
 };
@@ -90,7 +89,7 @@ describe('SubscriptionService', () => {
       });
 
       const result = await service.createCheckoutSession('user-1', 'user@test.com', {
-        plan: SubscriptionPlan.PREMIUM_MONTHLY,
+        plan: 'premium_monthly',
       });
 
       expect(result).toEqual({
@@ -111,7 +110,7 @@ describe('SubscriptionService', () => {
 
       await expect(
         service.createCheckoutSession('user-1', 'user@test.com', {
-          plan: 'invalid_plan' as SubscriptionPlan,
+          plan: 'invalid_plan',
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -213,7 +212,7 @@ describe('SubscriptionService', () => {
       };
       mockSubscriptionRepository.findOne.mockResolvedValue(existingSub);
 
-      const freePlan = { id: 'free-plan-uuid', slug: SubscriptionPlan.FREE };
+      const freePlan = { id: 'free-plan-uuid', slug: 'free' };
       mockPlanRepository.findOne.mockResolvedValue(freePlan);
 
       await service.handleWebhook('payload', 'sig');
@@ -221,7 +220,7 @@ describe('SubscriptionService', () => {
       expect(mockSubscriptionRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           status: SubscriptionStatus.CANCELED,
-          plan: SubscriptionPlan.FREE,
+          planId: 'free-plan-uuid',
         }),
       );
     });
@@ -260,7 +259,7 @@ describe('SubscriptionService', () => {
   describe('isPremium', () => {
     it('should return true for active premium monthly subscription', async () => {
       mockSubscriptionRepository.findOne.mockResolvedValue({
-        plan: SubscriptionPlan.PREMIUM_MONTHLY,
+        isPremiumPlan: true,
         status: SubscriptionStatus.ACTIVE,
         expiresAt: new Date(Date.now() + 86400000),
       });
@@ -270,7 +269,7 @@ describe('SubscriptionService', () => {
 
     it('should return false for expired subscription', async () => {
       mockSubscriptionRepository.findOne.mockResolvedValue({
-        plan: SubscriptionPlan.PREMIUM_MONTHLY,
+        isPremiumPlan: true,
         status: SubscriptionStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 86400000), // past
       });
@@ -280,7 +279,7 @@ describe('SubscriptionService', () => {
 
     it('should return false for free plan', async () => {
       mockSubscriptionRepository.findOne.mockResolvedValue({
-        plan: SubscriptionPlan.FREE,
+        isPremiumPlan: false,
         status: SubscriptionStatus.ACTIVE,
         expiresAt: null,
       });

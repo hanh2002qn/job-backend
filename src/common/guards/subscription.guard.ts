@@ -1,7 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SubscriptionService } from '../../modules/subscription/subscription.service';
-import { SubscriptionPlan } from '../../modules/subscription/entities/subscription.entity';
 import { CvService } from '../../modules/cv/cv.service';
 import { AuthenticatedRequest } from '../interfaces';
 
@@ -20,10 +19,10 @@ export class SubscriptionGuard implements CanActivate {
 
     // 1. Get Subscription
     const subscription = await this.subscriptionService.getSubscription(user.id);
-    const plan = subscription?.plan || SubscriptionPlan.FREE;
+    const plan = subscription?.planSlug || 'free';
 
     // If Premium, allow everything
-    if (plan === SubscriptionPlan.PREMIUM_MONTHLY || plan === SubscriptionPlan.PREMIUM_YEARLY) {
+    if (plan.startsWith('premium_')) {
       return true;
     }
 

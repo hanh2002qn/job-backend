@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import {
   Subscription as SubscriptionEntity,
-  SubscriptionPlan,
   SubscriptionStatus,
 } from './entities/subscription.entity';
 import { Plan } from './entities/plan.entity';
@@ -47,7 +46,7 @@ export class SubscriptionService {
     }
 
     const priceIdKey =
-      createDto.plan === SubscriptionPlan.PREMIUM_YEARLY
+      createDto.plan === 'premium_yearly'
         ? 'STRIPE_PREMIUM_YEARLY_PRICE_ID'
         : 'STRIPE_PREMIUM_MONTHLY_PRICE_ID';
 
@@ -131,10 +130,7 @@ export class SubscriptionService {
     sub.status = SubscriptionStatus.ACTIVE;
     sub.planId = plan?.id || null; // Save relation
 
-    // Legacy support: keep enum for now if needed, or derived from plan slug
-    if (plan) {
-      sub.plan = plan.slug as SubscriptionPlan;
-    }
+    // Legacy support: drop setting sub.plan as it is removed
 
     await this.subscriptionRepository.save(sub);
 
@@ -175,10 +171,9 @@ export class SubscriptionService {
       sub.status = SubscriptionStatus.CANCELED;
       // Reset to Free Plan
       const freePlan = await this.planRepository.findOne({
-        where: { slug: SubscriptionPlan.FREE },
+        where: { slug: 'free' },
       });
       sub.planId = freePlan?.id || null;
-      sub.plan = SubscriptionPlan.FREE;
       await this.subscriptionRepository.save(sub);
     }
   }
@@ -211,8 +206,7 @@ export class SubscriptionService {
     if (!sub) return false;
 
     return (
-      (sub.plan === SubscriptionPlan.PREMIUM_MONTHLY ||
-        sub.plan === SubscriptionPlan.PREMIUM_YEARLY) &&
+      sub.isPremiumPlan &&
       sub.status === SubscriptionStatus.ACTIVE &&
       (!sub.expiresAt || sub.expiresAt > new Date())
     );

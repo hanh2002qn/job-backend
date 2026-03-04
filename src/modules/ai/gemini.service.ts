@@ -3,159 +3,79 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { createHash } from 'crypto';
 
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
 import { CacheService } from '../../common/redis/cache.service';
-import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
-import type { LlmService } from './llm.interface';
+import { BaseLlmService } from './base-llm.service';
 
 @Injectable()
-export class GeminiService implements LlmService, OnModuleInit {
-  private readonly logger = new Logger(GeminiService.name);
+export class GeminiService extends BaseLlmService implements OnModuleInit {
+  protected readonly logger = new Logger(GeminiService.name);
+  protected readonly providerName = 'Gemini';
+
   private genAI: GoogleGenerativeAI;
   private model: GenerativeModel;
+  private modelName = 'gemini-flash-latest';
 
   constructor(
     private configService: ConfigService,
-    private cacheService: CacheService,
-    @InjectRepository(Prompt)
-    private promptRepository: Repository<Prompt>,
-    @InjectRepository(AiUsage)
-    private aiUsageRepository: Repository<AiUsage>,
-  ) {}
+    cacheService: CacheService,
+    @InjectRepository(Prompt) promptRepository: Repository<Prompt>,
+    @InjectRepository(AiUsage) aiUsageRepository: Repository<AiUsage>,
+  ) {
+    super(cacheService, promptRepository, aiUsageRepository);
+  }
 
   onModuleInit() {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
-      this.logger.warn(
-        'GEMINI_API_KEY is not defined in environment variables. AI features will not work.',
-      );
+      this.logger.warn('GEMINI_API_KEY is not defined. AI features will not work.');
       return;
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-    });
+    this.model = this.genAI.getGenerativeModel({ model: this.modelName });
   }
 
-  private generateCacheKey(prompt: string, systemInstruction?: string): string {
-    const hash = createHash('md5')
-      .update(prompt + (systemInstruction || ''))
-      .digest('hex');
-    return this.cacheService.buildKey(CACHE_KEYS.AI_RESPONSE, hash);
+  protected isConfigured(): boolean {
+    return !!this.genAI;
   }
 
-  async generateContent(
-    prompt: string,
-    systemInstruction?: string,
-    userId?: string,
-    feature: string = 'unknown',
-  ): Promise<string> {
-    const cacheKey = this.generateCacheKey(prompt, systemInstruction);
-
-    return this.cacheService.wrap(
-      cacheKey,
-      async () => {
-        if (!this.genAI) {
-          throw new Error('Gemini API is not configured.');
-        }
-        try {
-          const model = this.genAI.getGenerativeModel({
-            model: 'gemini-flash-latest',
-            systemInstruction,
-          });
-          const result = await model.generateContent(prompt);
-          const response = result.response;
-          const text = response.text();
-
-          // Log Usage
-          if (userId) {
-            const usage = result.response.usageMetadata;
-            if (usage) {
-              await this.aiUsageRepository.save({
-                userId,
-                feature,
-                model: 'gemini-flash-latest',
-                inputTokens: usage.promptTokenCount,
-                outputTokens: usage.candidatesTokenCount,
-                totalTokens: usage.totalTokenCount,
-              });
-            }
-          }
-
-          return text;
-        } catch (error) {
-          this.logger.error('Error generating content from Gemini', error);
-          throw error;
-        }
-      },
-      CACHE_TTL.AI_RESPONSE,
-    );
+  protected getModelName(): string {
+    return this.modelName;
   }
 
-  async getPromptContent(key: string, defaultContent: string): Promise<string> {
-    const cacheKey = this.cacheService.buildKey(CACHE_KEYS.AI_PROMPT, key);
-    return this.cacheService.wrap(
-      cacheKey,
-      async () => {
-        try {
-          const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
-          return prompt ? prompt.content : defaultContent;
-        } catch (_error) {
-          this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
-          return defaultContent;
-        }
-      },
-      CACHE_TTL.AI_PROMPT,
-    );
-  }
-
-  async generateJson<T>(
-    prompt: string,
-    systemInstruction?: string,
-    userId?: string,
-    feature: string = 'unknown',
-  ): Promise<T> {
-    const result = await this.generateContent(
-      `${prompt}\n\nIMPORTANT: Return ONLY valid JSON.`,
+  protected async callProvider(prompt: string, systemInstruction?: string) {
+    const model = this.genAI.getGenerativeModel({
+      model: this.modelName,
       systemInstruction,
-      userId,
-      feature,
-    );
-    try {
-      // Clean up markdown code blocks if present
-      let cleaned = result.trim();
-      if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '');
-      } else if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```/, '').replace(/```$/, '');
-      }
-      return JSON.parse(cleaned) as T;
-    } catch (_error) {
-      this.logger.error('Failed to parse Gemini response as JSON', result);
-      throw new Error('Invalid AI response format');
-    }
+    });
+    const result = await model.generateContent(prompt);
+    const usage = result.response.usageMetadata;
+    return {
+      text: result.response.text(),
+      inputTokens: usage?.promptTokenCount,
+      outputTokens: usage?.candidatesTokenCount,
+      totalTokens: usage?.totalTokenCount,
+    };
+  }
+
+  protected async callProviderJson(prompt: string, systemInstruction?: string) {
+    return this.callProvider(`${prompt}\n\nIMPORTANT: Return ONLY valid JSON.`, systemInstruction);
   }
 
   async *generateStream(prompt: string, systemInstruction?: string): AsyncIterable<string> {
-    if (!this.genAI) {
+    if (!this.isConfigured()) {
       throw new Error('Gemini API is not configured.');
     }
-    try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-flash-latest',
-        systemInstruction,
-      });
-      const result = await model.generateContentStream(prompt);
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) yield text;
-      }
-    } catch (_error) {
-      this.logger.error('Error generating streaming content from Gemini', _error);
-      throw _error;
+    const model = this.genAI.getGenerativeModel({
+      model: this.modelName,
+      systemInstruction,
+    });
+    const result = await model.generateContentStream(prompt);
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) yield text;
     }
   }
 }

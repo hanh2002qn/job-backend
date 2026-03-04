@@ -1,13 +1,17 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { SubscriptionPlan } from '../entities/subscription.entity';
 
 export class CreateCheckoutSessionDto {
-  @ApiProperty({ enum: SubscriptionPlan, default: SubscriptionPlan.PREMIUM_MONTHLY })
+  @ApiProperty({
+    description: 'Plan slug from the plans table (e.g., "premium_monthly", "premium_yearly")',
+    example: 'premium_monthly',
+  })
   @IsNotEmpty()
-  @IsEnum(SubscriptionPlan)
-  plan: SubscriptionPlan;
+  @IsString()
+  plan: string;
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   promoCode?: string;
 }

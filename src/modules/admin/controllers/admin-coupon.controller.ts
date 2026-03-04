@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { StripeService } from '../../subscription/stripe.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -22,6 +23,7 @@ export class AdminCouponController {
   }
 
   @Post()
+  @AuditAction({ action: 'CREATE_COUPON', module: 'COUPON' })
   @ApiOperation({ summary: 'Create a new coupon' })
   @ApiBody({
     schema: {
@@ -41,6 +43,7 @@ export class AdminCouponController {
   }
 
   @Delete(':id')
+  @AuditAction({ action: 'DELETE_COUPON', module: 'COUPON' })
   @ApiOperation({ summary: 'Delete a coupon' })
   async deleteCoupon(@Param('id') id: string) {
     return this.stripeService.deleteCoupon(id);

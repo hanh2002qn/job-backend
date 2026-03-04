@@ -27,6 +27,8 @@ import { AdminSupportController } from './controllers/admin-support.controller';
 import { AdminCouponController } from './controllers/admin-coupon.controller';
 import { AdminSettingsController } from './controllers/admin-settings.controller';
 
+import { AdminModerationService } from './services/admin-moderation.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Job, CV, Subscription, Plan]),
@@ -51,7 +53,7 @@ import { AdminSettingsController } from './controllers/admin-settings.controller
     AdminCouponController,
     AdminSettingsController,
   ],
-  providers: [AdminDashboardService, AdminPlanService, AdminPromptService],
+  providers: [AdminDashboardService, AdminPlanService, AdminPromptService, AdminModerationService],
   exports: [],
 })
 export class AdminModule {}

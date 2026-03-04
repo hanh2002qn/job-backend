@@ -4,7 +4,6 @@ import { AI_FEATURE_KEY } from '../decorators/ai-feature.decorator';
 import { AdminAiService } from '../../modules/admin/services/admin-ai.service';
 import { Request } from 'express';
 import { SubscriptionService } from '../../modules/subscription/subscription.service';
-import { SubscriptionPlan } from '../../modules/subscription/entities/subscription.entity';
 
 /**
  * Guard that checks if an AI feature is enabled and enforces rate limits.
@@ -59,7 +58,7 @@ export class AiFeatureGuard implements CanActivate {
     // Check tier quotas
     if (featureConfig.tierQuotas) {
       const subscription = await this.subscriptionService.getSubscription(userId);
-      const tier = subscription?.plan || SubscriptionPlan.FREE;
+      const tier = subscription?.planSlug || 'free';
       if (featureConfig.tierQuotas[tier] !== undefined) {
         quota = featureConfig.tierQuotas[tier];
       }

@@ -1,14 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
 import { CV } from '../../cv/entities/cv.entity';
-import {
-  Subscription,
-  SubscriptionStatus,
-  SubscriptionPlan,
-} from '../../subscription/entities/subscription.entity';
+import { Subscription, SubscriptionStatus } from '../../subscription/entities/subscription.entity';
 import { StripeService } from '../../subscription/stripe.service';
 import { SettingsService } from '../../settings/settings.service';
 
@@ -28,68 +24,59 @@ export class AdminDashboardService {
   ) {}
 
   async getStats() {
-    const totalUsers = await this.usersRepository.count();
-    const activeJobs = await this.jobsRepository.count({ where: { expired: false } });
-    const totalJobs = await this.jobsRepository.count();
-    const totalCvs = await this.cvRepository.count();
-
-    // Revenue & Subscriptions
-    const totalSubscriptions = await this.subscriptionRepository.count();
-    const activeSubscriptions = await this.subscriptionRepository.count({
-      where: { status: SubscriptionStatus.ACTIVE },
-    });
-
-    // Breakdown by plan
-    const premiumMonthly = await this.subscriptionRepository.count({
-      where: { plan: SubscriptionPlan.PREMIUM_MONTHLY, status: SubscriptionStatus.ACTIVE },
-    });
-    const premiumYearly = await this.subscriptionRepository.count({
-      where: { plan: SubscriptionPlan.PREMIUM_YEARLY, status: SubscriptionStatus.ACTIVE },
-    });
+    // Run all counts in parallel instead of sequential
+    const [
+      totalUsers,
+      totalJobs,
+      activeJobs,
+      totalCvs,
+      totalSubscriptions,
+      activeSubscriptions,
+      premiumMonthly,
+      premiumYearly,
+    ] = await Promise.all([
+      this.usersRepository.count(),
+      this.jobsRepository.count(),
+      this.jobsRepository.count({ where: { expired: false } }),
+      this.cvRepository.count(),
+      this.subscriptionRepository.count(),
+      this.subscriptionRepository.count({
+        where: { status: SubscriptionStatus.ACTIVE },
+      }),
+      this.subscriptionRepository.count({
+        where: { planDetails: { slug: 'premium_monthly' }, status: SubscriptionStatus.ACTIVE },
+        relations: ['planDetails'],
+      }),
+      this.subscriptionRepository.count({
+        where: { planDetails: { slug: 'premium_yearly' }, status: SubscriptionStatus.ACTIVE },
+        relations: ['planDetails'],
+      }),
+    ]);
 
     return {
-      users: {
-        total: totalUsers,
-      },
-      jobs: {
-        total: totalJobs,
-        active: activeJobs,
-      },
-      cvs: {
-        total: totalCvs,
-      },
+      users: { total: totalUsers },
+      jobs: { total: totalJobs, active: activeJobs },
+      cvs: { total: totalCvs },
       subscriptions: {
         total: totalSubscriptions,
         active: activeSubscriptions,
-        breakdown: {
-          monthly: premiumMonthly,
-          yearly: premiumYearly,
-        },
+        breakdown: { monthly: premiumMonthly, yearly: premiumYearly },
       },
     };
   }
 
   async getUserGrowth() {
-    // Get user growth for the last 30 days
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
+    // SQL aggregation instead of loading all users into memory
+    const result = await this.usersRepository
+      .createQueryBuilder('user')
+      .select("TO_CHAR(user.createdAt, 'YYYY-MM-DD')", 'date')
+      .addSelect('COUNT(*)::int', 'count')
+      .where("user.createdAt >= NOW() - INTERVAL '30 days'")
+      .groupBy('date')
+      .orderBy('date', 'ASC')
+      .getRawMany<{ date: string; count: number }>();
 
-    const users = await this.usersRepository.find({
-      select: ['createdAt'],
-      where: {
-        createdAt: Between(thirtyDaysAgo, today),
-      },
-    });
-
-    // Group by date
-    const growth: Record<string, number> = {};
-    users.forEach((user) => {
-      const date = user.createdAt.toISOString().split('T')[0];
-      growth[date] = (growth[date] || 0) + 1;
-    });
-
-    return Object.entries(growth).map(([date, count]) => ({ date, count }));
+    return result.map((r) => ({ date: r.date, count: Number(r.count) }));
   }
 
   async setMaintenanceMode(enabled: boolean): Promise<void> {

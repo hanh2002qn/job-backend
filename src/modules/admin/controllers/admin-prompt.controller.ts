@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminPromptService } from '../services/admin-prompt.service';
 import { Prompt } from '../../ai/entities/prompt.entity';
@@ -16,6 +17,7 @@ export class AdminPromptController {
   constructor(private readonly adminPromptService: AdminPromptService) {}
 
   @Post()
+  @AuditAction({ action: 'CREATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Create a new prompt' })
   create(@Body() createPromptDto: Partial<Prompt>) {
     return this.adminPromptService.create(createPromptDto);
@@ -28,12 +30,14 @@ export class AdminPromptController {
   }
 
   @Patch(':id')
+  @AuditAction({ action: 'UPDATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Update a prompt' })
   update(@Param('id') id: string, @Body() updatePromptDto: Partial<Prompt>) {
     return this.adminPromptService.update(id, updatePromptDto);
   }
 
   @Delete(':id')
+  @AuditAction({ action: 'DELETE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Delete a prompt' })
   remove(@Param('id') id: string) {
     return this.adminPromptService.remove(id);

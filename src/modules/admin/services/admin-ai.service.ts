@@ -32,16 +32,6 @@ const DEFAULT_FEATURES: Array<{ featureKey: string; displayName: string; descrip
     description: 'Tối ưu CV content bằng AI',
   },
   {
-    featureKey: 'mock_interview',
-    displayName: 'Mock Interview',
-    description: 'AI phỏng vấn thử: questions, feedback, evaluation',
-  },
-  {
-    featureKey: 'skill_roadmap',
-    displayName: 'Skill Roadmap',
-    description: 'Tạo lộ trình học skill bằng AI',
-  },
-  {
     featureKey: 'follow_up_email',
     displayName: 'Follow-up Email',
     description: 'Draft follow-up email bằng AI',
