@@ -1,45 +1,165 @@
-import { Injectable } from '@nestjs/common';
-import { TrackerService } from '../tracker/tracker.service';
-import { CvService } from '../cv/cv.service';
-import { ApplicationStatus, JobTracker } from '../tracker/entities/job-tracker.entity';
-import { SubscriptionService } from '../subscription/subscription.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ApplicationStatus, JobTracker } from '../tracker/entities/job-tracker.entity';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { FollowUp, FollowUpStatus } from '../follow-up/entities/follow-up.entity';
+import { CV } from '../cv/entities/cv.entity';
+import { CacheService } from '../../common/redis/cache.service';
+import { CACHE_TTL } from '../../common/redis/queue.constants';
+
+export type AnalyticsPeriod = '7d' | '30d' | '90d';
+
+interface FunnelData {
+  saved: number;
+  applied: number;
+  interview: number;
+  offer: number;
+  rejected: number;
+  successRate: string;
+}
+
+export interface AnalyticsOverview {
+  isPremium: boolean;
+  isDemo: boolean;
+  demoMessage?: string;
+  summary: {
+    totalTracked: number;
+    totalSaved: number;
+    activeApplications: number;
+    interviews: number;
+    offers: number;
+    cvGenerated: number;
+  };
+  funnel: FunnelData;
+  cvStats: {
+    total: number;
+    avgScore: number;
+    templates: Record<string, number> | null;
+  };
+  timeline: Array<{ date: string; count: number }> | null;
+  followUp: {
+    total: number;
+    sent: number;
+    scheduled: number;
+    responseRate: string | null;
+  };
+  conversionRate: string | null;
+}
 
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
+
   constructor(
-    private trackerService: TrackerService,
-    private cvService: CvService,
-    private subscriptionService: SubscriptionService,
+    @InjectRepository(JobTracker)
+    private readonly trackerRepository: Repository<JobTracker>,
+    @InjectRepository(CV)
+    private readonly cvRepository: Repository<CV>,
     @InjectRepository(FollowUp)
-    private followUpRepository: Repository<FollowUp>,
+    private readonly followUpRepository: Repository<FollowUp>,
+    private readonly subscriptionService: SubscriptionService,
+    private readonly cacheService: CacheService,
   ) {}
 
-  async getOverview(userId: string) {
-    const trackedJobs = await this.trackerService.findAll(userId);
-    const cvs = await this.cvService.findAll(userId);
-    const followUps = await this.followUpRepository.find({ where: { userId } });
+  async getOverview(userId: string, period: AnalyticsPeriod = '7d'): Promise<AnalyticsOverview> {
+    const cacheKey = this.cacheService.buildKey('analytics', userId, period);
+
+    return this.cacheService.wrap<AnalyticsOverview>(
+      cacheKey,
+      () => this.computeOverview(userId, period),
+      CACHE_TTL.USER_STATS,
+    );
+  }
+
+  private async computeOverview(
+    userId: string,
+    period: AnalyticsPeriod,
+  ): Promise<AnalyticsOverview> {
     const isPremium = await this.subscriptionService.isPremium(userId);
 
-    // Check if user has any data, if not return demo data
-    const hasData = trackedJobs.length > 0 || cvs.length > 0;
+    // 1. Funnel — SQL aggregation instead of loading all records
+    const funnelRaw = await this.trackerRepository
+      .createQueryBuilder('t')
+      .select('t.status', 'status')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('t.userId = :userId', { userId })
+      .groupBy('t.status')
+      .getRawMany<{ status: ApplicationStatus; count: number }>();
 
-    if (!hasData) {
+    const statusCounts: Record<string, number> = {};
+    let totalTracked = 0;
+    for (const row of funnelRaw) {
+      statusCounts[row.status] = Number(row.count);
+      totalTracked += Number(row.count);
+    }
+
+    const saved = statusCounts[ApplicationStatus.SAVED] || 0;
+    const applied = statusCounts[ApplicationStatus.APPLIED] || 0;
+    const interview = statusCounts[ApplicationStatus.INTERVIEW] || 0;
+    const offer = statusCounts[ApplicationStatus.OFFER] || 0;
+    const rejected = statusCounts[ApplicationStatus.REJECTED] || 0;
+    const totalApplications = applied + interview + offer + rejected;
+
+    // 2. CV stats — SQL aggregation
+    const cvStatsRaw = await this.cvRepository
+      .createQueryBuilder('cv')
+      .select('COUNT(*)::int', 'total')
+      .addSelect('COALESCE(AVG(cv.score), 0)::int', 'avgScore')
+      .where('cv.userId = :userId', { userId })
+      .getRawOne<{ total: number; avgScore: number }>();
+
+    const cvTotal = Number(cvStatsRaw?.total ?? 0);
+    const avgCvScore = Number(cvStatsRaw?.avgScore ?? 0);
+
+    // 3. Check if user has data
+    if (totalTracked === 0 && cvTotal === 0) {
       return this.getDemoOverview(isPremium);
     }
 
-    const saved = trackedJobs.filter((t) => t.status === ApplicationStatus.SAVED).length;
-    const applied = trackedJobs.filter((t) => t.status === ApplicationStatus.APPLIED).length;
-    const interview = trackedJobs.filter((t) => t.status === ApplicationStatus.INTERVIEW).length;
-    const offer = trackedJobs.filter((t) => t.status === ApplicationStatus.OFFER).length;
-    const rejected = trackedJobs.filter((t) => t.status === ApplicationStatus.REJECTED).length;
+    // 4. Template usage (premium only, small dataset — OK to load)
+    let templateUsage: Record<string, number> | null = null;
+    if (isPremium) {
+      const templates = await this.cvRepository
+        .createQueryBuilder('cv')
+        .select("COALESCE(cv.template, 'Default')", 'template')
+        .addSelect('COUNT(*)::int', 'count')
+        .where('cv.userId = :userId', { userId })
+        .groupBy('cv.template')
+        .getRawMany<{ template: string; count: number }>();
 
-    const totalApplications = applied + interview + offer + rejected;
+      templateUsage = {};
+      for (const row of templates) {
+        templateUsage[row.template] = Number(row.count);
+      }
+    }
 
-    // 1. Success Funnel
-    const funnel = {
+    // 5. Timeline — SQL aggregation with configurable period
+    let timeline: Array<{ date: string; count: number }> | null = null;
+    if (isPremium) {
+      const days = this.periodToDays(period);
+      timeline = await this.getTimelineData(userId, days);
+    }
+
+    // 6. Follow-up stats — SQL aggregation
+    const followUpRaw = await this.followUpRepository
+      .createQueryBuilder('f')
+      .select('COUNT(*)::int', 'total')
+      .addSelect(`COUNT(*) FILTER (WHERE f.status = '${FollowUpStatus.SENT}')::int`, 'sent')
+      .addSelect(
+        `COUNT(*) FILTER (WHERE f.status = '${FollowUpStatus.SCHEDULED}')::int`,
+        'scheduled',
+      )
+      .addSelect(`COUNT(*) FILTER (WHERE f."openedAt" IS NOT NULL)::int`, 'opened')
+      .where('f.userId = :userId', { userId })
+      .getRawOne<{ total: number; sent: number; scheduled: number; opened: number }>();
+
+    const followUpTotal = Number(followUpRaw?.total ?? 0);
+    const followUpSent = Number(followUpRaw?.sent ?? 0);
+    const followUpScheduled = Number(followUpRaw?.scheduled ?? 0);
+    const followUpOpened = Number(followUpRaw?.opened ?? 0);
+
+    const funnel: FunnelData = {
       saved,
       applied,
       interview,
@@ -49,60 +169,39 @@ export class AnalyticsService {
         totalApplications > 0 ? ((offer / totalApplications) * 100).toFixed(1) + '%' : '0%',
     };
 
-    // 2. CV Effectiveness
-    const avgCvScore =
-      cvs.length > 0
-        ? Math.round(cvs.reduce((acc, cv) => acc + (cv.score || 0), 0) / cvs.length)
-        : 0;
-
-    const templateUsage = cvs.reduce(
-      (acc, cv) => {
-        const name = cv.template || 'Default';
-        acc[name] = (acc[name] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // 3. Timeline (Last 7 days)
-    const timeline = this.getTimelineData(trackedJobs);
-
-    // 4. Follow-up Stats
-    const followUpStats = {
-      total: followUps.length,
-      sent: followUps.filter((f) => f.status === FollowUpStatus.SENT).length,
-      scheduled: followUps.filter((f) => f.status === FollowUpStatus.SCHEDULED).length,
-      responseRate: isPremium ? this.calculateResponseRate(followUps) : 'Premium Only',
-    };
-
     return {
       isPremium,
       isDemo: false,
       summary: {
-        totalTracked: trackedJobs.length,
+        totalTracked,
         totalSaved: saved,
         activeApplications: totalApplications,
         interviews: interview,
         offers: offer,
-        cvGenerated: cvs.length,
+        cvGenerated: cvTotal,
       },
       funnel,
       cvStats: {
-        total: cvs.length,
+        total: cvTotal,
         avgScore: avgCvScore,
-        templates: isPremium ? templateUsage : { locked: 'Upgrade to Premium' },
+        templates: templateUsage,
       },
-      timeline: isPremium ? timeline : [],
-      followUp: followUpStats,
+      timeline,
+      followUp: {
+        total: followUpTotal,
+        sent: followUpSent,
+        scheduled: followUpScheduled,
+        responseRate: isPremium ? this.calculateResponseRate(followUpSent, followUpOpened) : null,
+      },
       conversionRate: isPremium
         ? totalApplications > 0
           ? ((interview / totalApplications) * 100).toFixed(1) + '%'
           : '0%'
-        : 'Premium Only',
+        : null,
     };
   }
 
-  private getDemoOverview(isPremium: boolean) {
+  private getDemoOverview(isPremium: boolean): AnalyticsOverview {
     return {
       isPremium,
       isDemo: true,
@@ -126,13 +225,7 @@ export class AnalyticsService {
       cvStats: {
         total: 4,
         avgScore: 78,
-        templates: isPremium
-          ? {
-              'ATS-friendly': 2,
-              modern: 1,
-              'premium-elegant': 1,
-            }
-          : { locked: 'Upgrade to Premium' },
+        templates: isPremium ? { 'ATS-friendly': 2, modern: 1, 'premium-elegant': 1 } : null,
       },
       timeline: isPremium
         ? [
@@ -144,43 +237,69 @@ export class AnalyticsService {
             { date: this.getDateString(-1), count: 2 },
             { date: this.getDateString(0), count: 3 },
           ]
-        : [],
+        : null,
       followUp: {
         total: 5,
         sent: 3,
         scheduled: 2,
-        responseRate: isPremium ? '40%' : 'Premium Only',
+        responseRate: isPremium ? '40%' : null,
       },
-      conversionRate: isPremium ? '42.9%' : 'Premium Only',
+      conversionRate: isPremium ? '42.9%' : null,
     };
   }
 
-  private calculateResponseRate(followUps: FollowUp[]): string {
-    // Mock calculation - in real app, track actual responses
-    const sent = followUps.filter((f) => f.status === FollowUpStatus.SENT).length;
+  /**
+   * Calculate REAL response rate from openedAt tracking
+   */
+  private calculateResponseRate(sent: number, opened: number): string {
     if (sent === 0) return '0%';
-    // Assume 20-30% response rate for demo
-    return `${Math.round(sent * 0.25)}%`;
+    return ((opened / sent) * 100).toFixed(1) + '%';
   }
 
-  private getDateString(daysAgo: number): string {
+  private periodToDays(period: AnalyticsPeriod): number {
+    switch (period) {
+      case '30d':
+        return 30;
+      case '90d':
+        return 90;
+      case '7d':
+      default:
+        return 7;
+    }
+  }
+
+  private getDateString(daysOffset: number): string {
     const d = new Date();
-    d.setDate(d.getDate() - daysAgo);
+    d.setDate(d.getDate() + daysOffset);
     return d.toISOString().split('T')[0];
   }
 
-  private getTimelineData(trackers: JobTracker[]) {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toISOString().split('T')[0];
-    }).reverse();
+  private async getTimelineData(
+    userId: string,
+    days: number,
+  ): Promise<Array<{ date: string; count: number }>> {
+    // Generate date series in JS, count from DB
+    const dateLabels: string[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      dateLabels.push(this.getDateString(-i));
+    }
 
-    const data = last7Days.map((date) => {
-      const count = trackers.filter((t) => t.createdAt.toISOString().split('T')[0] === date).length;
-      return { date, count };
-    });
+    const raw = await this.trackerRepository
+      .createQueryBuilder('t')
+      .select('DATE(t."createdAt")::text', 'date')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('t.userId = :userId', { userId })
+      .andWhere('t."createdAt" >= NOW() - :interval::interval', {
+        interval: `${days} days`,
+      })
+      .groupBy('DATE(t."createdAt")')
+      .getRawMany<{ date: string; count: number }>();
 
-    return data;
+    const countMap: Record<string, number> = {};
+    for (const row of raw) {
+      countMap[row.date] = Number(row.count);
+    }
+
+    return dateLabels.map((date) => ({ date, count: countMap[date] || 0 }));
   }
 }

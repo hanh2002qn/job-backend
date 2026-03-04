@@ -24,7 +24,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AiFeatureModule } from './modules/ai/ai-feature.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AuditModule } from './modules/audit/audit.module';
-import { FeedbackModule } from './modules/feedback/feedback.module';
+
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
@@ -83,7 +83,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
     AdminModule,
     RedisModule,
     NotificationsModule,
-    FeedbackModule,
+
     HealthModule,
     AuditModule,
   ],

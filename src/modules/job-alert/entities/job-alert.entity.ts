@@ -16,7 +16,6 @@ export enum AlertFrequency {
 
 export enum AlertChannel {
   EMAIL = 'email',
-  PUSH = 'push',
 }
 
 @Entity('job_alerts')

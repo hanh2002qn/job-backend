@@ -19,15 +19,17 @@ export class AdminCrawlerController {
   @Post('trigger')
   @ApiOperation({ summary: 'Trigger job crawler manually' })
   async triggerCrawler(@Body('platform') platform: string) {
-    let jobName: string = JOB_TYPES.CRAWL_TOPCV;
+    const jobKey = `CRAWL_${platform.toUpperCase()}` as keyof typeof JOB_TYPES;
+    const jobName = JOB_TYPES[jobKey];
 
-    if (platform === 'linkedin') {
-      jobName = JOB_TYPES.CRAWL_LINKEDIN;
-    } else if (platform === 'vietnamworks') {
-      jobName = JOB_TYPES.CRAWL_VIETNAMWORKS;
+    if (!jobName) {
+      return {
+        message: `Unsupported platform: ${platform}. Defaulting to TopCV...`,
+        triggered: false,
+      };
     }
 
     await this.crawlerQueue.add(jobName, { platform });
-    return { message: `Crawler triggered for ${platform || 'topcv'}` };
+    return { message: `Crawler triggered for ${platform}`, triggered: true };
   }
 }

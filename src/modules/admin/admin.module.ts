@@ -5,7 +5,7 @@ import { JobsModule } from '../jobs/jobs.module';
 import { CvModule } from '../cv/cv.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { AuthModule } from '../auth/auth.module';
-import { FeedbackModule } from '../feedback/feedback.module';
+
 import { SettingsModule } from '../settings/settings.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminJobsController } from './controllers/admin-jobs.controller';
@@ -35,7 +35,7 @@ import { AdminSettingsController } from './controllers/admin-settings.controller
     CvModule,
     SubscriptionModule,
     AuthModule,
-    FeedbackModule,
+
     SettingsModule,
   ],
   controllers: [

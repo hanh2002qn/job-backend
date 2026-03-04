@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
-import { TrackerModule } from '../tracker/tracker.module';
-import { CvModule } from '../cv/cv.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { FollowUp } from '../follow-up/entities/follow-up.entity';
+import { JobTracker } from '../tracker/entities/job-tracker.entity';
+import { CV } from '../cv/entities/cv.entity';
+import { RedisModule } from '../../common/redis/redis.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FollowUp]), TrackerModule, CvModule, SubscriptionModule],
+  imports: [TypeOrmModule.forFeature([JobTracker, CV, FollowUp]), SubscriptionModule, RedisModule],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
 })

@@ -283,7 +283,7 @@ export class MatchingService {
     );
   }
 
-  private calculateMatch(job: Job, profile: Profile, userSkills: string[]) {
+  public calculateMatch(job: Job, profile: Profile, userSkills: string[]) {
     const jobSkills = job.skills || [];
 
     if (jobSkills.length === 0) {

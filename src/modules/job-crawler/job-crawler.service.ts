@@ -4,6 +4,16 @@ import { Repository, MoreThan } from 'typeorm';
 import { JobCrawlerStrategy, CrawlResult } from './interfaces/job-crawler.interface';
 import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
+import { IndeedCrawler } from './strategies/indeed.crawler';
+import { TimviecnhanhCrawler } from './strategies/timviecnhanh.crawler';
+import { ItviecCrawler } from './strategies/itviec.crawler';
+import { TopDevCrawler } from './strategies/topdev.crawler';
+import { VietnamWorksCrawler } from './strategies/vietnamworks.crawler';
+import { UpworkCrawler } from './strategies/upwork.crawler';
+import { FreelancerCrawler } from './strategies/freelancer.crawler';
+import { Vieclam24hCrawler } from './strategies/vieclam24h.crawler';
+import { Job123Crawler } from './strategies/123job.crawler';
+import { FacebookCrawler } from './strategies/facebook.crawler';
 import { CrawlerStats, CrawlerStatus } from './entities/crawler-stats.entity';
 import { CrawlerConfig } from './entities/crawler-config.entity';
 import { RateLimiterService } from './services/rate-limiter.service';
@@ -17,13 +27,36 @@ export class JobCrawlerService {
   constructor(
     private readonly topCvCrawler: TopCvCrawler,
     private readonly linkedInCrawler: LinkedInCrawler,
+    private readonly indeedCrawler: IndeedCrawler,
+    private readonly timviecnhanhCrawler: TimviecnhanhCrawler,
+    private readonly itviecCrawler: ItviecCrawler,
+    private readonly topDevCrawler: TopDevCrawler,
+    private readonly vietnamWorksCrawler: VietnamWorksCrawler,
+    private readonly upworkCrawler: UpworkCrawler,
+    private readonly freelancerCrawler: FreelancerCrawler,
+    private readonly vieclam24hCrawler: Vieclam24hCrawler,
+    private readonly job123Crawler: Job123Crawler,
+    private readonly facebookCrawler: FacebookCrawler,
     @InjectRepository(CrawlerStats)
     private readonly statsRepository: Repository<CrawlerStats>,
     @InjectRepository(CrawlerConfig)
     private readonly configRepository: Repository<CrawlerConfig>,
     private readonly rateLimiter: RateLimiterService,
   ) {
-    this.strategies = [this.topCvCrawler, this.linkedInCrawler];
+    this.strategies = [
+      this.topCvCrawler,
+      this.linkedInCrawler,
+      this.indeedCrawler,
+      this.timviecnhanhCrawler,
+      this.itviecCrawler,
+      this.topDevCrawler,
+      this.vietnamWorksCrawler,
+      this.upworkCrawler,
+      this.freelancerCrawler,
+      this.vieclam24hCrawler,
+      this.job123Crawler,
+      this.facebookCrawler,
+    ];
   }
 
   /**

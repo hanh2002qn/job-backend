@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from './entities/notification.entity';
+import { Notification, NotificationType } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
   constructor(
     @InjectRepository(Notification)
     private readonly notificationsRepository: Repository<Notification>,
@@ -42,9 +43,25 @@ export class NotificationsService {
   }
 
   async remove(userId: string, id: string): Promise<void> {
-    const result = await this.notificationsRepository.delete({ id, userId });
-    if (result.affected === 0) {
-      throw new NotFoundException('Notification not found');
-    }
+    await this.notificationsRepository.delete({ id, userId });
+  }
+
+  async sendPushNotification(
+    userId: string,
+    title: string,
+    message: string,
+    link?: string,
+  ): Promise<void> {
+    // TODO: Integrate with FCM or OneSignal
+    const notification = this.notificationsRepository.create({
+      userId,
+      title,
+      message,
+      link,
+      type: NotificationType.INFO,
+    });
+    await this.notificationsRepository.save(notification);
+
+    this.logger.log(`[PUSH NOTIFICATION MOCK] To User: ${userId}, Title: ${title}`);
   }
 }

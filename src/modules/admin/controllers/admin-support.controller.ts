@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Param, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from '../../auth/auth.service';
 import { UsersService } from '../../users/users.service';
@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
-import { FeedbackService } from '../../feedback/feedback.service';
 
 @ApiTags('Admin Support')
 @ApiBearerAuth()
@@ -17,14 +16,7 @@ export class AdminSupportController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
-    private feedbackService: FeedbackService,
   ) {}
-
-  @Get('feedbacks')
-  @ApiOperation({ summary: 'List all feedbacks' })
-  async listFeedbacks() {
-    return this.feedbackService.findAll();
-  }
 
   @Post('users/:id/impersonate')
   @ApiOperation({ summary: 'Impersonate a user (get access token)' })

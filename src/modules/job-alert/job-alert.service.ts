@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Job } from '../jobs/entities/job.entity';
 import { Profile } from '../profiles/entities/profile.entity';
 import { MailService } from '../mail/mail.service';
 import { AlertChannel, AlertFrequency, JobAlert } from './entities/job-alert.entity';
 import { UpdateJobAlertDto } from './dto/update-job-alert.dto';
+import { UserJobNotification } from './entities/user-job-notification.entity';
+import { MatchingService } from '../matching/matching.service';
 
 @Injectable()
 export class JobAlertService {
@@ -18,7 +20,10 @@ export class JobAlertService {
     private readonly profilesRepository: Repository<Profile>,
     @InjectRepository(JobAlert)
     private readonly jobAlertRepository: Repository<JobAlert>,
+    @InjectRepository(UserJobNotification)
+    private readonly userJobNotificationRepository: Repository<UserJobNotification>,
     private readonly mailService: MailService,
+    private readonly matchingService: MatchingService,
   ) {}
 
   async createDefaultSettings(userId: string) {
@@ -54,25 +59,32 @@ export class JobAlertService {
    * Check and send job alerts - called by worker scheduler
    */
   async handleJobAlerts() {
-    this.logger.log('Checking for new jobs to send alerts...');
+    this.logger.log('Starting enhanced job alert cycle...');
 
-    // 1. Get new jobs that haven't been alerted
-    const newJobs = await this.jobsRepository.find({
-      where: { isAlertSent: false, expired: false },
-    });
-
-    if (newJobs.length === 0) {
-      this.logger.log('No new jobs for alerts.');
-      return;
-    }
-
-    // 2. Get active alerts with preferences
+    // 1. Get all active users with alerts
     const activeAlerts = await this.jobAlertRepository.find({
       where: { isActive: true },
       relations: ['user', 'user.profile'],
     });
 
-    let processedCount = 0;
+    if (activeAlerts.length === 0) {
+      this.logger.log('No active job alerts found.');
+      return;
+    }
+
+    // 2. Get recent jobs (limit to last 7 days for performance if needed, or all new)
+    const recentJobs = await this.jobsRepository.find({
+      where: { expired: false },
+      order: { createdAt: 'DESC' },
+      take: 100, // Process in chunks of 100 recent jobs per cycle
+    });
+
+    if (recentJobs.length === 0) {
+      this.logger.log('No jobs found to alert.');
+      return;
+    }
+
+    let processedUsers = 0;
 
     for (const alert of activeAlerts) {
       const user = alert.user;
@@ -83,38 +95,55 @@ export class JobAlertService {
       // Check Frequency
       if (!this.shouldSendAlert(alert)) continue;
 
-      // Check Matches
-      const matchedJobs = newJobs.filter((job) => this.isMatch(job, profile));
+      // 3. Find jobs this user hasn't been notified about yet
+      const alreadyNotifiedJobIds = await this.userJobNotificationRepository
+        .find({
+          where: { userId: alert.userId },
+          select: ['jobId'],
+        })
+        .then((list) => list.map((n) => n.jobId));
+
+      const candidateJobs = recentJobs.filter((job) => !alreadyNotifiedJobIds.includes(job.id));
+
+      if (candidateJobs.length === 0) continue;
+
+      // 4. Use MatchingService for high-quality matches
+      const matchedJobs: Job[] = [];
+      const userSkills = profile.skills?.map((s) => s.toLowerCase().trim()) || [];
+
+      for (const job of candidateJobs) {
+        // We use the internal synchronous calculation for speed in the loop
+        // If we want FULL AI, we would call getSemanticMatch, but that's expensive per job/user
+        // So we use rule-based for the alert "filter"
+        const matchResult = this.matchingService.calculateMatch(job, profile, userSkills);
+
+        if (matchResult.matchScore >= 40) {
+          // Threshold for alerts
+          matchedJobs.push(job);
+        }
+      }
 
       if (matchedJobs.length > 0) {
+        // 5. Send alerts
         await this.sendAlerts(alert, user.email, matchedJobs);
-        processedCount++;
+
+        // 6. Record notifications to avoid duplicates
+        const notifications = matchedJobs.map((job) =>
+          this.userJobNotificationRepository.create({
+            userId: alert.userId,
+            jobId: job.id,
+            sentAt: new Date(),
+          }),
+        );
+        await this.userJobNotificationRepository.save(notifications);
 
         // Update lastSentAt
         await this.jobAlertRepository.update(alert.id, { lastSentAt: new Date() });
+        processedUsers++;
       }
     }
 
-    // 3. Mark jobs as notified (Generic approach: mark all new jobs as "alert processed")
-    // Note: In a real system, we might track per-user alerts, but simpler here is
-    // to mark them as "processed" for the global feed.
-    // However, if we mark them true, users with different frequencies might miss them.
-    // Ideally, we shouldn't mark isAlertSent=true globaly if we support individual frequencies.
-    // BUT, for this scope, let's assume 'isAlertSent' means "added to the notification queue/cycle".
-    // Or better: don't verify against 'isAlertSent' for Weekly users?
-    // Let's keep it simple: We just mark them as sent to avoid spamming the system every minute.
-    // A more robust system would keep a reference "JobNotification" table.
-    // For this MVP, we will accept that if a job is processed today,
-    // a user setting their alert to "Weekly" tomorrow might miss it.
-    // Fixed logic: We only mark jobs as sent if we are running in a "Daily" cycle?
-    // Actually, let's just mark them sent.
-
-    const jobIds = newJobs.map((j) => j.id);
-    if (jobIds.length > 0) {
-      await this.jobsRepository.update({ id: In(jobIds) }, { isAlertSent: true });
-    }
-
-    this.logger.log(`Processed alerts for ${processedCount} users.`);
+    this.logger.log(`Job alert cycle complete. Notified ${processedUsers} users.`);
   }
 
   private shouldSendAlert(alert: JobAlert): boolean {
@@ -125,73 +154,30 @@ export class JobAlertService {
     const diffHours = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
 
     if (alert.frequency === AlertFrequency.DAILY) {
-      return diffHours >= 24;
+      return diffHours >= 23; // Small buffer
     } else if (alert.frequency === AlertFrequency.WEEKLY) {
-      return diffHours >= 24 * 7;
+      return diffHours >= 24 * 7 - 1;
     }
     return true;
   }
 
   private async sendAlerts(alert: JobAlert, email: string, jobs: Job[]) {
+    // 1. Email Channel
     if (alert.channels.includes(AlertChannel.EMAIL)) {
       try {
-        await this.mailService.sendJobAlertEmail(alert.userId, email, jobs);
+        const mappedJobs = jobs.map((j) => ({
+          title: j.title,
+          company: j.company,
+          location: j.location,
+          salary: j.salary,
+          url: j.url || `${process.env.FRONTEND_URL}/jobs/${j.id}`,
+        }));
+        await this.mailService.sendJobAlertEmail(alert.userId, email, mappedJobs);
         this.logger.log(`Sent email alert to ${email}`);
-      } catch (e) {
-        this.logger.error(`Failed to send email to ${email}`, e);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Failed to send email to ${email}: ${message}`);
       }
     }
-
-    if (alert.channels.includes(AlertChannel.PUSH)) {
-      // Mock Push Notification
-      this.logger.log(
-        `[MOCK PUSH] Sending push notification to user ${alert.userId} for ${jobs.length} jobs.`,
-      );
-    }
-  }
-
-  private isMatch(job: Job, profile: Profile): boolean {
-    // Simple matching logic
-
-    // Match Industry (Category) - if user has industries set
-    if (profile.preferredIndustries && profile.preferredIndustries.length > 0) {
-      if (job.category) {
-        const match = profile.preferredIndustries.some((ind) =>
-          job.category.toLowerCase().includes(ind.toLowerCase()),
-        );
-        if (!match) return false;
-      } else {
-        // If job has no category, skip this filter or let it pass?
-        // For now, let's say if user has preferences, they ONLY want those industries.
-        return false;
-      }
-    }
-
-    // Match Location
-    if (profile.preferredLocations && profile.preferredLocations.length > 0) {
-      const locMatch = profile.preferredLocations.some((loc) =>
-        job.location.toLowerCase().includes(loc.toLowerCase()),
-      );
-      if (!locMatch) return false;
-    }
-
-    // Match Job Type
-    if (profile.preferredJobTypes && profile.preferredJobTypes.length > 0) {
-      if (job.jobType) {
-        const typeMatch = profile.preferredJobTypes.some((type) =>
-          job.jobType.toLowerCase().includes(type.toLowerCase()),
-        );
-        if (!typeMatch) return false;
-      }
-    }
-
-    // Match Salary
-    if (profile.minSalaryExpectation && job.salaryMax) {
-      if (job.salaryMax < profile.minSalaryExpectation) {
-        return false;
-      }
-    }
-
-    return true;
   }
 }

@@ -4,6 +4,7 @@ import { JobsService } from '../../jobs/jobs.service';
 import { JobNormalizationService } from '../services/job-normalization.service';
 import { DeduplicationService } from '../services/deduplication.service';
 import { RateLimiterService } from '../services/rate-limiter.service';
+import { ProxyService } from '../services/proxy.service';
 import * as cheerio from 'cheerio';
 import DOMPurify from 'isomorphic-dompurify';
 import { chromium } from 'playwright-extra';
@@ -70,10 +71,14 @@ export class TopCvCrawler implements JobCrawlerStrategy {
     private readonly normalizationService: JobNormalizationService,
     private readonly deduplicationService: DeduplicationService,
     private readonly rateLimiter: RateLimiterService,
+    private readonly proxyService: ProxyService,
   ) {}
 
   async crawlSpecificUrl(url: string) {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      proxy: this.proxyService.getProxyConfig(),
+    });
     try {
       const context = await browser.newContext();
       const page = await context.newPage();
@@ -105,7 +110,10 @@ export class TopCvCrawler implements JobCrawlerStrategy {
 
   async crawl(limit: number = 9999): Promise<CrawlResult> {
     this.logger.log(`Starting Headless TopCV Crawl (Limit: ${limit} pages)...`);
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      proxy: this.proxyService.getProxyConfig(),
+    });
 
     const result: CrawlResult = {
       jobsFound: 0,

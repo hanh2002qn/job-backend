@@ -18,6 +18,7 @@ import { FacebookCrawler } from './strategies/facebook.crawler';
 import { JobNormalizationService } from './services/job-normalization.service';
 import { DeduplicationService } from './services/deduplication.service';
 import { RateLimiterService } from './services/rate-limiter.service';
+import { ProxyService } from './services/proxy.service';
 import { CrawlerStats } from './entities/crawler-stats.entity';
 import { CrawlerConfig } from './entities/crawler-config.entity';
 import { Job } from '../jobs/entities/job.entity';
@@ -29,6 +30,7 @@ import { Job } from '../jobs/entities/job.entity';
     JobNormalizationService,
     DeduplicationService,
     RateLimiterService,
+    ProxyService,
     JobCrawlerService,
     TopCvCrawler,
     LinkedInCrawler,

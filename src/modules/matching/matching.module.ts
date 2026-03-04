@@ -9,5 +9,6 @@ import { AIModule } from '../ai/ai.module';
   imports: [JobsModule, ProfilesModule, AIModule],
   controllers: [MatchingController],
   providers: [MatchingService],
+  exports: [MatchingService],
 })
 export class MatchingModule {}

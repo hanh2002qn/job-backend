@@ -7,8 +7,15 @@ import { MailModule } from '../mail/mail.module';
 import { JobAlert } from './entities/job-alert.entity';
 import { JobAlertController } from './job-alert.controller';
 
+import { UserJobNotification } from './entities/user-job-notification.entity';
+import { MatchingModule } from '../matching/matching.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Job, Profile, JobAlert]), MailModule],
+  imports: [
+    TypeOrmModule.forFeature([Job, Profile, JobAlert, UserJobNotification]),
+    MailModule,
+    MatchingModule,
+  ],
   controllers: [JobAlertController],
   providers: [JobAlertService],
   exports: [JobAlertService],
