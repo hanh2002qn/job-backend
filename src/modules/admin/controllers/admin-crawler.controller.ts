@@ -1,5 +1,5 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUES, JOB_TYPES } from '../../../common/redis/queue.constants';
@@ -18,6 +18,9 @@ export class AdminCrawlerController {
 
   @Post('trigger')
   @ApiOperation({ summary: 'Trigger job crawler manually' })
+  @ApiResponse({ status: 201, description: 'Crawler triggered or platform unsupported.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   async triggerCrawler(
     @Body('platform') platform: string,
   ): Promise<{ message: string; triggered: boolean }> {

@@ -3,7 +3,7 @@ const path = require('path');
 
 const swaggerData = JSON.parse(fs.readFileSync('swagger.json', 'utf8'));
 
-const outDir = path.join(__dirname, 'docs', 'frontend-integration');
+const outDir = path.join(__dirname, '..', '..', 'docs', 'frontend-integration');
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }

@@ -1,17 +1,14 @@
-# Integration Guide: Health Module
+# Integration Guide: health Module
 
-This document provides frontend integration details for the **Health** module.
+This document provides frontend integration details for the **health** module.
 
 ## Endpoints
 
-### Endpoint
-
+### Check application health status 
 > **GET** `/api/health`
 
 #### Responses
-
-**200**:
-
-`Any Object`
+**200**: Application health information returned.
 
 ---
+

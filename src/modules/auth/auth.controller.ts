@@ -10,7 +10,14 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -52,7 +59,9 @@ export class AuthController {
 
   @Get('verify')
   @ApiOperation({ summary: 'Verify email address' })
-  @ApiQuery({ name: 'token', required: true })
+  @ApiQuery({ name: 'token', required: true, description: 'Email verification token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
     return this.authService.verifyEmail(token);
   }
@@ -74,6 +83,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Logout user' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Logout successful.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async logout(@CurrentUser() user: User): Promise<{ message: string }> {
     return this.authService.logout(user.id);
   }
@@ -81,6 +92,8 @@ export class AuthController {
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
   async refreshTokens(
     @Body() refreshDto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string; user: Omit<User, 'passwordHash'> }> {
@@ -92,6 +105,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Password changed successfully.' })
+  @ApiResponse({ status: 400, description: 'Current password is incorrect.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async changePassword(
     @CurrentUser() user: User,
     @Body() changeDto: ChangePasswordDto,
@@ -103,6 +119,8 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Request password reset' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Password reset email sent.' })
+  @ApiResponse({ status: 429, description: 'Too many requests.' })
   async forgotPassword(@Body() forgotDto: ForgotPasswordDto): Promise<{ message: string }> {
     return this.authService.forgotPassword(forgotDto.email);
   }
@@ -111,6 +129,9 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Reset password using token' })
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token.' })
+  @ApiResponse({ status: 429, description: 'Too many requests.' })
   async resetPassword(@Body() resetDto: ResetPasswordDto): Promise<{ message: string }> {
     return this.authService.resetPassword(resetDto);
   }
@@ -120,6 +141,7 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth consent screen.' })
   googleAuth(): void {
     // Guard redirects to Google
   }
@@ -127,6 +149,8 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
+  @ApiExcludeEndpoint()
+  @ApiResponse({ status: 302, description: 'Redirects to frontend with tokens.' })
   async googleAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as GoogleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
@@ -149,6 +173,7 @@ export class AuthController {
   @Get('github')
   @UseGuards(GithubAuthGuard)
   @ApiOperation({ summary: 'Initiate GitHub OAuth login' })
+  @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth consent screen.' })
   githubAuth(): void {
     // Guard redirects to GitHub
   }
@@ -156,6 +181,8 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
   @ApiOperation({ summary: 'GitHub OAuth callback' })
+  @ApiExcludeEndpoint()
+  @ApiResponse({ status: 302, description: 'Redirects to frontend with tokens.' })
   async githubAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as GithubProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
@@ -178,6 +205,7 @@ export class AuthController {
   @Post('apple')
   @UseGuards(AppleAuthGuard)
   @ApiOperation({ summary: 'Initiate Apple OAuth login' })
+  @ApiResponse({ status: 302, description: 'Redirects to Apple OAuth consent screen.' })
   appleAuth(): void {
     // Guard redirects to Apple
   }
@@ -185,6 +213,8 @@ export class AuthController {
   @Post('apple/callback')
   @UseGuards(AppleAuthGuard)
   @ApiOperation({ summary: 'Apple OAuth callback' })
+  @ApiExcludeEndpoint()
+  @ApiResponse({ status: 302, description: 'Redirects to frontend with tokens.' })
   async appleAuthCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as AppleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({

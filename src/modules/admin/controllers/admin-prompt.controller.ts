@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { AuditAction } from '../../../common/decorators/audit-log.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AdminPromptService } from '../services/admin-prompt.service';
 import { Prompt } from '../../ai/entities/prompt.entity';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -19,12 +19,14 @@ export class AdminPromptController {
   @Post()
   @AuditAction({ action: 'CREATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Create a new prompt' })
+  @ApiResponse({ status: 201, description: 'Prompt created.', type: Prompt })
   create(@Body() createPromptDto: Partial<Prompt>): Promise<Prompt> {
     return this.adminPromptService.create(createPromptDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all prompts' })
+  @ApiResponse({ status: 200, description: 'List of prompts returned.', type: [Prompt] })
   findAll(): Promise<Prompt[]> {
     return this.adminPromptService.findAll();
   }
@@ -32,6 +34,9 @@ export class AdminPromptController {
   @Patch(':id')
   @AuditAction({ action: 'UPDATE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Update a prompt' })
+  @ApiParam({ name: 'id', description: 'Prompt ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Prompt updated.', type: Prompt })
+  @ApiResponse({ status: 404, description: 'Prompt not found.' })
   update(@Param('id') id: string, @Body() updatePromptDto: Partial<Prompt>): Promise<Prompt> {
     return this.adminPromptService.update(id, updatePromptDto);
   }
@@ -39,6 +44,9 @@ export class AdminPromptController {
   @Delete(':id')
   @AuditAction({ action: 'DELETE_PROMPT', module: 'PROMPT' })
   @ApiOperation({ summary: 'Delete a prompt' })
+  @ApiParam({ name: 'id', description: 'Prompt ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Prompt deleted.' })
+  @ApiResponse({ status: 404, description: 'Prompt not found.' })
   remove(@Param('id') id: string): Promise<void> {
     return this.adminPromptService.remove(id);
   }

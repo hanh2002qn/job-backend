@@ -1,5 +1,5 @@
 import { Controller, Post, Param, UseGuards, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AuthService } from '../../auth/auth.service';
 import { UsersService } from '../../users/users.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -22,6 +22,10 @@ export class AdminSupportController {
   @Post('users/:id/impersonate')
   @AuditAction({ action: 'IMPERSONATE_USER', module: 'SUPPORT' })
   @ApiOperation({ summary: 'Impersonate a user (get access token)' })
+  @ApiParam({ name: 'id', description: 'User ID to impersonate (UUID)' })
+  @ApiResponse({ status: 201, description: 'Impersonation tokens generated.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or user not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   async impersonateUser(
     @Param('id') userId: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: Omit<User, 'passwordHash'> }> {

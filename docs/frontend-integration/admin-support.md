@@ -4,20 +4,20 @@ This document provides frontend integration details for the **Admin Support** mo
 
 ## Endpoints
 
-### Impersonate a user (get access token)
-
+### Impersonate a user (get access token) 
 > **POST** `/api/admin/support/users/{id}/impersonate`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Parameters (Path / Query)
-
-| Name | In     | Required | Type     | Description |
-| ---- | ------ | -------- | -------- | ----------- |
-| `id` | `path` | ✅       | `string` |             |
+| Name | In | Required | Type | Description |
+| --- | --- | --- | --- | --- |
+| `id` | `path` | ✅ | `string` | User ID to impersonate (UUID) |
 
 #### Responses
-
-**201**:
+**201**: Impersonation tokens generated.
+**401**: Unauthorized or user not found.
+**403**: Forbidden. Admin role required.
 
 ---
+

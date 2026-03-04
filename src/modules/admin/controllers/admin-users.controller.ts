@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Param, Body, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UsersService } from '../../users/users.service';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { UpdateUserRoleDto } from '../dto/update-user-role.dto';
@@ -19,6 +19,9 @@ export class AdminUsersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({ status: 200, description: 'Paginated list of users.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   async findAll(@Query() paginationDto: PaginationDto): Promise<{
     data: User[];
     meta: { total: number; page: number; limit: number; totalPages: number };
@@ -28,12 +31,22 @@ export class AdminUsersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user detail' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'User detail returned.', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async findOne(@Param('id') id: string): Promise<User | null> {
     return this.usersService.findOneById(id);
   }
 
   @Patch(':id/role')
   @ApiOperation({ summary: 'Update user role' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'User role updated.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async updateRole(
     @Param('id') id: string,
     @Body() updateRoleDto: UpdateUserRoleDto,

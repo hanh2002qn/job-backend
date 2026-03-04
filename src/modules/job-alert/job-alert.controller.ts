@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JobAlertService } from './job-alert.service';
 import { UpdateJobAlertDto } from './dto/update-job-alert.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -16,12 +16,16 @@ export class JobAlertController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get my job alert settings' })
+  @ApiResponse({ status: 200, description: 'Job alert settings returned.', type: JobAlert })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getSettings(@CurrentUser() user: User): Promise<JobAlert> {
     return this.jobAlertService.getSettings(user.id);
   }
 
   @Patch('me')
   @ApiOperation({ summary: 'Update my job alert settings' })
+  @ApiResponse({ status: 200, description: 'Job alert settings updated.', type: JobAlert })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateSettings(
     @CurrentUser() user: User,
     @Body() dto: UpdateJobAlertDto,

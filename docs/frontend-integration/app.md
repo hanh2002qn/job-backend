@@ -1,17 +1,14 @@
-# Integration Guide: App Module
+# Integration Guide: app Module
 
-This document provides frontend integration details for the **App** module.
+This document provides frontend integration details for the **app** module.
 
 ## Endpoints
 
-### Endpoint
-
+### Health check / Welcome message 
 > **GET** `/api`
 
 #### Responses
-
-**200**:
-
-Type: `string`
+**200**: Returns welcome message.
 
 ---
+

@@ -4,50 +4,45 @@ This document provides frontend integration details for the **admin/dashboard** 
 
 ## Endpoints
 
-### Get dashboard statistics
-
+### Get dashboard statistics 
 > **GET** `/api/admin/dashboard/stats`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Responses
-
-**200**:
+**200**: Dashboard stats returned.
+**401**: Unauthorized.
+**403**: Forbidden. Admin role required.
 
 ---
 
-### Get user growth chart data (last 30 days)
-
+### Get user growth chart data (last 30 days) 
 > **GET** `/api/admin/dashboard/chart/users`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Responses
-
-**200**:
+**200**: User growth chart data returned.
 
 ---
 
-### Toggle maintenance mode
-
+### Toggle maintenance mode 
 > **POST** `/api/admin/dashboard/maintenance`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Responses
-
-**201**:
+**201**: Maintenance mode toggled.
 
 ---
 
-### Get recent transactions (charges)
-
+### Get recent transactions (charges) 
 > **GET** `/api/admin/dashboard/transactions`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Responses
-
-**200**:
+**200**: Recent transactions returned.
 
 ---
+

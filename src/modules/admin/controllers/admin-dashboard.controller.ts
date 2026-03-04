@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AdminDashboardService } from '../services/admin-dashboard.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -21,6 +21,9 @@ export class AdminDashboardController {
   @Get('stats')
   @CacheTTL(600) // 10 minutes
   @ApiOperation({ summary: 'Get dashboard statistics' })
+  @ApiResponse({ status: 200, description: 'Dashboard stats returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   async getStats(): Promise<{
     users: { total: number };
     jobs: { total: number; active: number };
@@ -37,6 +40,7 @@ export class AdminDashboardController {
   @Get('chart/users')
   @CacheTTL(3600) // 1 hour
   @ApiOperation({ summary: 'Get user growth chart data (last 30 days)' })
+  @ApiResponse({ status: 200, description: 'User growth chart data returned.' })
   async getUserGrowth(): Promise<{ date: string; count: number }[]> {
     return this.dashboardService.getUserGrowth();
   }
@@ -44,6 +48,7 @@ export class AdminDashboardController {
   @Post('maintenance')
   @AuditAction({ action: 'TOGGLE_MAINTENANCE', module: 'DASHBOARD' })
   @ApiOperation({ summary: 'Toggle maintenance mode' })
+  @ApiResponse({ status: 201, description: 'Maintenance mode toggled.' })
   async toggleMaintenance(@Body('enabled') enabled: boolean): Promise<{ maintenance: boolean }> {
     await this.dashboardService.setMaintenanceMode(enabled);
     return { maintenance: enabled };
@@ -52,6 +57,7 @@ export class AdminDashboardController {
   @Get('transactions')
   @CacheTTL(600) // 10 minutes
   @ApiOperation({ summary: 'Get recent transactions (charges)' })
+  @ApiResponse({ status: 200, description: 'Recent transactions returned.' })
   async getTransactions(): Promise<
     {
       id: string;

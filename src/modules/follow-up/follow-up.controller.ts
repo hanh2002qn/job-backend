@@ -1,5 +1,5 @@
 import { Controller, Post, Body, UseGuards, Patch, Param, Get, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { FollowUpService } from './follow-up.service';
@@ -24,6 +24,9 @@ export class FollowUpController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('generate')
   @ApiOperation({ summary: 'Generate a follow-up email draft' })
+  @ApiResponse({ status: 201, description: 'Follow-up email generated.', type: FollowUp })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded.' })
   generate(@CurrentUser() user: User, @Body() generateDto: GenerateFollowUpDto): Promise<FollowUp> {
     return this.followUpService.generate(user.id, generateDto);
   }
@@ -32,6 +35,10 @@ export class FollowUpController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a follow-up draft content' })
+  @ApiParam({ name: 'id', description: 'Follow-up ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Follow-up updated.', type: FollowUp })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Follow-up not found.' })
   update(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -44,12 +51,16 @@ export class FollowUpController {
   @UseGuards(JwtAuthGuard)
   @Post('send')
   @ApiOperation({ summary: 'Send or schedule a follow-up email' })
+  @ApiResponse({ status: 201, description: 'Follow-up sent or scheduled.', type: FollowUp })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   send(@CurrentUser() user: User, @Body() sendDto: SendFollowUpDto): Promise<FollowUp> {
     return this.followUpService.sendOrSchedule(user.id, sendDto);
   }
 
   @Get('track/:token')
   @ApiOperation({ summary: 'Track email open' })
+  @ApiParam({ name: 'token', description: 'Tracking token' })
+  @ApiResponse({ status: 200, description: '1x1 transparent pixel returned.' })
   async track(@Param('token') token: string, @Res() res: Response): Promise<void> {
     await this.followUpService.markAsOpened(token);
 

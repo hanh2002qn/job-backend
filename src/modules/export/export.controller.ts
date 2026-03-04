@@ -1,5 +1,5 @@
 import { Controller, Post, Body, UseGuards, Get, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { ExportCvDto } from './dto/export-cv.dto';
@@ -17,6 +17,9 @@ export class ExportController {
 
   @Post('cv')
   @ApiOperation({ summary: 'Export CV to PDF/DOCX' })
+  @ApiResponse({ status: 200, description: 'CV file download.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'CV not found.' })
   async exportCv(
     @CurrentUser() user: User,
     @Body() exportDto: ExportCvDto,
@@ -33,6 +36,9 @@ export class ExportController {
 
   @Post('cover-letter')
   @ApiOperation({ summary: 'Export Cover Letter to PDF/DOCX' })
+  @ApiResponse({ status: 200, description: 'Cover letter file download.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Cover letter not found.' })
   async exportCoverLetter(
     @CurrentUser() user: User,
     @Body() exportDto: ExportCoverLetterDto,
@@ -49,6 +55,8 @@ export class ExportController {
 
   @Get('tracker/csv')
   @ApiOperation({ summary: 'Export Job Tracker to CSV' })
+  @ApiResponse({ status: 200, description: 'Tracker CSV file download.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async exportTrackerCsv(@CurrentUser() user: User, @Res() res: Response): Promise<void> {
     const result = await this.exportService.exportTrackerCsv(user.id);
     res.set({

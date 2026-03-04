@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AdminPlanService } from '../services/admin-plan.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -17,24 +17,32 @@ export class AdminPlanController {
 
   @Get()
   @ApiOperation({ summary: 'Get all subscription plans' })
+  @ApiResponse({ status: 200, description: 'List of plans returned.', type: [Plan] })
   async findAll(): Promise<Plan[]> {
     return this.planService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get plan detail' })
+  @ApiParam({ name: 'id', description: 'Plan ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Plan detail returned.', type: Plan })
+  @ApiResponse({ status: 404, description: 'Plan not found.' })
   async findOne(@Param('id') id: string): Promise<Plan> {
     return this.planService.findOne(id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create new plan' })
+  @ApiResponse({ status: 201, description: 'Plan created.', type: Plan })
   async create(@Body() createData: Partial<Plan>): Promise<Plan> {
     return this.planService.create(createData);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update plan (e.g., changes limits)' })
+  @ApiParam({ name: 'id', description: 'Plan ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Plan updated.', type: Plan })
+  @ApiResponse({ status: 404, description: 'Plan not found.' })
   async update(@Param('id') id: string, @Body() updateData: Partial<Plan>): Promise<Plan> {
     return this.planService.update(id, updateData);
   }

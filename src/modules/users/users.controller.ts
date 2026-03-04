@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from './entities/user.entity';
@@ -11,6 +11,8 @@ import { User } from './entities/user.entity';
 export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Current user profile returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getProfile(@CurrentUser() user: User): Omit<User, 'passwordHash'> {
     const { passwordHash: _passwordHash, ...result } = user;
     return result;

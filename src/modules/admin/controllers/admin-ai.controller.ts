@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -26,12 +26,22 @@ export class AdminAiController {
 
   @Get('features')
   @ApiOperation({ summary: 'List all AI feature configs' })
+  @ApiResponse({
+    status: 200,
+    description: 'AI feature configs returned.',
+    type: [AiFeatureConfig],
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   listFeatures(): Promise<AiFeatureConfig[]> {
     return this.adminAiService.listFeatures();
   }
 
   @Get('features/:id')
   @ApiOperation({ summary: 'Get a single AI feature config' })
+  @ApiParam({ name: 'id', description: 'AI feature config ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'AI feature config returned.', type: AiFeatureConfig })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
   getFeature(@Param('id') id: string): Promise<AiFeatureConfig> {
     return this.adminAiService.getFeature(id);
   }
@@ -39,6 +49,9 @@ export class AdminAiController {
   @Patch('features/:id')
   @AuditAction({ action: 'UPDATE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Update AI feature config' })
+  @ApiParam({ name: 'id', description: 'AI feature config ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'AI feature config updated.', type: AiFeatureConfig })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
   updateFeature(
     @Param('id') id: string,
     @Body() dto: UpdateAiFeatureDto,
@@ -49,6 +62,9 @@ export class AdminAiController {
   @Patch('features/:id/toggle')
   @AuditAction({ action: 'TOGGLE_AI_FEATURE', module: 'AI_CONFIG' })
   @ApiOperation({ summary: 'Toggle AI feature enabled/disabled' })
+  @ApiParam({ name: 'id', description: 'AI feature config ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'AI feature toggled.', type: AiFeatureConfig })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
   toggleFeature(
     @Param('id') id: string,
     @Body() dto: ToggleAiFeatureDto,
@@ -60,12 +76,23 @@ export class AdminAiController {
 
   @Get('usage')
   @ApiOperation({ summary: 'Get overall AI usage analytics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Overall usage stats returned.',
+    type: OverallUsageStatsResponseDto,
+  })
   getUsageStats(): Promise<OverallUsageStatsResponseDto> {
     return this.adminAiService.getOverallUsageStats();
   }
 
   @Get('usage/:featureKey')
   @ApiOperation({ summary: 'Get usage analytics for a specific AI feature' })
+  @ApiParam({ name: 'featureKey', description: 'AI feature key (e.g., cv_generation)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Feature usage stats returned.',
+    type: FeatureUsageStatsResponseDto,
+  })
   getFeatureUsageStats(
     @Param('featureKey') featureKey: string,
   ): Promise<FeatureUsageStatsResponseDto> {

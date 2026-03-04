@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { JobsService } from './jobs.service';
 import { JobSearchDto } from './dto/job-search.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -41,6 +41,7 @@ export class JobsController {
   @Get('search')
   @CacheTTL(300) // 5 minutes
   @ApiOperation({ summary: 'Search jobs with full-text search' })
+  @ApiResponse({ status: 200, description: 'Paginated list of jobs.' })
   async search(@Query() query: JobSearchDto): Promise<{
     data: Job[];
     meta: { total: number; page: number; limit: number; totalPages: number };
@@ -52,6 +53,8 @@ export class JobsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get saved/bookmarked jobs' })
+  @ApiResponse({ status: 200, description: 'Paginated list of saved jobs.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getSavedJobs(
     @CurrentUser() user: User,
     @Query() pagination: PaginationDto,
@@ -113,6 +116,9 @@ export class JobsController {
   @Get(':id')
   @CacheTTL(1800) // 30 minutes
   @ApiOperation({ summary: 'Get job detail' })
+  @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Job detail returned.', type: Job })
+  @ApiResponse({ status: 404, description: 'Job not found.' })
   async findOne(@Param('id') id: string): Promise<Job | null> {
     return this.jobsService.findOne(id);
   }
@@ -121,6 +127,10 @@ export class JobsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Save/Bookmark a job' })
+  @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Job saved.', type: SavedJob })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Job not found.' })
   async saveJob(@CurrentUser() user: User, @Param('id') id: string): Promise<SavedJob> {
     return this.jobsService.saveJob(user.id, id);
   }
@@ -130,6 +140,10 @@ export class JobsController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Unsave/Remove bookmark from job' })
+  @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 204, description: 'Job unsaved.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Saved job not found.' })
   async unsaveJob(@CurrentUser() user: User, @Param('id') id: string): Promise<void> {
     return this.jobsService.unsaveJob(user.id, id);
   }

@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { AnalyticsService, type AnalyticsPeriod, AnalyticsOverview } from './analytics.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
@@ -18,6 +18,8 @@ export class AnalyticsController {
 
   @Get('overview')
   @ApiOperation({ summary: 'Get application analytics overview' })
+  @ApiResponse({ status: 200, description: 'Analytics overview returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiQuery({
     name: 'period',
     required: false,

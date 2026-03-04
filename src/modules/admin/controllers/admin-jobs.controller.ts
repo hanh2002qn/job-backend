@@ -9,7 +9,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { JobsService } from '../../jobs/jobs.service';
 import { Job } from '../../jobs/entities/job.entity';
 import { JobSearchDto } from '../../jobs/dto/job-search.dto';
@@ -28,6 +28,7 @@ export class AdminJobsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all jobs (with filters)' })
+  @ApiResponse({ status: 200, description: 'Paginated list of jobs.' })
   async findAll(@Query() query: JobSearchDto): Promise<{
     data: Job[];
     meta: { total: number; page: number; limit: number; totalPages: number };
@@ -37,18 +38,25 @@ export class AdminJobsController {
 
   @Post()
   @ApiOperation({ summary: 'Create new job' })
+  @ApiResponse({ status: 201, description: 'Job created.', type: Job })
   async create(@Body() jobData: Partial<Job>): Promise<Job> {
     return this.jobsService.create(jobData);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update job' })
+  @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Job updated.' })
+  @ApiResponse({ status: 404, description: 'Job not found.' })
   async update(@Param('id') id: string, @Body() jobData: Partial<Job>): Promise<void> {
     return this.jobsService.update(id, jobData);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete job' })
+  @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Job deleted.' })
+  @ApiResponse({ status: 404, description: 'Job not found.' })
   async remove(@Param('id') id: string): Promise<void> {
     return this.jobsService.remove(id);
   }

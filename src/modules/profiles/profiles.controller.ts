@@ -23,6 +23,7 @@ import {
   ApiBody,
   ApiQuery,
   ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
@@ -81,6 +82,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user profile with completeness score' })
+  @ApiResponse({ status: 200, description: 'Profile returned.', type: Profile })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getMyProfile(@CurrentUser() user: User): Promise<Profile | null> {
     return this.profilesService.findByUserId(user.id);
   }
@@ -89,6 +92,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated.', type: Profile })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateMyProfile(
     @CurrentUser() user: User,
     @Body() updateProfileDto: UpdateProfileDto,
@@ -101,6 +106,8 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CV and auto-populate profile with AI parsing' })
+  @ApiResponse({ status: 201, description: 'CV uploaded and parsed.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -127,6 +134,8 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload profile avatar' })
+  @ApiResponse({ status: 201, description: 'Avatar uploaded.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -152,6 +161,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update profile visibility settings' })
+  @ApiResponse({ status: 200, description: 'Visibility settings updated.', type: Profile })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateVisibility(
     @CurrentUser() user: User,
     @Body() dto: UpdateVisibilityDto,
@@ -164,6 +175,9 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard, AiFeatureGuard)
   @AiFeature('profile_completeness')
   @ApiOperation({ summary: 'Get profile completeness score for target role' })
+  @ApiResponse({ status: 200, description: 'Completeness score returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile not found.' })
   async getCompleteness(
     @CurrentUser() user: User,
     @Query() query: CompletenessQueryDto,
@@ -181,6 +195,13 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get CV import sessions for current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'CV import sessions returned.',
+    type: [CvImportSession],
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile not found.' })
   async getCvSessions(@CurrentUser() user: User): Promise<CvImportSession[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -194,6 +215,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Confirm CV import session and merge to profile' })
+  @ApiParam({ name: 'sessionId', description: 'CV import session ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'CV import confirmed and merged.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile or session not found.' })
   async confirmCvImport(
     @CurrentUser() user: User,
     @Param('sessionId') sessionId: string,
@@ -210,6 +235,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Discard CV import session' })
+  @ApiParam({ name: 'sessionId', description: 'CV import session ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Session discarded.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile or session not found.' })
   async discardCvImport(
     @CurrentUser() user: User,
     @Param('sessionId') sessionId: string,
@@ -228,6 +257,9 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard, AiFeatureGuard)
   @AiFeature('profile_insights')
   @ApiOperation({ summary: 'Get AI insights for current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile insights returned.', type: [ProfileInsight] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile not found.' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   async getInsights(
     @CurrentUser() user: User,
@@ -246,6 +278,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark insight as read' })
+  @ApiParam({ name: 'insightId', description: 'Insight ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Insight marked as read.', type: ProfileInsight })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile or insight not found.' })
   async markInsightAsRead(
     @CurrentUser() user: User,
     @Param('insightId') insightId: string,
@@ -262,6 +298,10 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark insight as actioned' })
+  @ApiParam({ name: 'insightId', description: 'Insight ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Insight marked as actioned.', type: ProfileInsight })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Profile or insight not found.' })
   async markInsightAsActioned(
     @CurrentUser() user: User,
     @Param('insightId') insightId: string,
@@ -280,6 +320,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all skills for current user' })
+  @ApiResponse({ status: 200, description: 'Skills returned.', type: [ProfileSkill] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getSkills(@CurrentUser() user: User): Promise<ProfileSkill[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -292,6 +334,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new skill' })
+  @ApiResponse({ status: 201, description: 'Skill created.', type: ProfileSkill })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async createSkill(@CurrentUser() user: User, @Body() dto: CreateSkillDto): Promise<ProfileSkill> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -304,6 +348,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a skill' })
+  @ApiParam({ name: 'skillId', description: 'Skill ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Skill updated.', type: ProfileSkill })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateSkill(
     @CurrentUser() user: User,
     @Param('skillId') skillId: string,
@@ -320,6 +367,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a skill' })
+  @ApiParam({ name: 'skillId', description: 'Skill ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Skill deleted.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async deleteSkill(
     @CurrentUser() user: User,
     @Param('skillId') skillId: string,
@@ -336,6 +386,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Merge duplicate skills' })
+  @ApiResponse({ status: 201, description: 'Skills merged.', type: ProfileSkill })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async mergeSkills(@CurrentUser() user: User, @Body() dto: MergeSkillsDto): Promise<ProfileSkill> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -350,6 +402,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all experiences for current user' })
+  @ApiResponse({ status: 200, description: 'Experiences returned.', type: [ProfileExperience] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getExperiences(@CurrentUser() user: User): Promise<ProfileExperience[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -362,6 +416,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new experience' })
+  @ApiResponse({ status: 201, description: 'Experience created.', type: ProfileExperience })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async createExperience(
     @CurrentUser() user: User,
     @Body() dto: CreateExperienceDto,
@@ -377,6 +433,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update an experience' })
+  @ApiParam({ name: 'experienceId', description: 'Experience ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Experience updated.', type: ProfileExperience })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateExperience(
     @CurrentUser() user: User,
     @Param('experienceId') experienceId: string,
@@ -393,6 +452,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete an experience' })
+  @ApiParam({ name: 'experienceId', description: 'Experience ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Experience deleted.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async deleteExperience(
     @CurrentUser() user: User,
     @Param('experienceId') experienceId: string,
@@ -411,6 +473,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all projects for current user' })
+  @ApiResponse({ status: 200, description: 'Projects returned.', type: [ProfileProject] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getProjects(@CurrentUser() user: User): Promise<ProfileProject[]> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -423,6 +487,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a new project' })
+  @ApiResponse({ status: 201, description: 'Project created.', type: ProfileProject })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async createProject(
     @CurrentUser() user: User,
     @Body() dto: CreateProjectDto,
@@ -438,6 +504,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Project updated.', type: ProfileProject })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateProject(
     @CurrentUser() user: User,
     @Param('projectId') projectId: string,
@@ -454,6 +523,9 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Project deleted.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async deleteProject(
     @CurrentUser() user: User,
     @Param('projectId') projectId: string,
@@ -472,6 +544,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get career intent for current user' })
+  @ApiResponse({ status: 200, description: 'Career intent returned.', type: CareerIntent })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getCareerIntent(@CurrentUser() user: User): Promise<CareerIntent | null> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -484,6 +558,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update career intent' })
+  @ApiResponse({ status: 200, description: 'Career intent updated.', type: CareerIntent })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateCareerIntent(
     @CurrentUser() user: User,
     @Body() dto: UpdateCareerIntentDto,
@@ -501,6 +577,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get work preferences for current user' })
+  @ApiResponse({ status: 200, description: 'Work preferences returned.', type: WorkPreferences })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getWorkPreferences(@CurrentUser() user: User): Promise<WorkPreferences | null> {
     const profile = await this.profilesService.findByUserId(user.id);
     if (!profile) {
@@ -513,6 +591,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update work preferences' })
+  @ApiResponse({ status: 200, description: 'Work preferences updated.', type: WorkPreferences })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async updateWorkPreferences(
     @CurrentUser() user: User,
     @Body() dto: UpdateWorkPreferencesDto,
@@ -529,6 +609,8 @@ export class ProfilesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get public profile by ID' })
   @ApiParam({ name: 'id', description: 'Profile ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Public profile returned.' })
+  @ApiResponse({ status: 404, description: 'Profile not found or is not public.' })
   async getPublicProfile(@Param('id') id: string): Promise<Partial<Profile>> {
     const profile = await this.profilesService.findPublicProfile(id);
     if (!profile) {

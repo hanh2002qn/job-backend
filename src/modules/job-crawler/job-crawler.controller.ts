@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Patch, Param, UseGuards, Body } from '@nestjs/common';
 import { JobCrawlerService } from './job-crawler.service';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UpdateCrawlerConfigDto } from './dto/update-crawler-config.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -19,6 +19,9 @@ export class JobCrawlerController {
   @Get('health')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get crawler health status (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Crawler health status returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
   async getHealth(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     sources: Record<
@@ -41,6 +44,7 @@ export class JobCrawlerController {
   @Get('configs')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all crawler configurations (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Crawler configs returned.', type: [CrawlerConfig] })
   async getConfigs(): Promise<CrawlerConfig[]> {
     return this.crawlerService.getConfigs();
   }
@@ -48,6 +52,9 @@ export class JobCrawlerController {
   @Patch('configs/:source')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a specific crawler configuration (Admin only)' })
+  @ApiParam({ name: 'source', description: 'Crawler source name (e.g., topcv)' })
+  @ApiResponse({ status: 200, description: 'Crawler config updated.', type: CrawlerConfig })
+  @ApiResponse({ status: 404, description: 'Config not found.' })
   async updateConfig(
     @Param('source') source: string,
     @Body() updateDto: UpdateCrawlerConfigDto,
@@ -58,6 +65,7 @@ export class JobCrawlerController {
   @Post('trigger')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Trigger job crawler manually (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Crawler triggered in background.' })
   triggerCrawl(): { message: string } {
     // Trigger in background
     void this.crawlerService.handleCron();
@@ -67,6 +75,7 @@ export class JobCrawlerController {
   @Post('test')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Test crawler with specific URL' })
+  @ApiResponse({ status: 201, description: 'Test crawl executed.' })
   async testCrawl(@Body() body: { url: string }): Promise<{ message: string }> {
     await this.crawlerService.crawlSpecificUrl(body.url);
     return { message: 'Test crawl executed' };

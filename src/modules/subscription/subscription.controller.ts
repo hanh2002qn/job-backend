@@ -8,7 +8,7 @@ import {
   Req,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { SubscriptionService } from './subscription.service';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
@@ -26,6 +26,8 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create Stripe Checkout Session' })
+  @ApiResponse({ status: 201, description: 'Checkout session created.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   createCheckoutSession(
     @CurrentUser() user: User,
     @Body() createDto: CreateCheckoutSessionDto,
@@ -35,6 +37,8 @@ export class SubscriptionController {
 
   @Post('webhook')
   @ApiOperation({ summary: 'Stripe Webhook Handler' })
+  @ApiResponse({ status: 200, description: 'Webhook processed.' })
+  @ApiResponse({ status: 400, description: 'Missing signature or invalid payload.' })
   async handleWebhook(
     @Req() req: Request,
     @Headers('stripe-signature') signature: string,
@@ -51,6 +55,8 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cancel subscription at period end' })
+  @ApiResponse({ status: 201, description: 'Subscription cancelled at period end.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   cancelSubscription(@CurrentUser() user: User): Promise<{ message: string; sub: Subscription }> {
     return this.subscriptionService.cancelSubscription(user.id);
   }
@@ -59,6 +65,8 @@ export class SubscriptionController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current subscription status' })
+  @ApiResponse({ status: 200, description: 'Subscription status returned.', type: Subscription })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getMySubscription(@CurrentUser() user: User): Promise<Subscription | null> {
     return this.subscriptionService.getSubscription(user.id);
   }

@@ -4,14 +4,15 @@ This document provides frontend integration details for the **admin/crawler** mo
 
 ## Endpoints
 
-### Trigger job crawler manually
-
+### Trigger job crawler manually 
 > **POST** `/api/admin/crawler/trigger`
 
 🛡️ **Requires Authentication**: Yes (Bearer Token)
 
 #### Responses
-
-**201**:
+**201**: Crawler triggered or platform unsupported.
+**401**: Unauthorized.
+**403**: Forbidden. Admin role required.
 
 ---
+

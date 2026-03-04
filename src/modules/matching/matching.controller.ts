@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { MatchingService, FeedItem } from './matching.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
@@ -28,6 +28,8 @@ export class MatchingController {
 
   @Get('jobs')
   @ApiOperation({ summary: 'Get jobs matched to user profile (rule-based)' })
+  @ApiResponse({ status: 200, description: 'Matched jobs returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getMatchedJobs(@CurrentUser() user: User): Promise<
     {
       matchScore: number;
@@ -89,6 +91,8 @@ export class MatchingController {
   @UseGuards(AiFeatureGuard)
   @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get AI-powered job recommendations based on profile' })
+  @ApiResponse({ status: 200, description: 'AI recommendations returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getAIRecommendations(@CurrentUser() user: User): Promise<
     | { recommendations: never[]; message: string; profileCompleteness?: undefined }
     | {
@@ -102,6 +106,8 @@ export class MatchingController {
 
   @Get('feed')
   @ApiOperation({ summary: 'Get personalized job feed (AI + Rule-based)' })
+  @ApiResponse({ status: 200, description: 'Personalized job feed returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getFeed(
     @CurrentUser() user: User,
     @Query('page') page = '1',
@@ -117,6 +123,9 @@ export class MatchingController {
   @UseGuards(AiFeatureGuard)
   @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get detailed AI semantic matching analysis' })
+  @ApiParam({ name: 'jobId', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Semantic match analysis returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getSemanticMatch(
     @CurrentUser() user: User,
     @Param('jobId') jobId: string,
@@ -128,6 +137,9 @@ export class MatchingController {
   @ApiOperation({
     summary: 'Get detailed rule-based matching analysis',
   })
+  @ApiParam({ name: 'jobId', description: 'Job ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Rule-based match analysis returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getJobDetail(
     @CurrentUser() user: User,
     @Param('jobId') jobId: string,

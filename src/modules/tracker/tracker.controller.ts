@@ -9,7 +9,14 @@ import {
   Query,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { TrackerService } from './tracker.service';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { CreateInterviewDto } from './dto/create-interview.dto';
@@ -34,6 +41,8 @@ export class TrackerController {
 
   @Post()
   @ApiOperation({ summary: 'Track a new job' })
+  @ApiResponse({ status: 201, description: 'Job tracker created.', type: JobTracker })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   create(
     @CurrentUser() user: User,
     @Body() createTrackerDto: CreateTrackerDto,
@@ -43,6 +52,8 @@ export class TrackerController {
 
   @Get()
   @ApiOperation({ summary: 'Get all tracked jobs with filtering and sorting' })
+  @ApiResponse({ status: 200, description: 'List of tracked jobs.', type: [JobTracker] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiQuery({ name: 'status', enum: ApplicationStatus, required: false })
   @ApiQuery({ name: 'company', required: false })
   @ApiQuery({ name: 'title', required: false })
@@ -67,6 +78,12 @@ export class TrackerController {
 
   @Get('interviews/calendar')
   @ApiOperation({ summary: 'Get all scheduled interviews' })
+  @ApiResponse({
+    status: 200,
+    description: 'Interview calendar returned.',
+    type: [InterviewSchedule],
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getCalendar(@CurrentUser() user: User): Promise<InterviewSchedule[]> {
     return this.trackerService.findAllInterviews(user.id);
   }
@@ -75,6 +92,9 @@ export class TrackerController {
   @UseGuards(AiFeatureGuard)
   @AiFeature('interview_prep')
   @ApiOperation({ summary: 'Get AI preparation tips for an interview' })
+  @ApiParam({ name: 'id', description: 'Interview ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Interview preparation tips returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getPrepTips(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -84,12 +104,17 @@ export class TrackerController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Get application statistics' })
+  @ApiResponse({ status: 200, description: 'Application statistics returned.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getStats(@CurrentUser() user: User): Promise<Record<string, number>> {
     return this.trackerService.getStats(user.id);
   }
 
   @Post(':id/interviews')
   @ApiOperation({ summary: 'Schedule an interview for a tracked job' })
+  @ApiParam({ name: 'id', description: 'Tracker ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Interview scheduled.', type: InterviewSchedule })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   addInterview(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -100,6 +125,8 @@ export class TrackerController {
 
   @Post('bulk-status')
   @ApiOperation({ summary: 'Bulk update status for multiply trackers' })
+  @ApiResponse({ status: 201, description: 'Status updated for specified trackers.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   bulkUpdateStatus(
     @CurrentUser() user: User,
     @Body() dto: BulkUpdateStatusDto,
@@ -109,6 +136,9 @@ export class TrackerController {
 
   @Post(':id/notes')
   @ApiOperation({ summary: 'Add a note to a tracker' })
+  @ApiParam({ name: 'id', description: 'Tracker ID (UUID)' })
+  @ApiResponse({ status: 201, description: 'Note added.', type: TrackerNote })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   addNote(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -119,12 +149,18 @@ export class TrackerController {
 
   @Get(':id/notes')
   @ApiOperation({ summary: 'Get all notes for a tracker' })
+  @ApiParam({ name: 'id', description: 'Tracker ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Notes returned.', type: [TrackerNote] })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getNotes(@CurrentUser() user: User, @Param('id') id: string): Promise<TrackerNote[]> {
     return this.trackerService.getTrackerNotes(user.id, id);
   }
 
   @Patch('notes/:noteId')
   @ApiOperation({ summary: 'Update a note' })
+  @ApiParam({ name: 'noteId', description: 'Note ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Note updated.', type: TrackerNote })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   updateNote(
     @CurrentUser() user: User,
     @Param('noteId') noteId: string,
@@ -135,6 +171,9 @@ export class TrackerController {
 
   @Delete('notes/:noteId')
   @ApiOperation({ summary: 'Delete a note' })
+  @ApiParam({ name: 'noteId', description: 'Note ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Note deleted.', type: TrackerNote })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   deleteNote(@CurrentUser() user: User, @Param('noteId') noteId: string): Promise<TrackerNote> {
     return this.trackerService.deleteNote(user.id, noteId);
   }
@@ -158,6 +197,9 @@ export class TrackerController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update tracker entry (status, notes, cv, etc.)' })
+  @ApiParam({ name: 'id', description: 'Tracker ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Tracker updated.', type: JobTracker })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   update(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -168,6 +210,9 @@ export class TrackerController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remove a job from tracking list' })
+  @ApiParam({ name: 'id', description: 'Tracker ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Tracker removed.', type: JobTracker })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   remove(@CurrentUser() user: User, @Param('id') id: string): Promise<JobTracker> {
     return this.trackerService.remove(id, user.id);
   }
