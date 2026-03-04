@@ -21,13 +21,9 @@ import { ExportModule } from './modules/export/export.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
-import { ExtensionModule } from './modules/extension/extension.module';
 import { AdminModule } from './modules/admin/admin.module';
-import { AIModule } from './modules/ai/ai.module';
 import { AiFeatureModule } from './modules/ai/ai-feature.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
-import { MockInterviewModule } from './modules/mock-interview/mock-interview.module';
-import { SkillRoadmapModule } from './modules/skill-roadmap/skill-roadmap.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
@@ -80,12 +76,8 @@ import { MaintenanceMiddleware } from './common/middleware/maintenance.middlewar
     SubscriptionModule,
     MailModule,
     JobAlertModule,
-    ExtensionModule,
     AdminModule,
-    AIModule,
     AiFeatureModule,
-    MockInterviewModule,
-    SkillRoadmapModule,
     RedisModule,
     NotificationsModule,
     FeedbackModule,
