@@ -2,11 +2,14 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
 import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
-
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { createHash } from 'crypto';
+
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
+import { CacheService } from '../../common/redis/cache.service';
+import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import type { LlmService } from './llm.interface';
 
 @Injectable()
@@ -17,6 +20,7 @@ export class GroqService implements LlmService, OnModuleInit {
 
   constructor(
     private configService: ConfigService,
+    private cacheService: CacheService,
     @InjectRepository(Prompt)
     private promptRepository: Repository<Prompt>,
     @InjectRepository(AiUsage)
@@ -36,60 +40,82 @@ export class GroqService implements LlmService, OnModuleInit {
     this.logger.log(`GroqService initialized with model: ${this.model}`);
   }
 
+  private generateCacheKey(prompt: string, systemInstruction?: string): string {
+    const hash = createHash('md5')
+      .update(prompt + (systemInstruction || ''))
+      .digest('hex');
+    return this.cacheService.buildKey(CACHE_KEYS.AI_RESPONSE, hash);
+  }
+
   async generateContent(
     prompt: string,
     systemInstruction?: string,
     userId?: string,
     feature: string = 'unknown',
   ): Promise<string> {
-    if (!this.client) {
-      throw new Error('Groq API is not configured.');
-    }
+    const cacheKey = this.generateCacheKey(prompt, systemInstruction);
 
-    try {
-      const messages: ChatCompletionMessageParam[] = [];
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        if (!this.client) {
+          throw new Error('Groq API is not configured.');
+        }
 
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction });
-      }
+        try {
+          const messages: ChatCompletionMessageParam[] = [];
 
-      messages.push({ role: 'user', content: prompt });
+          if (systemInstruction) {
+            messages.push({ role: 'system', content: systemInstruction });
+          }
 
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages,
-        temperature: 0.7,
-      });
+          messages.push({ role: 'user', content: prompt });
 
-      const text = completion.choices[0]?.message?.content || '';
+          const completion = await this.client.chat.completions.create({
+            model: this.model,
+            messages,
+            temperature: 0.7,
+          });
 
-      // Log usage
-      if (userId && completion.usage) {
-        await this.aiUsageRepository.save({
-          userId,
-          feature,
-          model: this.model,
-          inputTokens: completion.usage.prompt_tokens,
-          outputTokens: completion.usage.completion_tokens,
-          totalTokens: completion.usage.total_tokens,
-        });
-      }
+          const text = completion.choices[0]?.message?.content || '';
 
-      return text;
-    } catch (error) {
-      this.logger.error('Error generating content from Groq', error);
-      throw error;
-    }
+          // Log usage
+          if (userId && completion.usage) {
+            await this.aiUsageRepository.save({
+              userId,
+              feature,
+              model: this.model,
+              inputTokens: completion.usage.prompt_tokens,
+              outputTokens: completion.usage.completion_tokens,
+              totalTokens: completion.usage.total_tokens,
+            });
+          }
+
+          return text;
+        } catch (error) {
+          this.logger.error('Error generating content from Groq', error);
+          throw error;
+        }
+      },
+      CACHE_TTL.AI_RESPONSE,
+    );
   }
 
   async getPromptContent(key: string, defaultContent: string): Promise<string> {
-    try {
-      const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
-      return prompt ? prompt.content : defaultContent;
-    } catch {
-      this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
-      return defaultContent;
-    }
+    const cacheKey = this.cacheService.buildKey(CACHE_KEYS.AI_PROMPT, key);
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        try {
+          const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
+          return prompt ? prompt.content : defaultContent;
+        } catch {
+          this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
+          return defaultContent;
+        }
+      },
+      CACHE_TTL.AI_PROMPT,
+    );
   }
 
   async generateJson<T>(
@@ -98,56 +124,64 @@ export class GroqService implements LlmService, OnModuleInit {
     userId?: string,
     feature: string = 'unknown',
   ): Promise<T> {
-    if (!this.client) {
-      throw new Error('Groq API is not configured.');
-    }
+    const cacheKey = this.generateCacheKey(prompt + ':json', systemInstruction);
 
-    try {
-      const messages: ChatCompletionMessageParam[] = [];
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        if (!this.client) {
+          throw new Error('Groq API is not configured.');
+        }
 
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction });
-      }
+        try {
+          const messages: ChatCompletionMessageParam[] = [];
 
-      messages.push({
-        role: 'user',
-        content: `${prompt}\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no explanation.`,
-      });
+          if (systemInstruction) {
+            messages.push({ role: 'system', content: systemInstruction });
+          }
 
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages,
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
-      });
+          messages.push({
+            role: 'user',
+            content: `${prompt}\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no explanation.`,
+          });
 
-      const text = completion.choices[0]?.message?.content || '';
+          const completion = await this.client.chat.completions.create({
+            model: this.model,
+            messages,
+            temperature: 0.3,
+            response_format: { type: 'json_object' },
+          });
 
-      // Log usage
-      if (userId && completion.usage) {
-        await this.aiUsageRepository.save({
-          userId,
-          feature,
-          model: this.model,
-          inputTokens: completion.usage.prompt_tokens,
-          outputTokens: completion.usage.completion_tokens,
-          totalTokens: completion.usage.total_tokens,
-        });
-      }
+          const text = completion.choices[0]?.message?.content || '';
 
-      // Parse JSON
-      let cleaned = text.trim();
-      if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '');
-      } else if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```/, '').replace(/```$/, '');
-      }
+          // Log usage
+          if (userId && completion.usage) {
+            await this.aiUsageRepository.save({
+              userId,
+              feature,
+              model: this.model,
+              inputTokens: completion.usage.prompt_tokens,
+              outputTokens: completion.usage.completion_tokens,
+              totalTokens: completion.usage.total_tokens,
+            });
+          }
 
-      return JSON.parse(cleaned) as T;
-    } catch (error) {
-      this.logger.error('Failed to generate/parse JSON from Groq', error);
-      throw new Error('Invalid AI response format');
-    }
+          // Parse JSON
+          let cleaned = text.trim();
+          if (cleaned.startsWith('```json')) {
+            cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '');
+          } else if (cleaned.startsWith('```')) {
+            cleaned = cleaned.replace(/^```/, '').replace(/```$/, '');
+          }
+
+          return JSON.parse(cleaned) as T;
+        } catch (error) {
+          this.logger.error('Failed to generate/parse JSON from Groq', error);
+          throw new Error('Invalid AI response format');
+        }
+      },
+      CACHE_TTL.AI_RESPONSE,
+    );
   }
 
   async *generateStream(prompt: string, systemInstruction?: string): AsyncIterable<string> {

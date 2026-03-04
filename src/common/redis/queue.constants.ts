@@ -42,6 +42,8 @@ export const CACHE_KEYS = {
   MATCHING: 'matching',
   USER_STATS: 'user:stats',
   PROFILE: 'profile',
+  AI_RESPONSE: 'ai:response',
+  AI_PROMPT: 'ai:prompt',
 } as const;
 
 // Cache TTL in milliseconds
@@ -51,6 +53,8 @@ export const CACHE_TTL = {
   MATCHING: 3600 * 1000, // 1 hour
   USER_STATS: 600 * 1000, // 10 minutes
   PROFILE: 1800 * 1000, // 30 minutes
+  AI_RESPONSE: 86400 * 1000, // 24 hours
+  AI_PROMPT: 3600 * 1000, // 1 hour
 } as const;
 
 // Types

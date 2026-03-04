@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminDashboardService } from '../services/admin-dashboard.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -12,16 +13,19 @@ import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 @Controller('admin/dashboard')
+@UseInterceptors(CacheInterceptor)
 export class AdminDashboardController {
   constructor(private readonly dashboardService: AdminDashboardService) {}
 
   @Get('stats')
+  @CacheTTL(600) // 10 minutes
   @ApiOperation({ summary: 'Get dashboard statistics' })
   async getStats() {
     return this.dashboardService.getStats();
   }
 
   @Get('chart/users')
+  @CacheTTL(3600) // 1 hour
   @ApiOperation({ summary: 'Get user growth chart data (last 30 days)' })
   async getUserGrowth() {
     return this.dashboardService.getUserGrowth();
@@ -36,6 +40,7 @@ export class AdminDashboardController {
   }
 
   @Get('transactions')
+  @CacheTTL(600) // 10 minutes
   @ApiOperation({ summary: 'Get recent transactions (charges)' })
   async getTransactions() {
     return this.dashboardService.getTransactions();

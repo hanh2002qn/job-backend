@@ -9,10 +9,15 @@ import { AiFeatureConfig } from './entities/ai-feature-config.entity';
 import { LLM_SERVICE } from './llm.interface';
 import { SettingsModule } from '../settings/settings.module';
 import { SettingsService } from '../settings/settings.service';
+import { RedisModule } from '../../common/redis/redis.module';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([Prompt, AiUsage, AiFeatureConfig]), SettingsModule],
+  imports: [
+    TypeOrmModule.forFeature([Prompt, AiUsage, AiFeatureConfig]),
+    SettingsModule,
+    RedisModule,
+  ],
   providers: [
     GeminiService,
     GroqService,

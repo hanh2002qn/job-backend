@@ -1,11 +1,14 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { createHash } from 'crypto';
+
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
+import { CacheService } from '../../common/redis/cache.service';
+import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import type { LlmService } from './llm.interface';
 
 @Injectable()
@@ -16,6 +19,7 @@ export class GeminiService implements LlmService, OnModuleInit {
 
   constructor(
     private configService: ConfigService,
+    private cacheService: CacheService,
     @InjectRepository(Prompt)
     private promptRepository: Repository<Prompt>,
     @InjectRepository(AiUsage)
@@ -36,54 +40,76 @@ export class GeminiService implements LlmService, OnModuleInit {
     });
   }
 
+  private generateCacheKey(prompt: string, systemInstruction?: string): string {
+    const hash = createHash('md5')
+      .update(prompt + (systemInstruction || ''))
+      .digest('hex');
+    return this.cacheService.buildKey(CACHE_KEYS.AI_RESPONSE, hash);
+  }
+
   async generateContent(
     prompt: string,
     systemInstruction?: string,
     userId?: string,
     feature: string = 'unknown',
   ): Promise<string> {
-    if (!this.genAI) {
-      throw new Error('Gemini API is not configured.');
-    }
-    try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-flash-latest',
-        systemInstruction,
-      });
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+    const cacheKey = this.generateCacheKey(prompt, systemInstruction);
 
-      // Log Usage
-      if (userId) {
-        const usage = result.response.usageMetadata;
-        if (usage) {
-          await this.aiUsageRepository.save({
-            userId,
-            feature,
-            model: 'gemini-flash-latest',
-            inputTokens: usage.promptTokenCount,
-            outputTokens: usage.candidatesTokenCount,
-            totalTokens: usage.totalTokenCount,
-          });
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        if (!this.genAI) {
+          throw new Error('Gemini API is not configured.');
         }
-      }
+        try {
+          const model = this.genAI.getGenerativeModel({
+            model: 'gemini-flash-latest',
+            systemInstruction,
+          });
+          const result = await model.generateContent(prompt);
+          const response = result.response;
+          const text = response.text();
 
-      return text;
-    } catch (error) {
-      this.logger.error('Error generating content from Gemini', error);
-      throw error;
-    }
+          // Log Usage
+          if (userId) {
+            const usage = result.response.usageMetadata;
+            if (usage) {
+              await this.aiUsageRepository.save({
+                userId,
+                feature,
+                model: 'gemini-flash-latest',
+                inputTokens: usage.promptTokenCount,
+                outputTokens: usage.candidatesTokenCount,
+                totalTokens: usage.totalTokenCount,
+              });
+            }
+          }
+
+          return text;
+        } catch (error) {
+          this.logger.error('Error generating content from Gemini', error);
+          throw error;
+        }
+      },
+      CACHE_TTL.AI_RESPONSE,
+    );
   }
 
   async getPromptContent(key: string, defaultContent: string): Promise<string> {
-    try {
-      const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
-      return prompt ? prompt.content : defaultContent;
-    } catch (_error) {
-      this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
-      return defaultContent;
-    }
+    const cacheKey = this.cacheService.buildKey(CACHE_KEYS.AI_PROMPT, key);
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        try {
+          const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
+          return prompt ? prompt.content : defaultContent;
+        } catch (_error) {
+          this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
+          return defaultContent;
+        }
+      },
+      CACHE_TTL.AI_PROMPT,
+    );
   }
 
   async generateJson<T>(

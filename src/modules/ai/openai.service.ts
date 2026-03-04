@@ -3,8 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { createHash } from 'crypto';
+
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
+import { CacheService } from '../../common/redis/cache.service';
+import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import type { LlmService } from './llm.interface';
 
 @Injectable()
@@ -15,6 +19,7 @@ export class OpenAIService implements LlmService, OnModuleInit {
 
   constructor(
     private configService: ConfigService,
+    private cacheService: CacheService,
     @InjectRepository(Prompt)
     private promptRepository: Repository<Prompt>,
     @InjectRepository(AiUsage)
@@ -39,57 +44,79 @@ export class OpenAIService implements LlmService, OnModuleInit {
     });
   }
 
+  private generateCacheKey(prompt: string, systemInstruction?: string): string {
+    const hash = createHash('md5')
+      .update(prompt + (systemInstruction || ''))
+      .digest('hex');
+    return this.cacheService.buildKey(CACHE_KEYS.AI_RESPONSE, hash);
+  }
+
   async generateContent(
     prompt: string,
     systemInstruction?: string,
     userId?: string,
     feature: string = 'unknown',
   ): Promise<string> {
-    if (!this.openai) {
-      throw new Error('OpenAI API is not configured.');
-    }
-    try {
-      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction });
-      }
-      messages.push({ role: 'user', content: prompt });
+    const cacheKey = this.generateCacheKey(prompt, systemInstruction);
 
-      const response = await this.openai.chat.completions.create({
-        model: this.defaultModel,
-        messages,
-      });
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        if (!this.openai) {
+          throw new Error('OpenAI API is not configured.');
+        }
+        try {
+          const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+          if (systemInstruction) {
+            messages.push({ role: 'system', content: systemInstruction });
+          }
+          messages.push({ role: 'user', content: prompt });
 
-      const message = response.choices[0]?.message;
-      const text = message?.content || '';
+          const response = await this.openai.chat.completions.create({
+            model: this.defaultModel,
+            messages,
+          });
 
-      // Log Usage
-      if (userId && response.usage) {
-        await this.aiUsageRepository.save({
-          userId,
-          feature,
-          model: this.defaultModel,
-          inputTokens: response.usage.prompt_tokens,
-          outputTokens: response.usage.completion_tokens,
-          totalTokens: response.usage.total_tokens,
-        });
-      }
+          const message = response.choices[0]?.message;
+          const text = message?.content || '';
 
-      return text;
-    } catch (error) {
-      this.logger.error('Error generating content from OpenAI', error);
-      throw error;
-    }
+          // Log Usage
+          if (userId && response.usage) {
+            await this.aiUsageRepository.save({
+              userId,
+              feature,
+              model: this.defaultModel,
+              inputTokens: response.usage.prompt_tokens,
+              outputTokens: response.usage.completion_tokens,
+              totalTokens: response.usage.total_tokens,
+            });
+          }
+
+          return text;
+        } catch (error) {
+          this.logger.error('Error generating content from OpenAI', error);
+          throw error;
+        }
+      },
+      CACHE_TTL.AI_RESPONSE,
+    );
   }
 
   async getPromptContent(key: string, defaultContent: string): Promise<string> {
-    try {
-      const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
-      return prompt ? prompt.content : defaultContent;
-    } catch (_error) {
-      this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
-      return defaultContent;
-    }
+    const cacheKey = this.cacheService.buildKey(CACHE_KEYS.AI_PROMPT, key);
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        try {
+          const prompt = await this.promptRepository.findOne({ where: { key, isActive: true } });
+          return prompt ? prompt.content : defaultContent;
+        } catch (_error) {
+          this.logger.warn(`Failed to fetch prompt ${key}, using default.`);
+          return defaultContent;
+        }
+      },
+      CACHE_TTL.AI_PROMPT,
+    );
   }
 
   async generateJson<T>(
@@ -98,42 +125,50 @@ export class OpenAIService implements LlmService, OnModuleInit {
     userId?: string,
     feature: string = 'unknown',
   ): Promise<T> {
-    if (!this.openai) {
-      throw new Error('OpenAI API is not configured.');
-    }
-    try {
-      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction });
-      }
-      messages.push({ role: 'user', content: prompt });
+    const cacheKey = this.generateCacheKey(prompt + ':json', systemInstruction);
 
-      const response = await this.openai.chat.completions.create({
-        model: this.defaultModel,
-        messages,
-        response_format: { type: 'json_object' },
-      });
+    return this.cacheService.wrap(
+      cacheKey,
+      async () => {
+        if (!this.openai) {
+          throw new Error('OpenAI API is not configured.');
+        }
+        try {
+          const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+          if (systemInstruction) {
+            messages.push({ role: 'system', content: systemInstruction });
+          }
+          messages.push({ role: 'user', content: prompt });
 
-      const messageContent = response.choices[0]?.message?.content || '';
-      const text = messageContent.trim();
+          const response = await this.openai.chat.completions.create({
+            model: this.defaultModel,
+            messages,
+            response_format: { type: 'json_object' },
+          });
 
-      // Log Usage
-      if (userId && response.usage) {
-        await this.aiUsageRepository.save({
-          userId,
-          feature,
-          model: this.defaultModel,
-          inputTokens: response.usage.prompt_tokens,
-          outputTokens: response.usage.completion_tokens,
-          totalTokens: response.usage.total_tokens,
-        });
-      }
+          const messageContent = response.choices[0]?.message?.content || '';
+          const text = messageContent.trim();
 
-      return JSON.parse(text) as T;
-    } catch (error) {
-      this.logger.error('Failed to parse OpenAI response as JSON', error);
-      throw new Error('Invalid AI response format');
-    }
+          // Log Usage
+          if (userId && response.usage) {
+            await this.aiUsageRepository.save({
+              userId,
+              feature,
+              model: this.defaultModel,
+              inputTokens: response.usage.prompt_tokens,
+              outputTokens: response.usage.completion_tokens,
+              totalTokens: response.usage.total_tokens,
+            });
+          }
+
+          return JSON.parse(text) as T;
+        } catch (error) {
+          this.logger.error('Failed to parse OpenAI response as JSON', error);
+          throw new Error('Invalid AI response format');
+        }
+      },
+      CACHE_TTL.AI_RESPONSE,
+    );
   }
 
   async *generateStream(prompt: string, systemInstruction?: string): AsyncIterable<string> {

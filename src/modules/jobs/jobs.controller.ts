@@ -8,7 +8,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JobsService } from './jobs.service';
 import { JobSearchDto } from './dto/job-search.dto';
@@ -19,10 +21,12 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('jobs')
 @Controller('jobs')
+@UseInterceptors(CacheInterceptor)
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
   @Get('search')
+  @CacheTTL(300) // 5 minutes
   @ApiOperation({ summary: 'Search jobs with full-text search' })
   async search(@Query() query: JobSearchDto) {
     return this.jobsService.findAll(query);
@@ -37,6 +41,7 @@ export class JobsController {
   }
 
   @Get(':id')
+  @CacheTTL(1800) // 30 minutes
   @ApiOperation({ summary: 'Get job detail' })
   async findOne(@Param('id') id: string) {
     return this.jobsService.findOne(id);
