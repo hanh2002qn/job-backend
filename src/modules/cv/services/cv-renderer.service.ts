@@ -12,6 +12,17 @@ export class CvRendererService {
     return templateFn(content);
   }
 
+  /**
+   * Get list of available templates
+   */
+  getAvailableTemplates() {
+    return [
+      { id: 'modern', name: 'Modern ATS', type: 'free' },
+      { id: 'professional', name: 'Professional', type: 'premium' },
+      { id: 'creative', name: 'Creative', type: 'premium' },
+    ];
+  }
+
   private getTemplate(name: string): HandlebarsTemplateDelegate {
     // Simple inline templates for now. In real apps, load from files.
     let source = '';

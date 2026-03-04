@@ -5,7 +5,6 @@ import { TrackerController } from './tracker.controller';
 import { JobTracker } from './entities/job-tracker.entity';
 import { InterviewSchedule } from './entities/interview-schedule.entity';
 import { TrackerNote } from './entities/tracker-note.entity';
-import { GoogleCalendarService } from './services/google-calendar.service';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { JobsModule } from '../jobs/jobs.module';
 import { MailModule } from '../mail/mail.module';
@@ -22,7 +21,7 @@ import { UserCredits } from '../users/entities/user-credits.entity';
     AIModule,
   ],
   controllers: [TrackerController],
-  providers: [TrackerService, GoogleCalendarService],
+  providers: [TrackerService /*, GoogleCalendarService */],
   exports: [TrackerService],
 })
 export class TrackerModule {}

@@ -6,6 +6,7 @@ import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
 export interface GoogleProfile {
   googleId: string;
   email: string;
+  isEmailVerified: boolean;
   firstName: string;
   lastName: string;
   avatarUrl: string;
@@ -33,13 +34,15 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const { id, name, emails, photos } = profile;
 
     const emailObj = emails?.[0];
-    if (!emailObj?.verified) {
+    const isVerified = emailObj?.verified === true;
+    if (!isVerified) {
       return done(new UnauthorizedException('Google email not verified'), undefined);
     }
 
     const user: GoogleProfile = {
       googleId: id,
-      email: emailObj.value || '',
+      email: emailObj?.value || '',
+      isEmailVerified: isVerified,
       firstName: name?.givenName || '',
       lastName: name?.familyName || '',
       avatarUrl: photos?.[0]?.value || '',

@@ -124,6 +124,7 @@ export class TrackerController {
     return this.trackerService.deleteNote(user.id, noteId);
   }
 
+  /*
   @Post('interviews/:id/sync-calendar')
   @ApiOperation({ summary: 'Sync interview to Google Calendar' })
   async syncCalendar(
@@ -138,6 +139,7 @@ export class TrackerController {
     }
     return this.trackerService.syncInterviewToCalendar(user.id, id, accessToken);
   }
+  */
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update tracker entry (status, notes, cv, etc.)' })

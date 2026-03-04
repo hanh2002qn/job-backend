@@ -10,7 +10,6 @@ import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
-import { PdfService } from './services/pdf.service';
 import { CvRendererService } from './services/cv-renderer.service';
 import type { CvContent } from './interfaces/cv.interface';
 
@@ -27,7 +26,6 @@ export class CvService {
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
     @Inject(LLM_SERVICE) private llmService: LlmService,
-    private pdfService: PdfService,
     private cvRendererService: CvRendererService,
   ) {}
 
@@ -203,6 +201,10 @@ export class CvService {
     });
   }
 
+  getTemplates() {
+    return this.cvRendererService.getAvailableTemplates();
+  }
+
   async findOne(userId: string, id: string): Promise<CV> {
     const cv = await this.cvRepository.findOne({
       where: { id, userId },
@@ -282,14 +284,11 @@ export class CvService {
     return this.cvRepository.save(cv);
   }
 
-  async downloadPdf(userId: string, cvId: string): Promise<Buffer> {
+  async getHtml(userId: string, cvId: string): Promise<string> {
     const cv = await this.cvRepository.findOne({ where: { id: cvId, userId } });
     if (!cv) throw new NotFoundException('CV not found');
 
-    // Render HTML
-    const html = this.cvRendererService.render(cv.content, cv.template || 'modern');
-
-    // Generate PDF
-    return this.pdfService.generatePdf(html);
+    // Render HTML and return string directly
+    return this.cvRendererService.render(cv.content, cv.template || 'modern');
   }
 }

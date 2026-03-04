@@ -6,6 +6,7 @@ import { Strategy } from 'passport-apple';
 export interface AppleProfile {
   appleId: string;
   email: string;
+  isEmailVerified: boolean;
   firstName?: string;
   lastName?: string;
 }
@@ -37,6 +38,7 @@ export class AppleStrategy extends PassportStrategy(Strategy, 'apple') {
     const user: AppleProfile = {
       appleId: profile.id,
       email: profile.email,
+      isEmailVerified: true,
       firstName: profile.name?.firstName,
       lastName: profile.name?.lastName,
     };

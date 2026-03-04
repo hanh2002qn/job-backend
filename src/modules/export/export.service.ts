@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CvService } from '../cv/cv.service';
 import { ExportCvDto, ExportFormat } from './dto/export-cv.dto';
-import { PdfService } from '../cv/services/pdf.service';
 import { CvRendererService } from '../cv/services/cv-renderer.service';
 import { TrackerService } from '../tracker/tracker.service';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
@@ -17,7 +16,6 @@ interface CvForExport {
 export class ExportService {
   constructor(
     private readonly cvService: CvService,
-    private readonly pdfService: PdfService,
     private readonly cvRendererService: CvRendererService,
     private readonly trackerService: TrackerService,
   ) {}
@@ -27,11 +25,10 @@ export class ExportService {
 
     if (exportDto.format === ExportFormat.PDF) {
       const html = this.cvRendererService.render(cv.content, cv.template);
-      const buffer = await this.pdfService.generatePdf(html);
       return {
-        buffer,
-        filename: `cv-${cv.id}.pdf`,
-        contentType: 'application/pdf',
+        buffer: Buffer.from(html),
+        filename: `cv-${cv.id}.html`,
+        contentType: 'text/html',
       };
     } else {
       const buffer = await this.generateDocx(cv);

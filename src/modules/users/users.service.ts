@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -6,6 +6,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export interface OAuthUserData {
   email: string;
+  isEmailVerified: boolean;
   googleId?: string;
   githubId?: string;
   appleId?: string;
@@ -106,6 +107,12 @@ export class UsersService {
     // 2. Try to find by email and link the account
     const existingByEmail = await this.findOneByEmail(oauthData.email);
     if (existingByEmail) {
+      if (!oauthData.isEmailVerified) {
+        throw new UnauthorizedException(
+          'Please verify your email with the provider before linking to an existing account.',
+        );
+      }
+
       // Link OAuth account to existing user
       if (oauthData.googleId) existingByEmail.googleId = oauthData.googleId;
       if (oauthData.githubId) existingByEmail.githubId = oauthData.githubId;

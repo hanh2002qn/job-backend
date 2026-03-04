@@ -199,22 +199,90 @@ export class JobNormalizationService {
       loc.includes('hồ chí minh') ||
       loc.includes('hcm') ||
       loc.includes('sài gòn') ||
-      loc.includes('district 1') ||
-      loc.includes('quận 1')
+      loc.includes('ho chi minh')
     )
       return City.HO_CHI_MINH;
-    if (
-      loc.includes('hà nội') ||
-      loc.includes('hn') ||
-      loc.includes('ba đình') ||
-      loc.includes('cầu giấy')
-    )
+    if (loc.includes('hà nội') || loc.includes('hanoi') || loc.includes('ha noi'))
       return City.HA_NOI;
-    if (loc.includes('đà nẵng') || loc.includes('dn')) return City.DA_NANG;
-    if (loc.includes('cần thơ')) return City.CAN_THO;
-    if (loc.includes('hải phòng')) return City.HAI_PHONG;
-    if (loc.includes('bình dương')) return City.BINH_DUONG;
-    if (loc.includes('đồng nai')) return City.DONG_NAI;
+    if (loc.includes('đà nẵng') || loc.includes('danang') || loc.includes('da nang'))
+      return City.DA_NANG;
+    if (loc.includes('cần thơ') || loc.includes('can tho')) return City.CAN_THO;
+    if (loc.includes('hải phòng') || loc.includes('hai phong')) return City.HAI_PHONG;
+    if (loc.includes('an giang') || loc.includes('angiang')) return City.AN_GIANG;
+    if (
+      loc.includes('bà rịa') ||
+      loc.includes('vũng tàu') ||
+      loc.includes('ba ria') ||
+      loc.includes('vung tau')
+    )
+      return City.BA_RIA_VUNG_TAU;
+    if (loc.includes('bắc giang') || loc.includes('bac giang')) return City.BAC_GIANG;
+    if (loc.includes('bắc kạn') || loc.includes('bac kan')) return City.BAC_KAN;
+    if (loc.includes('bạc liêu') || loc.includes('bac lieu')) return City.BAC_LIEU;
+    if (loc.includes('bắc ninh') || loc.includes('bac ninh')) return City.BAC_NINH;
+    if (loc.includes('bến tre') || loc.includes('ben tre')) return City.BEN_TRE;
+    if (loc.includes('bình định') || loc.includes('binh dinh')) return City.BINH_DINH;
+    if (loc.includes('bình dương') || loc.includes('binh duong')) return City.BINH_DUONG;
+    if (loc.includes('bình phước') || loc.includes('binh phuoc')) return City.BINH_PHUOC;
+    if (loc.includes('bình thuận') || loc.includes('binh thuan')) return City.BINH_THUAN;
+    if (loc.includes('cà mau') || loc.includes('ca mau')) return City.CA_MAU;
+    if (loc.includes('cao bằng') || loc.includes('cao bang')) return City.CAO_BANG;
+    if (loc.includes('đắk lắk') || loc.includes('dak lak')) return City.DAK_LAK;
+    if (loc.includes('đắk nông') || loc.includes('dak nong')) return City.DAK_NONG;
+    if (loc.includes('điện biên') || loc.includes('dien bien')) return City.DIEN_BIEN;
+    if (loc.includes('đồng nai') || loc.includes('dong nai')) return City.DONG_NAI;
+    if (loc.includes('đồng tháp') || loc.includes('dong thap')) return City.DONG_THAP;
+    if (loc.includes('gia lai') || loc.includes('gialai')) return City.GIA_LAI;
+    if (loc.includes('hà giang') || loc.includes('ha giang')) return City.HA_GIANG;
+    if (loc.includes('hà nam') || loc.includes('ha nam')) return City.HA_NAM;
+    if (loc.includes('hà tĩnh') || loc.includes('ha tinh')) return City.HA_TINH;
+    if (loc.includes('hải dương') || loc.includes('hai duong')) return City.HAI_DUONG;
+    if (loc.includes('hậu giang') || loc.includes('hau giang')) return City.HAU_GIANG;
+    if (loc.includes('hòa bình') || loc.includes('hoa binh')) return City.HOA_BINH;
+    if (loc.includes('hưng yên') || loc.includes('hung yen')) return City.HUNG_YEN;
+    if (loc.includes('khánh hòa') || loc.includes('khanh hoa') || loc.includes('nha trang'))
+      return City.KHANH_HOA;
+    if (loc.includes('kiên giang') || loc.includes('kien giang')) return City.KIEN_GIANG;
+    if (loc.includes('kon tum') || loc.includes('kontum')) return City.KON_TUM;
+    if (loc.includes('lai châu') || loc.includes('lai chau')) return City.LAI_CHAU;
+    if (
+      loc.includes('lâm đồng') ||
+      loc.includes('lam dong') ||
+      loc.includes('đà lạt') ||
+      loc.includes('da lat')
+    )
+      return City.LAM_DONG;
+    if (loc.includes('lạng sơn') || loc.includes('lang son')) return City.LANG_SON;
+    if (loc.includes('lào cai') || loc.includes('lao cai')) return City.LAO_CAI;
+    if (loc.includes('long an') || loc.includes('longan')) return City.LONG_AN;
+    if (loc.includes('nam định') || loc.includes('nam dinh')) return City.NAM_DINH;
+    if (loc.includes('nghệ an') || loc.includes('nghe an') || loc.includes('vinh'))
+      return City.NGHE_AN;
+    if (loc.includes('ninh bình') || loc.includes('ninh binh')) return City.NINH_BINH;
+    if (loc.includes('ninh thuận') || loc.includes('ninh thuan')) return City.NINH_THUAN;
+    if (loc.includes('phú thọ') || loc.includes('phu tho')) return City.PHU_THO;
+    if (loc.includes('phú yên') || loc.includes('phu yen')) return City.PHU_YEN;
+    if (loc.includes('quảng bình') || loc.includes('quang binh')) return City.QUANG_BINH;
+    if (loc.includes('quảng nam') || loc.includes('quang nam')) return City.QUANG_NAM;
+    if (loc.includes('quảng ngãi') || loc.includes('quang ngai')) return City.QUANG_NGAI;
+    if (loc.includes('quảng ninh') || loc.includes('quang ninh')) return City.QUANG_NINH;
+    if (loc.includes('quảng trị') || loc.includes('quang tri')) return City.QUANG_TRI;
+    if (loc.includes('sóc trăng') || loc.includes('soc trang')) return City.SOC_TRANG;
+    if (loc.includes('sơn la') || loc.includes('son la')) return City.SON_LA;
+    if (loc.includes('tây ninh') || loc.includes('tay ninh')) return City.TAY_NINH;
+    if (loc.includes('thái bình') || loc.includes('thai binh')) return City.THAI_BINH;
+    if (loc.includes('thái nguyên') || loc.includes('thai nguyen')) return City.THAI_NGUYEN;
+    if (loc.includes('thanh hóa') || loc.includes('thanh hoa')) return City.THANH_HOA;
+    if (loc.includes('thừa thiên huế') || loc.includes('hue') || loc.includes('huế'))
+      return City.THUA_THIEN_HUE;
+    if (loc.includes('tiền giang') || loc.includes('tien giang')) return City.TIEN_GIANG;
+    if (loc.includes('trà vinh') || loc.includes('tra vinh')) return City.TRA_VINH;
+    if (loc.includes('tuyên quang') || loc.includes('tuyen quang')) return City.TUYEN_QUANG;
+    if (loc.includes('vĩnh long') || loc.includes('vinh long')) return City.VINH_LONG;
+    if (loc.includes('vĩnh phúc') || loc.includes('vinh phuc')) return City.VINH_PHUC;
+    if (loc.includes('yên bái') || loc.includes('yen bai')) return City.YEN_BAI;
+    if (loc.includes('toàn quốc') || loc.includes('nationwide') || loc.includes('tất cả'))
+      return City.NATIONWIDE;
 
     return City.OTHER;
   }

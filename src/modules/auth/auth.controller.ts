@@ -124,6 +124,7 @@ export class AuthController {
     const profile = req.user as GoogleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,
+      isEmailVerified: profile.isEmailVerified,
       googleId: profile.googleId,
       avatarUrl: profile.avatarUrl,
       fullName: `${profile.firstName} ${profile.lastName}`.trim(),
@@ -152,6 +153,7 @@ export class AuthController {
     const profile = req.user as GithubProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,
+      isEmailVerified: profile.isEmailVerified,
       githubId: profile.githubId,
       avatarUrl: profile.avatarUrl,
       fullName: profile.displayName || profile.username,
@@ -180,6 +182,7 @@ export class AuthController {
     const profile = req.user as AppleProfile;
     const user = await this.usersService.findOrCreateOAuthUser({
       email: profile.email,
+      isEmailVerified: profile.isEmailVerified,
       appleId: profile.appleId,
       fullName: profile.firstName ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
     });

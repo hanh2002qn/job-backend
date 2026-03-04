@@ -4,7 +4,6 @@ import { CvService } from './cv.service';
 import { CvController } from './cv.controller';
 import { CV } from './entities/cv.entity';
 import { CvVersion } from './entities/cv-version.entity';
-import { PdfService } from './services/pdf.service';
 import { CvRendererService } from './services/cv-renderer.service';
 import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
@@ -21,7 +20,7 @@ import { AIModule } from '../ai/ai.module';
     AIModule,
   ],
   controllers: [CvController],
-  providers: [CvService, PdfService, CvRendererService],
-  exports: [CvService, PdfService, CvRendererService],
+  providers: [CvService, CvRendererService],
+  exports: [CvService, CvRendererService],
 })
 export class CvModule {}

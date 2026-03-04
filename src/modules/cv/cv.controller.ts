@@ -1,5 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CvService } from './cv.service';
@@ -33,6 +32,12 @@ export class CvController {
   @ApiOperation({ summary: 'List my generated CVs' })
   findAll(@CurrentUser() user: User) {
     return this.cvService.findAll(user.id);
+  }
+
+  @Get('templates')
+  @ApiOperation({ summary: 'List available CV templates' })
+  getTemplates() {
+    return this.cvService.getTemplates();
   }
 
   @Get(':id')
@@ -75,17 +80,10 @@ export class CvController {
     return this.cvService.restoreVersion(user.id, id, versionId);
   }
 
-  @Get(':id/download')
-  @ApiOperation({ summary: 'Download CV as PDF' })
-  async download(@CurrentUser() user: User, @Param('id') id: string, @Res() res: Response) {
-    const buffer = await this.cvService.downloadPdf(user.id, id);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="cv-${id}.pdf"`,
-      'Content-Length': buffer.length,
-    });
-
-    res.send(buffer);
+  @Get(':id/html')
+  @ApiOperation({ summary: 'Get CV HTML for client-side rendering/printing' })
+  async getHtml(@CurrentUser() user: User, @Param('id') id: string) {
+    const html = await this.cvService.getHtml(user.id, id);
+    return { html };
   }
 }

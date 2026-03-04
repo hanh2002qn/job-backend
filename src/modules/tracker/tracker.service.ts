@@ -12,7 +12,6 @@ import { JobsService } from '../jobs/jobs.service';
 import { InterviewSchedule } from './entities/interview-schedule.entity';
 import { TrackerNote } from './entities/tracker-note.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
-import { GoogleCalendarService } from './services/google-calendar.service';
 import { UserCredits } from '../users/entities/user-credits.entity';
 
 @Injectable()
@@ -32,7 +31,7 @@ export class TrackerService {
     private subscriptionService: SubscriptionService,
     @Inject(LLM_SERVICE) private llmService: LlmService,
     private jobsService: JobsService,
-    private googleCalendarService: GoogleCalendarService,
+    // private googleCalendarService: GoogleCalendarService,
   ) {}
 
   /**
@@ -430,7 +429,8 @@ export class TrackerService {
 
   /**
    * Sync interview to Google Calendar
-   */
+   * /
+  /*
   async syncInterviewToCalendar(userId: string, interviewId: string, userAccessToken: string) {
     if (!this.googleCalendarService.isConfigured()) {
       throw new Error('Google Calendar is not configured on the server');
@@ -481,4 +481,5 @@ export class TrackerService {
       return { success: false, action: 'failed' };
     }
   }
+  */
 }
