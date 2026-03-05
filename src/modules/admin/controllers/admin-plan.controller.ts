@@ -1,11 +1,19 @@
 import { Controller, Get, Patch, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiBody,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { AdminPlanService } from '../services/admin-plan.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 import { Plan } from '../../subscription/entities/plan.entity';
+import { CreatePlanDto, UpdatePlanDto } from '../dto/plan.dto';
 
 @ApiTags('admin/plans')
 @ApiBearerAuth()
@@ -33,17 +41,19 @@ export class AdminPlanController {
 
   @Post()
   @ApiOperation({ summary: 'Create new plan' })
+  @ApiBody({ type: CreatePlanDto })
   @ApiResponse({ status: 201, description: 'Plan created.', type: Plan })
-  async create(@Body() createData: Partial<Plan>): Promise<Plan> {
+  async create(@Body() createData: CreatePlanDto): Promise<Plan> {
     return this.planService.create(createData);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update plan (e.g., changes limits)' })
   @ApiParam({ name: 'id', description: 'Plan ID (UUID)' })
+  @ApiBody({ type: UpdatePlanDto })
   @ApiResponse({ status: 200, description: 'Plan updated.', type: Plan })
   @ApiResponse({ status: 404, description: 'Plan not found.' })
-  async update(@Param('id') id: string, @Body() updateData: Partial<Plan>): Promise<Plan> {
+  async update(@Param('id') id: string, @Body() updateData: UpdatePlanDto): Promise<Plan> {
     return this.planService.update(id, updateData);
   }
 }

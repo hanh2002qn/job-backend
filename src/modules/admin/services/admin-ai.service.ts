@@ -46,16 +46,6 @@ const DEFAULT_FEATURES: Array<{ featureKey: string; displayName: string; descrip
     description: 'Tạo cover letter bằng AI',
   },
   {
-    featureKey: 'interview_prep',
-    displayName: 'Interview Prep',
-    description: 'AI tips chuẩn bị phỏng vấn',
-  },
-  {
-    featureKey: 'job_extraction',
-    displayName: 'Job Extraction',
-    description: 'Extract job data từ HTML bằng AI',
-  },
-  {
     featureKey: 'job_matching',
     displayName: 'Job Matching',
     description: 'AI matching score + job recommendations',

@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UsersRepository } from './users.repository';
-import { BaseSearchDto } from '../../common/dto/base-search.dto';
+import { UserSearchDto } from './dto/user-search.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 export interface OAuthUserData {
@@ -23,7 +23,7 @@ export class UsersService {
     return this.usersRepository.createAndSave(userData as DeepPartial<User>);
   }
 
-  async findAll(searchDto: BaseSearchDto): Promise<PaginatedResponseDto<User>> {
+  async findAll(searchDto: UserSearchDto): Promise<PaginatedResponseDto<User>> {
     return this.usersRepository.findAllPaginated(searchDto);
   }
 

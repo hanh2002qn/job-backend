@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, Like } from 'typeorm';
+import { DataSource, Like, FindOptionsWhere } from 'typeorm';
 import { BaseRepository } from '../../common/repositories/base.repository';
 import { User } from './entities/user.entity';
-import { BaseSearchDto } from '../../common/dto/base-search.dto';
+import { UserSearchDto, UserStatusFilter } from './dto/user-search.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
@@ -35,12 +35,26 @@ export class UsersRepository extends BaseRepository<User> {
     return this.findOne({ where: { appleId } });
   }
 
-  async findAllPaginated(searchDto: BaseSearchDto): Promise<PaginatedResponseDto<User>> {
-    const { page = 1, limit = 10, search } = searchDto;
+  async findAllPaginated(searchDto: UserSearchDto): Promise<PaginatedResponseDto<User>> {
+    const { page = 1, limit = 10, search, role, status } = searchDto;
+    const where: FindOptionsWhere<User> = {};
+
+    if (search) {
+      where.email = Like(`%${search}%`);
+    }
+
+    if (role) {
+      where.role = role;
+    }
+
+    if (status) {
+      where.isBanned = status === UserStatusFilter.BANNED;
+    }
+
     return this.paginate({
       page,
       limit,
-      where: search ? { email: Like(`%${search}%`) } : {},
+      where,
       order: { createdAt: 'DESC' },
     });
   }

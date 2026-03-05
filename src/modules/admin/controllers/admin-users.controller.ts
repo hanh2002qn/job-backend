@@ -17,7 +17,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@ne
 import { UsersService } from '../../users/users.service';
 import { User, UserRole } from '../../users/entities/user.entity';
 
-import { BaseSearchDto } from '../../../common/dto/base-search.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -29,6 +28,7 @@ import {
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { BanUserDto } from '../dto/ban-user.dto';
 import { ChangeRoleDto } from '../dto/change-role.dto';
+import { UserSearchDto } from '../../users/dto/user-search.dto';
 import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('admin/users')
@@ -44,7 +44,7 @@ export class AdminUsersController {
   @ApiResponse({ status: 200, description: 'Paginated list of users.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
-  async findAll(@Query() searchDto: BaseSearchDto): Promise<PaginatedResponseDto<User>> {
+  async findAll(@Query() searchDto: UserSearchDto): Promise<PaginatedResponseDto<User>> {
     return this.usersService.findAll(searchDto);
   }
 
