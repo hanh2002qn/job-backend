@@ -5,6 +5,7 @@ import { JobsModule } from '../jobs/jobs.module';
 import { CvModule } from '../cv/cv.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { AuthModule } from '../auth/auth.module';
+import { JobCrawlerModule } from '../job-crawler/job-crawler.module';
 
 import { SettingsModule } from '../settings/settings.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
@@ -34,6 +35,7 @@ import { AdminSettingsController } from './controllers/admin-settings.controller
     CvModule,
     SubscriptionModule,
     AuthModule,
+    JobCrawlerModule,
 
     SettingsModule,
   ],

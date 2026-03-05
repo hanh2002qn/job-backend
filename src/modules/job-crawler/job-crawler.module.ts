@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JobCrawlerService } from './job-crawler.service';
 import { JobsModule } from '../jobs/jobs.module';
-import { JobCrawlerController } from './job-crawler.controller';
 import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
 import { IndeedCrawler } from './strategies/indeed.crawler';
@@ -27,7 +26,6 @@ import { CrawlerConfigRepository } from './crawler-config.repository';
 
 @Module({
   imports: [JobsModule, TypeOrmModule.forFeature([CrawlerStats, CrawlerConfig, Job])],
-  controllers: [JobCrawlerController],
   providers: [
     JobNormalizationService,
     DeduplicationService,
@@ -49,5 +47,6 @@ import { CrawlerConfigRepository } from './crawler-config.repository';
     Job123Crawler,
     FacebookCrawler,
   ],
+  exports: [JobCrawlerService],
 })
 export class JobCrawlerModule {}
