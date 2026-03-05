@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CareerIntent } from '../entities/career-intent.entity';
+import { CareerIntentRepository } from '../career-intent.repository';
 import { UpdateCareerIntentDto } from '../dto/career-intent.dto';
 import { DataSource } from '../interfaces/profile-enums';
 
 @Injectable()
 export class CareerIntentService {
-  constructor(
-    @InjectRepository(CareerIntent)
-    private careerIntentRepository: Repository<CareerIntent>,
-  ) {}
+  constructor(private careerIntentRepository: CareerIntentRepository) {}
 
   async findByProfileId(profileId: string): Promise<CareerIntent | null> {
     return this.careerIntentRepository.findOne({

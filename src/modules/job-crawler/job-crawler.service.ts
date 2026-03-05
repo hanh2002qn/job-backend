@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { MoreThan } from 'typeorm';
 import { JobCrawlerStrategy, CrawlResult } from './interfaces/job-crawler.interface';
 import { TopCvCrawler } from './strategies/topcv.crawler';
 import { LinkedInCrawler } from './strategies/linkedin.crawler';
@@ -14,10 +13,11 @@ import { FreelancerCrawler } from './strategies/freelancer.crawler';
 import { Vieclam24hCrawler } from './strategies/vieclam24h.crawler';
 import { Job123Crawler } from './strategies/123job.crawler';
 import { FacebookCrawler } from './strategies/facebook.crawler';
-import { CrawlerStats, CrawlerStatus } from './entities/crawler-stats.entity';
-import { CrawlerConfig } from './entities/crawler-config.entity';
+import { CrawlerStatus } from './entities/crawler-stats.entity';
 import { RateLimiterService } from './services/rate-limiter.service';
 import { UpdateCrawlerConfigDto } from './dto/update-crawler-config.dto';
+import { CrawlerStatsRepository } from './crawler-stats.repository';
+import { CrawlerConfigRepository } from './crawler-config.repository';
 
 @Injectable()
 export class JobCrawlerService {
@@ -37,10 +37,8 @@ export class JobCrawlerService {
     private readonly vieclam24hCrawler: Vieclam24hCrawler,
     private readonly job123Crawler: Job123Crawler,
     private readonly facebookCrawler: FacebookCrawler,
-    @InjectRepository(CrawlerStats)
-    private readonly statsRepository: Repository<CrawlerStats>,
-    @InjectRepository(CrawlerConfig)
-    private readonly configRepository: Repository<CrawlerConfig>,
+    private readonly statsRepository: CrawlerStatsRepository,
+    private readonly configRepository: CrawlerConfigRepository,
     private readonly rateLimiter: RateLimiterService,
   ) {
     this.strategies = [

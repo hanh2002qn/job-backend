@@ -1,10 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 
 export enum PromptCategory {
   CV = 'CV',
@@ -14,10 +9,7 @@ export enum PromptCategory {
 }
 
 @Entity('prompts')
-export class Prompt {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Prompt extends BaseEntity {
   @Column({ unique: true })
   key: string; // e.g., 'CV_GENERATION_SUMMARY'
 
@@ -36,10 +28,4 @@ export class Prompt {
 
   @Column({ default: true })
   isActive: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

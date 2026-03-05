@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -9,6 +10,8 @@ import {
   NotFoundException,
   ForbiddenException,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UsersService } from '../../users/users.service';
@@ -18,9 +21,15 @@ import { BaseSearchDto } from '../../../common/dto/base-search.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { BanUserDto } from '../dto/ban-user.dto';
+import { ChangeRoleDto } from '../dto/change-role.dto';
+import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('admin/users')
 @ApiBearerAuth()
@@ -35,10 +44,7 @@ export class AdminUsersController {
   @ApiResponse({ status: 200, description: 'Paginated list of users.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden. Admin role required.' })
-  async findAll(@Query() searchDto: BaseSearchDto): Promise<{
-    data: User[];
-    meta: { total: number; page: number; limit: number; totalPages: number };
-  }> {
+  async findAll(@Query() searchDto: BaseSearchDto): Promise<PaginatedResponseDto<User>> {
     return this.usersService.findAll(searchDto);
   }
 
@@ -56,7 +62,7 @@ export class AdminUsersController {
   }
 
   @Patch(':id/ban')
-  @AuditAction({ action: 'BAN_USER', module: 'USERS' })
+  @AuditAction({ action: AuditActionType.BAN_USER, module: AuditModule.USERS })
   @ApiOperation({ summary: 'Ban or Unban a user' })
   @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({ status: 200, description: 'User ban status updated.' })
@@ -79,5 +85,62 @@ export class AdminUsersController {
     }
 
     await this.usersService.update(id, { isBanned: dto.isBanned });
+  }
+
+  @Patch(':id/role')
+  @AuditAction({ action: AuditActionType.CHANGE_USER_ROLE, module: AuditModule.USERS })
+  @ApiOperation({ summary: 'Change user role' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'User role updated.' })
+  @ApiResponse({ status: 403, description: 'Cannot change own role.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async changeRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ChangeRoleDto,
+    @CurrentUser() currentUser: User,
+  ): Promise<void> {
+    if (id === currentUser.id) {
+      throw new ForbiddenException('Admins cannot change their own role');
+    }
+
+    const target = await this.usersService.findOneById(id);
+    if (!target) throw new NotFoundException('User not found');
+
+    await this.usersService.update(id, { role: dto.role });
+  }
+
+  @Patch(':id/verify')
+  @AuditAction({ action: AuditActionType.VERIFY_USER, module: AuditModule.USERS })
+  @ApiOperation({ summary: 'Manually verify a user email' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'User verified.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async verifyUser(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    const target = await this.usersService.findOneById(id);
+    if (!target) throw new NotFoundException('User not found');
+
+    await this.usersService.update(id, { isVerified: true });
+  }
+
+  @Delete(':id')
+  @AuditAction({ action: AuditActionType.DELETE_USER, module: AuditModule.USERS })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a user' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
+  @ApiResponse({ status: 204, description: 'User deleted.' })
+  @ApiResponse({ status: 403, description: 'Cannot delete own account.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async deleteUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: User,
+  ): Promise<void> {
+    if (id === currentUser.id) {
+      throw new ForbiddenException('Admins cannot delete their own account');
+    }
+
+    const target = await this.usersService.findOneById(id);
+    if (!target) throw new NotFoundException('User not found');
+
+    await this.usersService.delete(id);
   }
 }

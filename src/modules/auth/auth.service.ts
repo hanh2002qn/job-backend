@@ -6,9 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { RefreshTokenRepository } from './refresh-token.repository';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -30,8 +29,7 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private configService: ConfigService,
-    @InjectRepository(RefreshToken)
-    private refreshTokenRepository: Repository<RefreshToken>,
+    private refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<User> {

@@ -1,17 +1,13 @@
 import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { SystemSetting } from './entities/system-setting.entity';
 import { UpdateSystemSettingDto } from './dto/update-system-setting.dto';
+import { SettingsRepository } from './settings.repository';
 
 @Injectable()
 export class SettingsService implements OnModuleInit {
   private settingsCache: Map<string, unknown> = new Map();
 
-  constructor(
-    @InjectRepository(SystemSetting)
-    private readonly settingsRepository: Repository<SystemSetting>,
-  ) {}
+  constructor(private readonly settingsRepository: SettingsRepository) {}
 
   async onModuleInit() {
     await this.seedDefaults();

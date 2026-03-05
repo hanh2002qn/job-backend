@@ -1,5 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AdminPromptService } from '../services/admin-prompt.service';
 import { Prompt } from '../../ai/entities/prompt.entity';
@@ -17,7 +21,7 @@ export class AdminPromptController {
   constructor(private readonly adminPromptService: AdminPromptService) {}
 
   @Post()
-  @AuditAction({ action: 'CREATE_PROMPT', module: 'PROMPT' })
+  @AuditAction({ action: AuditActionType.CREATE_PROMPT, module: AuditModule.PROMPT })
   @ApiOperation({ summary: 'Create a new prompt' })
   @ApiResponse({ status: 201, description: 'Prompt created.', type: Prompt })
   create(@Body() createPromptDto: Partial<Prompt>): Promise<Prompt> {
@@ -32,7 +36,7 @@ export class AdminPromptController {
   }
 
   @Patch(':id')
-  @AuditAction({ action: 'UPDATE_PROMPT', module: 'PROMPT' })
+  @AuditAction({ action: AuditActionType.UPDATE_PROMPT, module: AuditModule.PROMPT })
   @ApiOperation({ summary: 'Update a prompt' })
   @ApiParam({ name: 'id', description: 'Prompt ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Prompt updated.', type: Prompt })
@@ -42,7 +46,7 @@ export class AdminPromptController {
   }
 
   @Delete(':id')
-  @AuditAction({ action: 'DELETE_PROMPT', module: 'PROMPT' })
+  @AuditAction({ action: AuditActionType.DELETE_PROMPT, module: AuditModule.PROMPT })
   @ApiOperation({ summary: 'Delete a prompt' })
   @ApiParam({ name: 'id', description: 'Prompt ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Prompt deleted.' })

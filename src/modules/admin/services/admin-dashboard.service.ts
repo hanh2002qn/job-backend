@@ -1,24 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Job } from '../../jobs/entities/job.entity';
-import { CV } from '../../cv/entities/cv.entity';
-import { Subscription, SubscriptionStatus } from '../../subscription/entities/subscription.entity';
+import { SubscriptionStatus } from '../../subscription/entities/subscription.entity';
+import { UsersRepository } from '../../users/users.repository';
+import { JobsRepository } from '../../jobs/jobs.repository';
+import { CvRepository } from '../../cv/cv.repository';
+import { SubscriptionRepository } from '../../subscription/subscription.repository';
 import { StripeService } from '../../subscription/stripe.service';
 import { SettingsService } from '../../settings/settings.service';
 
 @Injectable()
 export class AdminDashboardService {
   constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-    @InjectRepository(Job)
-    private jobsRepository: Repository<Job>,
-    @InjectRepository(CV)
-    private cvRepository: Repository<CV>,
-    @InjectRepository(Subscription)
-    private subscriptionRepository: Repository<Subscription>,
+    private usersRepository: UsersRepository,
+    private jobsRepository: JobsRepository,
+    private cvRepository: CvRepository,
+    private subscriptionRepository: SubscriptionRepository,
     private readonly settingsService: SettingsService,
     private readonly stripeService: StripeService,
   ) {}

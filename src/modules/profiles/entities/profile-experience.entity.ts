@@ -1,22 +1,11 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Profile } from './profile.entity';
 import { DataSource, EmploymentType, WorkScope, Responsibility } from '../interfaces/profile-enums';
 
 @Entity('profile_experiences')
 @Index(['profileId', 'organization'])
-export class ProfileExperience {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class ProfileExperience extends BaseEntity {
   @Column({ type: 'uuid' })
   profileId: string;
 
@@ -67,10 +56,4 @@ export class ProfileExperience {
 
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 1.0 })
   confidence: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

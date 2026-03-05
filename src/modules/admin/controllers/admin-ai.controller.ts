@@ -10,7 +10,11 @@ import {
   OverallUsageStatsResponseDto,
   FeatureUsageStatsResponseDto,
 } from '../dto/ai-usage-stats.dto';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 
 import { AiFeatureConfig } from '../../ai/entities/ai-feature-config.entity';
 
@@ -47,7 +51,7 @@ export class AdminAiController {
   }
 
   @Patch('features/:id')
-  @AuditAction({ action: 'UPDATE_AI_FEATURE', module: 'AI_CONFIG' })
+  @AuditAction({ action: AuditActionType.UPDATE_AI_FEATURE, module: AuditModule.AI_CONFIG })
   @ApiOperation({ summary: 'Update AI feature config' })
   @ApiParam({ name: 'id', description: 'AI feature config ID (UUID)' })
   @ApiResponse({ status: 200, description: 'AI feature config updated.', type: AiFeatureConfig })
@@ -60,7 +64,7 @@ export class AdminAiController {
   }
 
   @Patch('features/:id/toggle')
-  @AuditAction({ action: 'TOGGLE_AI_FEATURE', module: 'AI_CONFIG' })
+  @AuditAction({ action: AuditActionType.TOGGLE_AI_FEATURE, module: AuditModule.AI_CONFIG })
   @ApiOperation({ summary: 'Toggle AI feature enabled/disabled' })
   @ApiParam({ name: 'id', description: 'AI feature config ID (UUID)' })
   @ApiResponse({ status: 200, description: 'AI feature toggled.', type: AiFeatureConfig })

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CoverLetter } from './entities/cover-letter.entity';
+import { CoverLetterRepository } from './cover-letter.repository';
 import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -11,8 +10,7 @@ import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 @Injectable()
 export class CoverLetterService {
   constructor(
-    @InjectRepository(CoverLetter)
-    private coverLettersRepository: Repository<CoverLetter>,
+    private coverLettersRepository: CoverLetterRepository,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     @Inject(LLM_SERVICE) private llmService: LlmService,

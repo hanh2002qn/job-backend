@@ -1,19 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('email_preferences')
-export class EmailPreference {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class EmailPreference extends BaseEntity {
   @Column()
   userId: string;
 
@@ -29,10 +19,4 @@ export class EmailPreference {
 
   @Column({ default: true })
   marketing: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

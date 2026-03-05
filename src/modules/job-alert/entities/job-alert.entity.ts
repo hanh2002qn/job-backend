@@ -1,12 +1,5 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum AlertFrequency {
@@ -19,10 +12,7 @@ export enum AlertChannel {
 }
 
 @Entity('job_alerts')
-export class JobAlert {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class JobAlert extends BaseEntity {
   @Column()
   userId: string;
 
@@ -46,10 +36,4 @@ export class JobAlert {
 
   @Column({ type: 'timestamp', nullable: true })
   lastSentAt: Date;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

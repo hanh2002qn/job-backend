@@ -6,7 +6,11 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 import Stripe from 'stripe';
 
 @ApiTags('admin/dashboard')
@@ -46,7 +50,7 @@ export class AdminDashboardController {
   }
 
   @Post('maintenance')
-  @AuditAction({ action: 'TOGGLE_MAINTENANCE', module: 'DASHBOARD' })
+  @AuditAction({ action: AuditActionType.TOGGLE_MAINTENANCE, module: AuditModule.DASHBOARD })
   @ApiOperation({ summary: 'Toggle maintenance mode' })
   @ApiResponse({ status: 201, description: 'Maintenance mode toggled.' })
   async toggleMaintenance(@Body('enabled') enabled: boolean): Promise<{ maintenance: boolean }> {

@@ -2,11 +2,9 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
 import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
-import { Prompt } from './entities/prompt.entity';
-import { AiUsage } from './entities/ai-usage.entity';
+import { PromptRepository } from './prompt.repository';
+import { AiUsageRepository } from './ai-usage.repository';
 import { CacheService } from '../../common/redis/cache.service';
 import { BaseLlmService } from './base-llm.service';
 
@@ -21,8 +19,8 @@ export class GroqService extends BaseLlmService implements OnModuleInit {
   constructor(
     private configService: ConfigService,
     cacheService: CacheService,
-    @InjectRepository(Prompt) promptRepository: Repository<Prompt>,
-    @InjectRepository(AiUsage) aiUsageRepository: Repository<AiUsage>,
+    promptRepository: PromptRepository,
+    aiUsageRepository: AiUsageRepository,
   ) {
     super(cacheService, promptRepository, aiUsageRepository);
   }

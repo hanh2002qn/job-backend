@@ -1,27 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Job } from '../jobs/entities/job.entity';
-import { Profile } from '../profiles/entities/profile.entity';
 import { MailService } from '../mail/mail.service';
 import { AlertChannel, AlertFrequency, JobAlert } from './entities/job-alert.entity';
 import { UpdateJobAlertDto } from './dto/update-job-alert.dto';
-import { UserJobNotification } from './entities/user-job-notification.entity';
 import { MatchingService } from '../matching/matching.service';
+import { JobsRepository } from '../jobs/jobs.repository';
+import { ProfileRepository } from '../profiles/profile.repository';
+import { JobAlertRepository } from './job-alert.repository';
+import { UserJobNotificationRepository } from './user-job-notification.repository';
 
 @Injectable()
 export class JobAlertService {
   private readonly logger = new Logger(JobAlertService.name);
 
   constructor(
-    @InjectRepository(Job)
-    private readonly jobsRepository: Repository<Job>,
-    @InjectRepository(Profile)
-    private readonly profilesRepository: Repository<Profile>,
-    @InjectRepository(JobAlert)
-    private readonly jobAlertRepository: Repository<JobAlert>,
-    @InjectRepository(UserJobNotification)
-    private readonly userJobNotificationRepository: Repository<UserJobNotification>,
+    private readonly jobsRepository: JobsRepository,
+    private readonly profilesRepository: ProfileRepository,
+    private readonly jobAlertRepository: JobAlertRepository,
+    private readonly userJobNotificationRepository: UserJobNotificationRepository,
     private readonly mailService: MailService,
     private readonly matchingService: MatchingService,
   ) {}

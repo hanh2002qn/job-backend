@@ -1,9 +1,8 @@
 import { Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
 import { createHash } from 'crypto';
 
-import { Prompt } from './entities/prompt.entity';
-import { AiUsage } from './entities/ai-usage.entity';
+import { PromptRepository } from './prompt.repository';
+import { AiUsageRepository } from './ai-usage.repository';
 import { CacheService } from '../../common/redis/cache.service';
 import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import type { LlmService } from './llm.interface';
@@ -36,8 +35,8 @@ export abstract class BaseLlmService implements LlmService {
 
   constructor(
     protected readonly cacheService: CacheService,
-    protected readonly promptRepository: Repository<Prompt>,
-    protected readonly aiUsageRepository: Repository<AiUsage>,
+    protected readonly promptRepository: PromptRepository,
+    protected readonly aiUsageRepository: AiUsageRepository,
   ) {}
 
   // ============ Abstract methods — each provider MUST implement ============

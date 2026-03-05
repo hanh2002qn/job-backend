@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Plan } from './plan.entity';
 
@@ -20,10 +12,7 @@ export enum SubscriptionStatus {
 }
 
 @Entity('subscriptions')
-export class Subscription {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Subscription extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
@@ -56,12 +45,6 @@ export class Subscription {
 
   @Column({ default: false })
   cancelAtPeriodEnd: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   /**
    * Helper: get the plan slug (e.g., 'free', 'premium_monthly', 'premium_yearly')

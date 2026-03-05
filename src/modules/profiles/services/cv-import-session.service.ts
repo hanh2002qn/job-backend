@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CvImportSession } from '../entities/cv-import-session.entity';
-import { ProfileSkill } from '../entities/profile-skill.entity';
-import { ProfileExperience } from '../entities/profile-experience.entity';
-import { ProfileProject } from '../entities/profile-project.entity';
+import { CvImportSessionRepository } from '../cv-import-session.repository';
+import { ProfileSkillRepository } from '../profile-skill.repository';
+import { ProfileExperienceRepository } from '../profile-experience.repository';
+import { ProfileProjectRepository } from '../profile-project.repository';
 import {
   ImportStatus,
   DataSource,
@@ -21,14 +20,10 @@ export class CvImportSessionService {
   private readonly logger = new Logger(CvImportSessionService.name);
 
   constructor(
-    @InjectRepository(CvImportSession)
-    private sessionRepository: Repository<CvImportSession>,
-    @InjectRepository(ProfileSkill)
-    private skillsRepository: Repository<ProfileSkill>,
-    @InjectRepository(ProfileExperience)
-    private experienceRepository: Repository<ProfileExperience>,
-    @InjectRepository(ProfileProject)
-    private projectsRepository: Repository<ProfileProject>,
+    private sessionRepository: CvImportSessionRepository,
+    private skillsRepository: ProfileSkillRepository,
+    private experienceRepository: ProfileExperienceRepository,
+    private projectsRepository: ProfileProjectRepository,
     @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 

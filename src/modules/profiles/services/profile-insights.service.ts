@@ -1,23 +1,19 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ProfileMetadata } from '../entities/profile-metadata.entity';
 import { ProfileInsight, InsightTrigger } from '../entities/profile-insight.entity';
 import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
-import { ProfileSkill } from '../entities/profile-skill.entity';
-import { ProfileExperience } from '../entities/profile-experience.entity';
+import { ProfileMetadataRepository } from '../profile-metadata.repository';
+import { ProfileInsightRepository } from '../profile-insight.repository';
+import { ProfileSkillRepository } from '../profile-skill.repository';
+import { ProfileExperienceRepository } from '../profile-experience.repository';
 
 @Injectable()
 export class ProfileInsightsService {
   constructor(
-    @InjectRepository(ProfileMetadata)
-    private metadataRepository: Repository<ProfileMetadata>,
-    @InjectRepository(ProfileInsight)
-    private insightRepository: Repository<ProfileInsight>,
-    @InjectRepository(ProfileSkill)
-    private skillsRepository: Repository<ProfileSkill>,
-    @InjectRepository(ProfileExperience)
-    private experienceRepository: Repository<ProfileExperience>,
+    private metadataRepository: ProfileMetadataRepository,
+    private insightRepository: ProfileInsightRepository,
+    private skillsRepository: ProfileSkillRepository,
+    private experienceRepository: ProfileExperienceRepository,
     @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 

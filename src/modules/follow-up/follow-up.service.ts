@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { FollowUp, FollowUpStatus, FollowUpType } from './entities/follow-up.entity';
+import { FollowUpRepository } from './follow-up.repository';
 import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
 import { SendFollowUpDto } from './dto/send-follow-up.dto';
 import { JobsService } from '../jobs/jobs.service';
@@ -15,8 +14,7 @@ import { UpdateFollowUpDto } from './dto/update-follow-up.dto';
 @Injectable()
 export class FollowUpService {
   constructor(
-    @InjectRepository(FollowUp)
-    private followUpRepository: Repository<FollowUp>,
+    private followUpRepository: FollowUpRepository,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,

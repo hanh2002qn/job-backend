@@ -6,6 +6,7 @@ import { FollowUp } from './entities/follow-up.entity';
 import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { FollowUpRepository } from './follow-up.repository';
 
 import { AIModule } from '../ai/ai.module';
 
@@ -18,7 +19,7 @@ import { AIModule } from '../ai/ai.module';
     AIModule,
   ],
   controllers: [FollowUpController],
-  providers: [FollowUpService],
-  exports: [FollowUpService],
+  providers: [FollowUpService, FollowUpRepository],
+  exports: [FollowUpService, FollowUpRepository],
 })
 export class FollowUpModule {}

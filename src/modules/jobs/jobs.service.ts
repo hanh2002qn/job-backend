@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { LessThan } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
@@ -10,14 +9,14 @@ import { CacheService } from '../../common/redis/cache.service';
 import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { createPaginationMeta } from '../../common/utils/pagination.util';
+import { JobsRepository } from './jobs.repository';
+import { SavedJobRepository } from './saved-job.repository';
 
 @Injectable()
 export class JobsService {
   constructor(
-    @InjectRepository(Job)
-    private jobsRepository: Repository<Job>,
-    @InjectRepository(SavedJob)
-    private savedJobsRepository: Repository<SavedJob>,
+    private jobsRepository: JobsRepository,
+    private savedJobsRepository: SavedJobRepository,
     private cacheService: CacheService,
   ) {}
 
@@ -64,7 +63,7 @@ export class JobsService {
           minSalary,
           maxSalary,
           jobType,
-          status,
+          status: jobStatus,
           sortBy = JobSortBy.POSTED_AT,
           sortOrder = SortOrder.DESC,
           page = 1,
@@ -130,8 +129,8 @@ export class JobsService {
           query.andWhere('job.salaryMax <= :maxSalary', { maxSalary });
         }
 
-        if (status) {
-          query.andWhere('job.status = :status', { status });
+        if (jobStatus) {
+          query.andWhere('job.status = :status', { status: jobStatus as unknown });
         }
 
         // Filter expired jobs

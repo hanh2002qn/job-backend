@@ -1,11 +1,12 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ProfileSkill } from '../entities/profile-skill.entity';
 import { ProfileExperience } from '../entities/profile-experience.entity';
 import { ProfileProject } from '../entities/profile-project.entity';
-import { CareerIntent } from '../entities/career-intent.entity';
-import { Profile } from '../entities/profile.entity';
+import { ProfileRepository } from '../profile.repository';
+import { ProfileSkillRepository } from '../profile-skill.repository';
+import { ProfileExperienceRepository } from '../profile-experience.repository';
+import { ProfileProjectRepository } from '../profile-project.repository';
+import { CareerIntentRepository } from '../career-intent.repository';
 import { SkillLevel } from '../interfaces/profile-enums';
 import { LLM_SERVICE, type LlmService } from '../../ai/llm.interface';
 import { CacheService } from '../../../common/redis/cache.service';
@@ -28,16 +29,11 @@ export class ProfileCompletenessService {
   private readonly logger = new Logger(ProfileCompletenessService.name);
 
   constructor(
-    @InjectRepository(Profile)
-    private profileRepository: Repository<Profile>,
-    @InjectRepository(ProfileSkill)
-    private skillsRepository: Repository<ProfileSkill>,
-    @InjectRepository(ProfileExperience)
-    private experienceRepository: Repository<ProfileExperience>,
-    @InjectRepository(ProfileProject)
-    private projectsRepository: Repository<ProfileProject>,
-    @InjectRepository(CareerIntent)
-    private careerIntentRepository: Repository<CareerIntent>,
+    private profileRepository: ProfileRepository,
+    private skillsRepository: ProfileSkillRepository,
+    private experienceRepository: ProfileExperienceRepository,
+    private projectsRepository: ProfileProjectRepository,
+    private careerIntentRepository: CareerIntentRepository,
     @Inject(LLM_SERVICE) private llmService: LlmService,
     private readonly cacheService: CacheService,
   ) {}

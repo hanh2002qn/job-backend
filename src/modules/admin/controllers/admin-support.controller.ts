@@ -6,7 +6,11 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { User, UserRole } from '../../users/entities/user.entity';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 
 @ApiTags('Admin Support')
 @ApiBearerAuth()
@@ -20,7 +24,7 @@ export class AdminSupportController {
   ) {}
 
   @Post('users/:id/impersonate')
-  @AuditAction({ action: 'IMPERSONATE_USER', module: 'SUPPORT' })
+  @AuditAction({ action: AuditActionType.IMPERSONATE_USER, module: AuditModule.SUPPORT })
   @ApiOperation({ summary: 'Impersonate a user (get access token)' })
   @ApiParam({ name: 'id', description: 'User ID to impersonate (UUID)' })
   @ApiResponse({ status: 201, description: 'Impersonation tokens generated.' })

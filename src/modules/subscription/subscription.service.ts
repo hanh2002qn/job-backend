@@ -1,16 +1,15 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import {
   Subscription as SubscriptionEntity,
   SubscriptionStatus,
 } from './entities/subscription.entity';
-import { Plan } from './entities/plan.entity';
-import { UserCredits } from '../users/entities/user-credits.entity';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { StripeService } from './stripe.service';
 import Stripe from 'stripe';
+import { SubscriptionRepository } from './subscription.repository';
+import { PlanRepository } from './plan.repository';
+import { UserCreditsRepository } from '../users/user-credits.repository';
 
 interface StripeSubscriptionEvent {
   id: string;
@@ -24,12 +23,9 @@ export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(
-    @InjectRepository(SubscriptionEntity)
-    private subscriptionRepository: Repository<SubscriptionEntity>,
-    @InjectRepository(UserCredits)
-    private creditsRepository: Repository<UserCredits>,
-    @InjectRepository(Plan) // Injected Plan repository
-    private planRepository: Repository<Plan>,
+    private subscriptionRepository: SubscriptionRepository,
+    private creditsRepository: UserCreditsRepository,
+    private planRepository: PlanRepository,
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
   ) {}

@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial, Like } from 'typeorm';
+import { DeepPartial } from 'typeorm';
 import { User } from './entities/user.entity';
+import { UsersRepository } from './users.repository';
 import { BaseSearchDto } from '../../common/dto/base-search.dto';
-import { createPaginationMeta } from '../../common/utils/pagination.util';
+import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 export interface OAuthUserData {
   email: string;
@@ -17,94 +17,72 @@ export interface OAuthUserData {
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-  ) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   async create(userData: Partial<User>): Promise<User> {
-    const newUser = this.usersRepository.create(userData);
-    return this.usersRepository.save(newUser);
+    return this.usersRepository.createAndSave(userData as DeepPartial<User>);
   }
 
-  async findAll(searchDto: BaseSearchDto) {
-    const { page = 1, limit = 10, search } = searchDto;
-    const skip = (page - 1) * limit;
-
-    const where = search ? { email: Like(`%${search}%`) } : {};
-
-    const [items, total] = await this.usersRepository.findAndCount({
-      where,
-      skip,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
-
-    return {
-      data: items,
-      meta: createPaginationMeta(total, page, limit),
-    };
+  async findAll(searchDto: BaseSearchDto): Promise<PaginatedResponseDto<User>> {
+    return this.usersRepository.findAllPaginated(searchDto);
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository.findByEmail(email);
   }
 
   async findOneById(id: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id } });
+    return this.usersRepository.findById(id);
   }
 
   async findOneByVerificationToken(token: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { verificationToken: token },
-    });
+    return this.usersRepository.findByVerificationToken(token);
   }
 
   async findOneByResetToken(token: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { resetPasswordToken: token },
-    });
+    return this.usersRepository.findByResetToken(token);
   }
 
-  async update(id: string, updateData: DeepPartial<User>) {
-    return this.usersRepository.update(
-      id,
-      updateData as Parameters<typeof this.usersRepository.update>[1],
-    );
+  async update(id: string, updateData: DeepPartial<User>): Promise<void> {
+    await this.usersRepository.updateById(id, updateData);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.usersRepository.deleteById(id);
   }
 
   // OAuth methods
   async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { googleId } });
+    return this.usersRepository.findByGoogleId(googleId);
   }
 
   async findByGithubId(githubId: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { githubId } });
+    return this.usersRepository.findByGithubId(githubId);
   }
 
   async findByAppleId(appleId: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { appleId } });
+    return this.usersRepository.findByAppleId(appleId);
   }
 
   async findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<User> {
     // 1. Try to find by OAuth provider ID
     if (oauthData.googleId) {
-      const existingByGoogle = await this.findByGoogleId(oauthData.googleId);
-      if (existingByGoogle) return existingByGoogle;
+      const existing = await this.usersRepository.findByGoogleId(oauthData.googleId);
+      if (existing) return existing;
     }
 
     if (oauthData.githubId) {
-      const existingByGithub = await this.findByGithubId(oauthData.githubId);
-      if (existingByGithub) return existingByGithub;
+      const existing = await this.usersRepository.findByGithubId(oauthData.githubId);
+      if (existing) return existing;
     }
 
     if (oauthData.appleId) {
-      const existingByApple = await this.findByAppleId(oauthData.appleId);
-      if (existingByApple) return existingByApple;
+      const existing = await this.usersRepository.findByAppleId(oauthData.appleId);
+      if (existing) return existing;
     }
 
     // 2. Try to find by email and link the account
-    const existingByEmail = await this.findOneByEmail(oauthData.email);
+    const existingByEmail = await this.usersRepository.findByEmail(oauthData.email);
     if (existingByEmail) {
       if (!oauthData.isEmailVerified) {
         throw new UnauthorizedException(
@@ -112,7 +90,6 @@ export class UsersService {
         );
       }
 
-      // Link OAuth account to existing user
       if (oauthData.googleId) existingByEmail.googleId = oauthData.googleId;
       if (oauthData.githubId) existingByEmail.githubId = oauthData.githubId;
       if (oauthData.appleId) existingByEmail.appleId = oauthData.appleId;
@@ -123,16 +100,14 @@ export class UsersService {
     }
 
     // 3. Create new user
-    const newUser = this.usersRepository.create({
+    return this.usersRepository.createAndSave({
       email: oauthData.email,
       googleId: oauthData.googleId,
       githubId: oauthData.githubId,
       appleId: oauthData.appleId,
       avatarUrl: oauthData.avatarUrl,
-      isVerified: true, // OAuth users are auto-verified
-      passwordHash: null, // OAuth users don't have password
+      isVerified: true,
+      passwordHash: null,
     });
-
-    return this.usersRepository.save(newUser);
   }
 }

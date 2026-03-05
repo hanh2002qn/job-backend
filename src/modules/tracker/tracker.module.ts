@@ -9,8 +9,11 @@ import { SubscriptionModule } from '../subscription/subscription.module';
 import { JobsModule } from '../jobs/jobs.module';
 import { MailModule } from '../mail/mail.module';
 import { AIModule } from '../ai/ai.module';
-
 import { UserCredits } from '../users/entities/user-credits.entity';
+import { JobTrackerRepository } from './job-tracker.repository';
+import { InterviewScheduleRepository } from './interview-schedule.repository';
+import { TrackerNoteRepository } from './tracker-note.repository';
+import { UserCreditsRepository } from '../users/user-credits.repository';
 
 @Module({
   imports: [
@@ -21,7 +24,13 @@ import { UserCredits } from '../users/entities/user-credits.entity';
     AIModule,
   ],
   controllers: [TrackerController],
-  providers: [TrackerService /*, GoogleCalendarService */],
-  exports: [TrackerService],
+  providers: [
+    TrackerService,
+    JobTrackerRepository,
+    InterviewScheduleRepository,
+    TrackerNoteRepository,
+    UserCreditsRepository /*, GoogleCalendarService */,
+  ],
+  exports: [TrackerService, JobTrackerRepository],
 })
 export class TrackerModule {}

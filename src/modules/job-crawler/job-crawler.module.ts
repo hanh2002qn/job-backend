@@ -22,6 +22,8 @@ import { ProxyService } from './services/proxy.service';
 import { CrawlerStats } from './entities/crawler-stats.entity';
 import { CrawlerConfig } from './entities/crawler-config.entity';
 import { Job } from '../jobs/entities/job.entity';
+import { CrawlerStatsRepository } from './crawler-stats.repository';
+import { CrawlerConfigRepository } from './crawler-config.repository';
 
 @Module({
   imports: [JobsModule, TypeOrmModule.forFeature([CrawlerStats, CrawlerConfig, Job])],
@@ -32,6 +34,8 @@ import { Job } from '../jobs/entities/job.entity';
     RateLimiterService,
     ProxyService,
     JobCrawlerService,
+    CrawlerStatsRepository,
+    CrawlerConfigRepository,
     TopCvCrawler,
     LinkedInCrawler,
     IndeedCrawler,

@@ -1,10 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 
 export interface PlanLimits {
   max_cvs: number;
@@ -14,10 +9,7 @@ export interface PlanLimits {
 }
 
 @Entity('plans')
-export class Plan {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Plan extends BaseEntity {
   @Column({ unique: true })
   slug: string; // 'free', 'premium_monthly', 'premium_yearly'
 
@@ -41,10 +33,4 @@ export class Plan {
 
   @Column({ default: true })
   isActive: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

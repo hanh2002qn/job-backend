@@ -1,12 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { JobTracker } from './job-tracker.entity';
 
 export enum InterviewType {
@@ -19,10 +12,7 @@ export enum InterviewType {
 }
 
 @Entity('interview_schedules')
-export class InterviewSchedule {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class InterviewSchedule extends BaseEntity {
   @Column({ type: 'uuid' })
   trackerId: string;
 
@@ -62,10 +52,4 @@ export class InterviewSchedule {
   // Interview duration in minutes (for calendar event)
   @Column({ type: 'int', default: 60 })
   durationMinutes: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

@@ -10,6 +10,9 @@ import { AiFeatureConfig } from './entities/ai-feature-config.entity';
 import { LLM_SERVICE } from './llm.interface';
 import { SettingsModule } from '../settings/settings.module';
 import { RedisModule } from '../../common/redis/redis.module';
+import { PromptRepository } from './prompt.repository';
+import { AiFeatureConfigRepository } from './ai-feature-config.repository';
+import { AiUsageRepository } from './ai-usage.repository';
 
 @Global()
 @Module({
@@ -27,6 +30,9 @@ import { RedisModule } from '../../common/redis/redis.module';
       provide: LLM_SERVICE,
       useExisting: LlmRouterService,
     },
+    PromptRepository,
+    AiFeatureConfigRepository,
+    AiUsageRepository,
   ],
   exports: [
     LLM_SERVICE,
@@ -35,6 +41,9 @@ import { RedisModule } from '../../common/redis/redis.module';
     OpenAIService,
     LlmRouterService,
     TypeOrmModule,
+    PromptRepository,
+    AiFeatureConfigRepository,
+    AiUsageRepository,
   ],
 })
 export class AIModule {}

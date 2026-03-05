@@ -1,16 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ProfileExperience } from '../entities/profile-experience.entity';
+import { ProfileExperienceRepository } from '../profile-experience.repository';
 import { CreateExperienceDto, UpdateExperienceDto } from '../dto/experience.dto';
 import { DataSource } from '../interfaces/profile-enums';
 
 @Injectable()
 export class ExperienceService {
-  constructor(
-    @InjectRepository(ProfileExperience)
-    private experienceRepository: Repository<ProfileExperience>,
-  ) {}
+  constructor(private experienceRepository: ProfileExperienceRepository) {}
 
   async findAll(profileId: string): Promise<ProfileExperience[]> {
     return this.experienceRepository.find({

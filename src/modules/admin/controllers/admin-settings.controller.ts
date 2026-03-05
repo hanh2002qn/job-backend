@@ -6,7 +6,11 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 import { SettingsService } from '../../settings/settings.service';
 import { UpdateSystemSettingDto } from '../../settings/dto/update-system-setting.dto';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
 import { SystemSetting } from '../../settings/entities/system-setting.entity';
 
 @ApiTags('Admin Settings')
@@ -34,7 +38,7 @@ export class AdminSettingsController {
   }
 
   @Patch(':key')
-  @AuditAction({ action: 'UPDATE_SETTING', module: 'SETTINGS' })
+  @AuditAction({ action: AuditActionType.UPDATE_SETTING, module: AuditModule.SETTINGS })
   @ApiOperation({ summary: 'Update or create a system setting' })
   @ApiParam({ name: 'key', description: 'Setting key' })
   @ApiResponse({ status: 200, description: 'Setting updated.', type: SystemSetting })

@@ -25,6 +25,15 @@ import { ProfileInsightsService } from './services/profile-insights.service';
 import { FileUploadModule } from '../../common/services/file-upload.module';
 import { AIModule } from '../ai/ai.module';
 import { UsersModule } from '../users/users.module';
+import { ProfileRepository } from './profile.repository';
+import { ProfileSkillRepository } from './profile-skill.repository';
+import { ProfileExperienceRepository } from './profile-experience.repository';
+import { ProfileProjectRepository } from './profile-project.repository';
+import { WorkPreferencesRepository } from './work-preferences.repository';
+import { CareerIntentRepository } from './career-intent.repository';
+import { ProfileMetadataRepository } from './profile-metadata.repository';
+import { ProfileInsightRepository } from './profile-insight.repository';
+import { CvImportSessionRepository } from './cv-import-session.repository';
 
 @Module({
   imports: [
@@ -48,6 +57,15 @@ import { UsersModule } from '../users/users.module';
   ],
   controllers: [ProfilesController],
   providers: [
+    ProfileRepository,
+    ProfileSkillRepository,
+    ProfileExperienceRepository,
+    ProfileProjectRepository,
+    WorkPreferencesRepository,
+    CareerIntentRepository,
+    ProfileMetadataRepository,
+    ProfileInsightRepository,
+    CvImportSessionRepository,
     ProfilesService,
     SkillsService,
     ExperienceService,
@@ -59,6 +77,15 @@ import { UsersModule } from '../users/users.module';
     ProfileInsightsService,
   ],
   exports: [
+    ProfileRepository,
+    ProfileSkillRepository,
+    ProfileExperienceRepository,
+    ProfileProjectRepository,
+    WorkPreferencesRepository,
+    CareerIntentRepository,
+    ProfileMetadataRepository,
+    ProfileInsightRepository,
+    CvImportSessionRepository,
     ProfilesService,
     SkillsService,
     ExperienceService,

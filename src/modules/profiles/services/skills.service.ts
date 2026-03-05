@@ -1,18 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { ILike } from 'typeorm';
 import { ProfileSkill } from '../entities/profile-skill.entity';
-import { Profile } from '../entities/profile.entity';
+import { ProfileSkillRepository } from '../profile-skill.repository';
+import { ProfileRepository } from '../profile.repository';
 import { CreateSkillDto, UpdateSkillDto, MergeSkillsDto } from '../dto/skill.dto';
 import { DataSource } from '../interfaces/profile-enums';
 
 @Injectable()
 export class SkillsService {
   constructor(
-    @InjectRepository(ProfileSkill)
-    private skillsRepository: Repository<ProfileSkill>,
-    @InjectRepository(Profile)
-    private profilesRepository: Repository<Profile>,
+    private skillsRepository: ProfileSkillRepository,
+    private profilesRepository: ProfileRepository,
   ) {}
 
   async findAll(profileId: string): Promise<ProfileSkill[]> {

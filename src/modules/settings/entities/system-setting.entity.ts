@@ -1,16 +1,8 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('system_settings')
-export class SystemSetting {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class SystemSetting extends BaseEntity {
   @Column({ unique: true })
   key: string;
 
@@ -20,10 +12,4 @@ export class SystemSetting {
 
   @Column({ type: 'text', nullable: true })
   description: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

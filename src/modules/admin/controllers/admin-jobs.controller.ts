@@ -17,7 +17,12 @@ import { UserRole } from '../../users/entities/user.entity';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { AuditAction } from '../../../common/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditActionType,
+  AuditModule,
+} from '../../../common/decorators/audit-log.decorator';
+import { PaginatedResponseDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('admin/jobs')
 @ApiBearerAuth()
@@ -30,10 +35,7 @@ export class AdminJobsController {
   @Get()
   @ApiOperation({ summary: 'Get all jobs (with filters)' })
   @ApiResponse({ status: 200, description: 'Paginated list of jobs.' })
-  async findAll(@Query() query: JobSearchDto): Promise<{
-    data: Job[];
-    meta: { total: number; page: number; limit: number; totalPages: number };
-  }> {
+  async findAll(@Query() query: JobSearchDto): Promise<PaginatedResponseDto<Job>> {
     return this.jobsService.findAll(query);
   }
 
@@ -45,7 +47,7 @@ export class AdminJobsController {
   }
 
   @Patch(':id')
-  @AuditAction({ action: 'MODERATE_JOB', module: 'JOBS' })
+  @AuditAction({ action: AuditActionType.MODERATE_JOB, module: AuditModule.JOBS })
   @ApiOperation({ summary: 'Update job' })
   @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Job updated.' })
@@ -55,7 +57,7 @@ export class AdminJobsController {
   }
 
   @Delete(':id')
-  @AuditAction({ action: 'DELETE_JOB', module: 'JOBS' })
+  @AuditAction({ action: AuditActionType.DELETE_JOB, module: AuditModule.JOBS })
   @ApiOperation({ summary: 'Delete job' })
   @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Job deleted.' })

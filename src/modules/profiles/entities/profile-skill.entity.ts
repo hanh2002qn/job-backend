@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Profile } from './profile.entity';
 import {
   DataSource,
@@ -19,10 +11,7 @@ import {
 
 @Entity('profile_skills')
 @Index(['profileId', 'name'])
-export class ProfileSkill {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class ProfileSkill extends BaseEntity {
   @Column({ type: 'uuid' })
   profileId: string;
 
@@ -70,10 +59,4 @@ export class ProfileSkill {
 
   @Column({ type: 'boolean', default: false })
   possibleDuplicate: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

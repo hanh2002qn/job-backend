@@ -22,6 +22,7 @@ import { AdminPlanService } from './services/admin-plan.service';
 import { AdminPromptController } from './controllers/admin-prompt.controller';
 import { AdminAiController } from './controllers/admin-ai.controller';
 import { AdminPromptService } from './services/admin-prompt.service';
+import { AdminAiService } from './services/admin-ai.service';
 import { AdminSupportController } from './controllers/admin-support.controller';
 import { AdminSettingsController } from './controllers/admin-settings.controller';
 
@@ -47,7 +48,7 @@ import { AdminSettingsController } from './controllers/admin-settings.controller
     AdminSupportController,
     AdminSettingsController,
   ],
-  providers: [AdminDashboardService, AdminPlanService, AdminPromptService],
+  providers: [AdminDashboardService, AdminPlanService, AdminPromptService, AdminAiService],
   exports: [],
 })
 export class AdminModule {}

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ApplicationStatus, JobTracker } from '../tracker/entities/job-tracker.entity';
+import { ApplicationStatus } from '../tracker/entities/job-tracker.entity';
 import { SubscriptionService } from '../subscription/subscription.service';
-import { FollowUp, FollowUpStatus } from '../follow-up/entities/follow-up.entity';
-import { CV } from '../cv/entities/cv.entity';
+import { FollowUpStatus } from '../follow-up/entities/follow-up.entity';
 import { CacheService } from '../../common/redis/cache.service';
 import { CACHE_TTL } from '../../common/redis/queue.constants';
+import { JobTrackerRepository } from '../tracker/job-tracker.repository';
+import { CvRepository } from '../cv/cv.repository';
+import { FollowUpRepository } from '../follow-up/follow-up.repository';
 
 export type AnalyticsPeriod = '7d' | '30d' | '90d';
 
@@ -52,12 +52,9 @@ export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
 
   constructor(
-    @InjectRepository(JobTracker)
-    private readonly trackerRepository: Repository<JobTracker>,
-    @InjectRepository(CV)
-    private readonly cvRepository: Repository<CV>,
-    @InjectRepository(FollowUp)
-    private readonly followUpRepository: Repository<FollowUp>,
+    private readonly trackerRepository: JobTrackerRepository,
+    private readonly cvRepository: CvRepository,
+    private readonly followUpRepository: FollowUpRepository,
     private readonly subscriptionService: SubscriptionService,
     private readonly cacheService: CacheService,
   ) {}

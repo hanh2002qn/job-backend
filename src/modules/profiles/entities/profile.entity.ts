@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  OneToMany,
-  JoinColumn,
-  UpdateDateColumn,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { ProfileSkill } from './profile-skill.entity';
 import { ProfileExperience } from './profile-experience.entity';
@@ -35,10 +27,7 @@ const DEFAULT_VISIBILITY: VisibilitySettings = {
 };
 
 @Entity('profiles')
-export class Profile {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Profile extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
@@ -142,13 +131,6 @@ export class Profile {
 
   @OneToMany(() => ProfileInsight, (insight) => insight.profile)
   insights: ProfileInsight[];
-
-  // ============ Timestamps ============
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   // ============ DEPRECATED: Legacy fields (kept for migration) ============
   /** @deprecated Use profileSkills instead */

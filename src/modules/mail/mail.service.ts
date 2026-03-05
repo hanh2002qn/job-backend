@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as SendGrid from '@sendgrid/mail';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs';
@@ -9,6 +7,7 @@ import * as path from 'path';
 import { JobAlertJob } from '../profiles/interfaces/profile.interface';
 import { EmailPreference } from './entities/email-preference.entity';
 import { UpdateMailPreferencesDto } from './dto/update-mail-preferences.dto';
+import { EmailPreferenceRepository } from './email-preference.repository';
 
 @Injectable()
 export class MailService {
@@ -17,8 +16,7 @@ export class MailService {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(EmailPreference)
-    private readonly preferenceRepository: Repository<EmailPreference>,
+    private readonly preferenceRepository: EmailPreferenceRepository,
   ) {
     const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
     if (!apiKey) {

@@ -1,22 +1,11 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { JobTracker } from './job-tracker.entity';
 
 @Entity('tracker_notes')
 @Index(['trackerId', 'createdAt'])
-export class TrackerNote {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class TrackerNote extends BaseEntity {
   @Column({ type: 'uuid' })
   trackerId: string;
 
@@ -33,10 +22,4 @@ export class TrackerNote {
 
   @Column({ type: 'text' })
   content: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

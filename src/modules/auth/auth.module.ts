@@ -12,6 +12,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
 import { AppleStrategy } from './strategies/apple.strategy';
 import { MailModule } from '../mail/mail.module';
+import { RefreshTokenRepository } from './refresh-token.repository';
 
 @Module({
   imports: [
@@ -35,7 +36,14 @@ import { MailModule } from '../mail/mail.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, AppleStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    GithubStrategy,
+    AppleStrategy,
+    RefreshTokenRepository,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

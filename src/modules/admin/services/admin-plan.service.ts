@@ -1,14 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Plan } from '../../subscription/entities/plan.entity';
+import { PlanRepository } from '../../subscription/plan.repository';
 
 @Injectable()
 export class AdminPlanService {
-  constructor(
-    @InjectRepository(Plan)
-    private planRepository: Repository<Plan>,
-  ) {}
+  constructor(private planRepository: PlanRepository) {}
 
   async findAll() {
     return this.planRepository.find({ order: { price: 'ASC' } });

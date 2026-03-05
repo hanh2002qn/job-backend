@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { WorkPreferences } from '../entities/work-preferences.entity';
+import { WorkPreferencesRepository } from '../work-preferences.repository';
 import { UpdateWorkPreferencesDto } from '../dto/work-preferences.dto';
 import { DataSource } from '../interfaces/profile-enums';
 
 @Injectable()
 export class WorkPreferencesService {
-  constructor(
-    @InjectRepository(WorkPreferences)
-    private workPreferencesRepository: Repository<WorkPreferences>,
-  ) {}
+  constructor(private workPreferencesRepository: WorkPreferencesRepository) {}
 
   async findByProfileId(profileId: string): Promise<WorkPreferences | null> {
     return this.workPreferencesRepository.findOne({

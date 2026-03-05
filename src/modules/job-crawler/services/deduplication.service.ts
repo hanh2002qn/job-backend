@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { MoreThan } from 'typeorm';
 import * as crypto from 'crypto';
 import { Job } from '../../jobs/entities/job.entity';
+import { JobsRepository } from '../../jobs/jobs.repository';
 
 export interface DuplicateCheckResult {
   isDuplicate: boolean;
@@ -13,10 +13,7 @@ export interface DuplicateCheckResult {
 
 @Injectable()
 export class DeduplicationService {
-  constructor(
-    @InjectRepository(Job)
-    private jobsRepository: Repository<Job>,
-  ) {}
+  constructor(private jobsRepository: JobsRepository) {}
 
   /**
    * Generate SHA256 hash from job content for exact matching

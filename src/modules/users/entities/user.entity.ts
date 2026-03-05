@@ -1,12 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToOne,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, OneToOne, OneToMany } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Profile } from '../../profiles/entities/profile.entity';
 import { JobTracker } from '../../tracker/entities/job-tracker.entity';
 import { CV } from '../../cv/entities/cv.entity';
@@ -21,10 +14,7 @@ export enum UserRole {
 }
 
 @Entity('users')
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class User extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
@@ -65,12 +55,6 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   avatarUrl: string | null;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;

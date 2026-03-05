@@ -1,11 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import type { OriginalJobData } from '../../job-crawler/interfaces/job-crawler.interface';
 import {
   City,
@@ -19,10 +13,7 @@ import {
 } from '../enums/job.enums';
 
 @Entity('jobs')
-export class Job {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Job extends BaseEntity {
   @Column()
   source: string; // e.g., 'linkedIn', 'topcv'
 
@@ -134,9 +125,6 @@ export class Job {
   @Column({ type: 'timestamp', nullable: true })
   postedAt: Date | null; // Date job was posted on source
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @Column({ default: false })
   isVerified: boolean;
 
@@ -162,7 +150,4 @@ export class Job {
   @Column({ type: 'varchar', length: 64, nullable: true })
   @Index()
   contentHash: string | null;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

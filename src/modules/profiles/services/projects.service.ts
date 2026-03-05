@@ -1,16 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ProfileProject } from '../entities/profile-project.entity';
+import { ProfileProjectRepository } from '../profile-project.repository';
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto';
 import { DataSource } from '../interfaces/profile-enums';
 
 @Injectable()
 export class ProjectsService {
-  constructor(
-    @InjectRepository(ProfileProject)
-    private projectsRepository: Repository<ProfileProject>,
-  ) {}
+  constructor(private projectsRepository: ProfileProjectRepository) {}
 
   async findAll(profileId: string): Promise<ProfileProject[]> {
     return this.projectsRepository.find({

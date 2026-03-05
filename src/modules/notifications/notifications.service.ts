@@ -1,16 +1,12 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { NotificationRepository } from './notification.repository';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  constructor(
-    @InjectRepository(Notification)
-    private readonly notificationsRepository: Repository<Notification>,
-  ) {}
+  constructor(private readonly notificationsRepository: NotificationRepository) {}
 
   async create(dto: CreateNotificationDto): Promise<Notification> {
     const notification = this.notificationsRepository.create(dto);

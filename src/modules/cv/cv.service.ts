@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CV } from './entities/cv.entity';
-import { CvVersion } from './entities/cv-version.entity';
-import { UserCredits } from '../users/entities/user-credits.entity';
 import { GenerateCvDto } from './dto/generate-cv.dto';
+import { CvRepository } from './cv.repository';
+import { CvVersionRepository } from './cv-version.repository';
+import { UserCreditsRepository } from '../users/user-credits.repository';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -16,12 +15,9 @@ import type { CvContent } from './interfaces/cv.interface';
 @Injectable()
 export class CvService {
   constructor(
-    @InjectRepository(CV)
-    private cvRepository: Repository<CV>,
-    @InjectRepository(CvVersion)
-    private cvVersionRepository: Repository<CvVersion>,
-    @InjectRepository(UserCredits)
-    private creditsRepository: Repository<UserCredits>,
+    private cvRepository: CvRepository,
+    private cvVersionRepository: CvVersionRepository,
+    private creditsRepository: UserCreditsRepository,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,

@@ -4,12 +4,13 @@ import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
 import { ConfigModule } from '@nestjs/config';
 import { EmailPreference } from './entities/email-preference.entity';
+import { EmailPreferenceRepository } from './email-preference.repository';
 
 @Global()
 @Module({
   imports: [TypeOrmModule.forFeature([EmailPreference]), ConfigModule],
   controllers: [MailController],
-  providers: [MailService],
-  exports: [MailService],
+  providers: [MailService, EmailPreferenceRepository],
+  exports: [MailService, EmailPreferenceRepository],
 })
 export class MailModule {}

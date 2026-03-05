@@ -1,6 +1,4 @@
 import { Injectable, NotFoundException, Logger, ForbiddenException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { JobTracker, ApplicationStatus } from './entities/job-tracker.entity';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
@@ -9,24 +7,21 @@ import { MailService } from '../mail/mail.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { JobsService } from '../jobs/jobs.service';
-import { InterviewSchedule } from './entities/interview-schedule.entity';
-import { TrackerNote } from './entities/tracker-note.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
-import { UserCredits } from '../users/entities/user-credits.entity';
+import { JobTrackerRepository } from './job-tracker.repository';
+import { InterviewScheduleRepository } from './interview-schedule.repository';
+import { TrackerNoteRepository } from './tracker-note.repository';
+import { UserCreditsRepository } from '../users/user-credits.repository';
 
 @Injectable()
 export class TrackerService {
   private readonly logger = new Logger(TrackerService.name);
 
   constructor(
-    @InjectRepository(JobTracker)
-    private trackerRepository: Repository<JobTracker>,
-    @InjectRepository(InterviewSchedule)
-    private interviewRepository: Repository<InterviewSchedule>,
-    @InjectRepository(TrackerNote)
-    private noteRepository: Repository<TrackerNote>,
-    @InjectRepository(UserCredits)
-    private creditsRepository: Repository<UserCredits>,
+    private trackerRepository: JobTrackerRepository,
+    private interviewRepository: InterviewScheduleRepository,
+    private noteRepository: TrackerNoteRepository,
+    private creditsRepository: UserCreditsRepository,
     private mailService: MailService,
     private subscriptionService: SubscriptionService,
     @Inject(LLM_SERVICE) private llmService: LlmService,

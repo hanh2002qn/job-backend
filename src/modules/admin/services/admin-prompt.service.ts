@@ -1,14 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Prompt } from '../../ai/entities/prompt.entity';
+import { PromptRepository } from '../../ai/prompt.repository';
 
 @Injectable()
 export class AdminPromptService {
-  constructor(
-    @InjectRepository(Prompt)
-    private promptRepository: Repository<Prompt>,
-  ) {}
+  constructor(private promptRepository: PromptRepository) {}
 
   async create(createPromptDto: Partial<Prompt>): Promise<Prompt> {
     const prompt = this.promptRepository.create(createPromptDto);

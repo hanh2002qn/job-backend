@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Profile } from './entities/profile.entity';
+import { ProfileRepository } from './profile.repository';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
 import { FileUploadService } from '../../common/services/file-upload.service';
@@ -14,8 +13,7 @@ export class ProfilesService {
   private readonly logger = new Logger(ProfilesService.name);
 
   constructor(
-    @InjectRepository(Profile)
-    private profilesRepository: Repository<Profile>,
+    private profilesRepository: ProfileRepository,
     private fileUploadService: FileUploadService,
     private usersService: UsersService,
     private cvImportSessionService: CvImportSessionService,

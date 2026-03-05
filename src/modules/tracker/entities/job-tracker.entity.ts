@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
 import { CV } from '../../cv/entities/cv.entity';
@@ -22,10 +14,7 @@ export enum ApplicationStatus {
 }
 
 @Entity('job_trackers')
-export class JobTracker {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class JobTracker extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
@@ -74,12 +63,6 @@ export class JobTracker {
 
   @Column({ default: false })
   isReminderSent: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @OneToMany(() => InterviewSchedule, (interview) => interview.tracker)
   interviews: InterviewSchedule[];

@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Between } from 'typeorm';
 import { AiFeatureConfig } from '../../ai/entities/ai-feature-config.entity';
-import { AiUsage } from '../../ai/entities/ai-usage.entity';
+import { AiFeatureConfigRepository } from '../../ai/ai-feature-config.repository';
+import { AiUsageRepository } from '../../ai/ai-usage.repository';
 import { UpdateAiFeatureDto } from '../dto/ai-feature.dto';
 import {
   OverallUsageStatsResponseDto,
@@ -67,10 +67,8 @@ export class AdminAiService implements OnModuleInit {
   private readonly logger = new Logger(AdminAiService.name);
 
   constructor(
-    @InjectRepository(AiFeatureConfig)
-    private featureConfigRepository: Repository<AiFeatureConfig>,
-    @InjectRepository(AiUsage)
-    private aiUsageRepository: Repository<AiUsage>,
+    private featureConfigRepository: AiFeatureConfigRepository,
+    private aiUsageRepository: AiUsageRepository,
   ) {}
 
   async onModuleInit(): Promise<void> {
