@@ -24,7 +24,6 @@ import { AdminAiController } from './controllers/admin-ai.controller';
 import { AdminPromptService } from './services/admin-prompt.service';
 import { AdminModerationController } from './controllers/admin-moderation.controller';
 import { AdminSupportController } from './controllers/admin-support.controller';
-import { AdminCouponController } from './controllers/admin-coupon.controller';
 import { AdminSettingsController } from './controllers/admin-settings.controller';
 
 import { AdminModerationService } from './services/admin-moderation.service';
@@ -50,7 +49,6 @@ import { AdminModerationService } from './services/admin-moderation.service';
     AdminAiController,
     AdminModerationController,
     AdminSupportController,
-    AdminCouponController,
     AdminSettingsController,
   ],
   providers: [AdminDashboardService, AdminPlanService, AdminPromptService, AdminModerationService],
