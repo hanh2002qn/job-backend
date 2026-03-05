@@ -2,8 +2,7 @@ import { Controller, Get, UseGuards, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { MatchingService, FeedItem } from './matching.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
-import { AiFeature } from '../../common/decorators/ai-feature.decorator';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
@@ -88,8 +87,6 @@ export class MatchingController {
   }
 
   @Get('ai-recommendations')
-  @UseGuards(AiFeatureGuard)
-  @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get AI-powered job recommendations based on profile' })
   @ApiResponse({ status: 200, description: 'AI recommendations returned.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
@@ -120,8 +117,6 @@ export class MatchingController {
   }
 
   @Get('job/:jobId/semantic')
-  @UseGuards(AiFeatureGuard)
-  @AiFeature('job_matching')
   @ApiOperation({ summary: 'Get detailed AI semantic matching analysis' })
   @ApiParam({ name: 'jobId', description: 'Job ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Semantic match analysis returned.' })

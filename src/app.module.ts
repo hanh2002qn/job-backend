@@ -21,7 +21,6 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MailModule } from './modules/mail/mail.module';
 import { JobAlertModule } from './modules/job-alert/job-alert.module';
 import { AdminModule } from './modules/admin/admin.module';
-import { AiFeatureModule } from './modules/ai/ai-feature.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AuditModule } from './modules/audit/audit.module';
 
@@ -41,7 +40,6 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
       isGlobal: true,
     }),
     SettingsModule,
-    AiFeatureModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

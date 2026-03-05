@@ -1,99 +1,16 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Between } from 'typeorm';
-import { AiFeatureConfig } from '../../ai/entities/ai-feature-config.entity';
-import { AiFeatureConfigRepository } from '../../ai/ai-feature-config.repository';
 import { AiUsageRepository } from '../../ai/ai-usage.repository';
-import { UpdateAiFeatureDto } from '../dto/ai-feature.dto';
 import {
   OverallUsageStatsResponseDto,
   FeatureUsageStatsResponseDto,
 } from '../dto/ai-usage-stats.dto';
 
-const DEFAULT_FEATURES: Array<{ featureKey: string; displayName: string; description: string }> = [
-  {
-    featureKey: 'cv_parsing',
-    displayName: 'CV Parsing',
-    description: 'Parse CV bằng AI để extract structured data',
-  },
-  {
-    featureKey: 'cv_import',
-    displayName: 'CV Import',
-    description: 'Import structured fields (skills, experience, projects) từ CV text',
-  },
-  {
-    featureKey: 'profile_completeness',
-    displayName: 'Profile Completeness',
-    description: 'Phân tích gap cho target role bằng AI',
-  },
-  {
-    featureKey: 'profile_insights',
-    displayName: 'Profile Insights',
-    description: 'AI-generated insights và suggestions cho profile',
-  },
-  {
-    featureKey: 'cv_generation',
-    displayName: 'CV Generation',
-    description: 'Tối ưu CV content bằng AI',
-  },
-  {
-    featureKey: 'follow_up_email',
-    displayName: 'Follow-up Email',
-    description: 'Draft follow-up email bằng AI',
-  },
-  {
-    featureKey: 'cover_letter',
-    displayName: 'Cover Letter',
-    description: 'Tạo cover letter bằng AI',
-  },
-  {
-    featureKey: 'job_matching',
-    displayName: 'Job Matching',
-    description: 'AI matching score + job recommendations',
-  },
-];
-
 @Injectable()
-export class AdminAiService implements OnModuleInit {
+export class AdminAiService {
   private readonly logger = new Logger(AdminAiService.name);
 
-  constructor(
-    private featureConfigRepository: AiFeatureConfigRepository,
-    private aiUsageRepository: AiUsageRepository,
-  ) {}
-
-  async onModuleInit(): Promise<void> {
-    await this.seedDefaultFeatures();
-  }
-
-  // ============ Feature Config CRUD ============
-
-  async listFeatures(): Promise<AiFeatureConfig[]> {
-    return this.featureConfigRepository.find({
-      order: { featureKey: 'ASC' },
-    });
-  }
-
-  async getFeature(id: string): Promise<AiFeatureConfig> {
-    const feature = await this.featureConfigRepository.findOne({ where: { id } });
-    if (!feature) throw new NotFoundException('AI feature config not found');
-    return feature;
-  }
-
-  async getFeatureByKey(featureKey: string): Promise<AiFeatureConfig | null> {
-    return this.featureConfigRepository.findOne({ where: { featureKey } });
-  }
-
-  async updateFeature(id: string, dto: UpdateAiFeatureDto): Promise<AiFeatureConfig> {
-    const feature = await this.getFeature(id);
-    Object.assign(feature, dto);
-    return this.featureConfigRepository.save(feature);
-  }
-
-  async toggleFeature(id: string, isEnabled: boolean): Promise<AiFeatureConfig> {
-    const feature = await this.getFeature(id);
-    feature.isEnabled = isEnabled;
-    return this.featureConfigRepository.save(feature);
-  }
+  constructor(private aiUsageRepository: AiUsageRepository) {}
 
   // ============ Usage Analytics ============
 
@@ -222,35 +139,5 @@ export class AdminAiService implements OnModuleInit {
         totalTokens: Number(r.totalTokens),
       })),
     };
-  }
-
-  // ============ User Rate Limit Check ============
-
-  async getUserDailyUsageCount(userId: string, featureKey: string): Promise<number> {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return this.aiUsageRepository.count({
-      where: { userId, feature: featureKey, createdAt: Between(startOfDay, now) },
-    });
-  }
-
-  // ============ Seed ============
-
-  private async seedDefaultFeatures(): Promise<void> {
-    for (const feature of DEFAULT_FEATURES) {
-      const existing = await this.featureConfigRepository.findOne({
-        where: { featureKey: feature.featureKey },
-      });
-      if (!existing) {
-        await this.featureConfigRepository.save(
-          this.featureConfigRepository.create({
-            ...feature,
-            isEnabled: true,
-            maxRequestsPerDay: 0,
-          }),
-        );
-        this.logger.log(`Seeded AI feature: ${feature.featureKey}`);
-      }
-    }
   }
 }

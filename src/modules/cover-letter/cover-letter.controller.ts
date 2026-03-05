@@ -5,8 +5,7 @@ import { CoverLetterService } from './cover-letter.service';
 import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
-import { AiFeature } from '../../common/decorators/ai-feature.decorator';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { CoverLetter } from './entities/cover-letter.entity';
@@ -19,8 +18,7 @@ export class CoverLetterController {
   constructor(private readonly coverLetterService: CoverLetterService) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @UseGuards(AiFeatureGuard)
-  @AiFeature('cover_letter')
+  @UseGuards(JwtAuthGuard)
   @Post('generate')
   @ApiOperation({ summary: 'Generate a Cover Letter' })
   @ApiResponse({ status: 201, description: 'Cover letter generated.', type: CoverLetter })

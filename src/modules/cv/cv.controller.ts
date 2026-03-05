@@ -7,8 +7,7 @@ import { TailorCvDto } from './dto/tailor-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../../common/guards/subscription.guard';
-import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
-import { AiFeature } from '../../common/decorators/ai-feature.decorator';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { CV } from './entities/cv.entity';
@@ -22,8 +21,7 @@ export class CvController {
   constructor(private readonly cvService: CvService) {}
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @UseGuards(SubscriptionGuard, AiFeatureGuard)
-  @AiFeature('cv_generation')
+  @UseGuards(SubscriptionGuard)
   @Post('generate')
   @ApiOperation({ summary: 'Generate a CV for a specific job' })
   @ApiResponse({ status: 201, description: 'CV generated successfully.', type: CV })

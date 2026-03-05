@@ -6,21 +6,17 @@ import { OpenAIService } from './openai.service';
 import { LlmRouterService } from './llm-router.service';
 import { Prompt } from './entities/prompt.entity';
 import { AiUsage } from './entities/ai-usage.entity';
-import { AiFeatureConfig } from './entities/ai-feature-config.entity';
+
 import { LLM_SERVICE } from './llm.interface';
 import { SettingsModule } from '../settings/settings.module';
 import { RedisModule } from '../../common/redis/redis.module';
 import { PromptRepository } from './prompt.repository';
-import { AiFeatureConfigRepository } from './ai-feature-config.repository';
+
 import { AiUsageRepository } from './ai-usage.repository';
 
 @Global()
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Prompt, AiUsage, AiFeatureConfig]),
-    SettingsModule,
-    RedisModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Prompt, AiUsage]), SettingsModule, RedisModule],
   providers: [
     GeminiService,
     GroqService,
@@ -31,7 +27,7 @@ import { AiUsageRepository } from './ai-usage.repository';
       useExisting: LlmRouterService,
     },
     PromptRepository,
-    AiFeatureConfigRepository,
+
     AiUsageRepository,
   ],
   exports: [
@@ -42,7 +38,7 @@ import { AiUsageRepository } from './ai-usage.repository';
     LlmRouterService,
     TypeOrmModule,
     PromptRepository,
-    AiFeatureConfigRepository,
+
     AiUsageRepository,
   ],
 })

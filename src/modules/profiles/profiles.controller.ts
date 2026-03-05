@@ -26,8 +26,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { AiFeatureGuard } from '../../common/guards/ai-feature.guard';
-import { AiFeature } from '../../common/decorators/ai-feature.decorator';
+
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateVisibilityDto } from './dto/visibility-settings.dto';
@@ -172,8 +171,7 @@ export class ProfilesController {
 
   @Get('me/completeness')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, AiFeatureGuard)
-  @AiFeature('profile_completeness')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get profile completeness score for target role' })
   @ApiResponse({ status: 200, description: 'Completeness score returned.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
@@ -254,8 +252,7 @@ export class ProfilesController {
 
   @Get('me/insights')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, AiFeatureGuard)
-  @AiFeature('profile_insights')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get AI insights for current user profile' })
   @ApiResponse({ status: 200, description: 'Profile insights returned.', type: [ProfileInsight] })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
