@@ -4,6 +4,7 @@ import { AI_FEATURE_KEY } from '../decorators/ai-feature.decorator';
 import { AdminAiService } from '../../modules/admin/services/admin-ai.service';
 import { Request } from 'express';
 import { SubscriptionService } from '../../modules/subscription/subscription.service';
+import { UserRole } from 'src/modules/users/entities/user.entity';
 
 /**
  * Guard that checks if an AI feature is enabled and enforces rate limits.
@@ -51,7 +52,7 @@ export class AiFeatureGuard implements CanActivate {
     if (!userId) return true;
 
     // Admin bypass
-    if (user?.role === 'admin') return true;
+    if (user?.role === UserRole.ADMIN) return true;
 
     let quota = featureConfig.maxRequestsPerDay;
 
