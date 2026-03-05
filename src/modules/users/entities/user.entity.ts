@@ -28,7 +28,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, select: false })
   passwordHash: string | null;
 
   @Column({ default: false })
@@ -37,13 +37,13 @@ export class User {
   @Column({ default: false })
   isBanned: boolean;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, select: false })
   verificationToken: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, select: false })
   resetPasswordToken: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, select: false })
   resetPasswordExpires: Date | null;
 
   @Column({
@@ -54,13 +54,13 @@ export class User {
   role: UserRole;
 
   // OAuth fields
-  @Column({ type: 'varchar', nullable: true, unique: true })
+  @Column({ type: 'varchar', nullable: true, unique: true, select: false })
   googleId: string | null;
 
-  @Column({ type: 'varchar', nullable: true, unique: true })
+  @Column({ type: 'varchar', nullable: true, unique: true, select: false })
   githubId: string | null;
 
-  @Column({ type: 'varchar', nullable: true, unique: true })
+  @Column({ type: 'varchar', nullable: true, unique: true, select: false })
   appleId: string | null;
 
   @Column({ type: 'varchar', nullable: true })

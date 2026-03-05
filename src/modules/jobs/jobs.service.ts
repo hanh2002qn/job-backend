@@ -9,6 +9,7 @@ import { SortOrder } from '../../common/dto/base-search.dto';
 import { CacheService } from '../../common/redis/cache.service';
 import { CACHE_KEYS, CACHE_TTL } from '../../common/redis/queue.constants';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { createPaginationMeta } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class JobsService {
@@ -52,7 +53,7 @@ export class JobsService {
       cacheKey,
       async () => {
         const {
-          keyword,
+          search,
           location,
           city,
           experienceLevel,
@@ -63,6 +64,7 @@ export class JobsService {
           minSalary,
           maxSalary,
           jobType,
+          status,
           sortBy = JobSortBy.POSTED_AT,
           sortOrder = SortOrder.DESC,
           page = 1,
@@ -71,15 +73,15 @@ export class JobsService {
         const query = this.jobsRepository.createQueryBuilder('job');
 
         // Full-text search with PostgreSQL tsvector
-        if (keyword) {
+        if (search) {
           query.andWhere(
-            "job.searchVector @@ plainto_tsquery('english', :keyword) OR " +
-              'job.title ILIKE :likeKeyword OR job.company ILIKE :likeKeyword',
-            { keyword, likeKeyword: `%${keyword}%` },
+            "job.searchVector @@ plainto_tsquery('english', :search) OR " +
+              'job.title ILIKE :likeSearch OR job.company ILIKE :likeSearch',
+            { search, likeSearch: `%${search}%` },
           );
           // Add ranking for full-text matches
           query.addSelect(
-            "COALESCE(ts_rank(job.searchVector, plainto_tsquery('english', :keyword)), 0)",
+            "COALESCE(ts_rank(job.searchVector, plainto_tsquery('english', :search)), 0)",
             'search_rank',
           );
         }
@@ -128,11 +130,15 @@ export class JobsService {
           query.andWhere('job.salaryMax <= :maxSalary', { maxSalary });
         }
 
+        if (status) {
+          query.andWhere('job.status = :status', { status });
+        }
+
         // Filter expired jobs
         query.andWhere('job.expired = :expired', { expired: false });
 
         // Sorting logic
-        if (keyword) {
+        if (search) {
           // Sort by relevance first when searching
           query.orderBy('search_rank', 'DESC');
           query.addOrderBy(`job.${sortBy}`, sortOrder);
@@ -147,12 +153,7 @@ export class JobsService {
 
         return {
           data: items,
-          meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-          },
+          meta: createPaginationMeta(total, page, limit),
         };
       },
       CACHE_TTL.JOBS_LIST,
@@ -248,12 +249,7 @@ export class JobsService {
 
     return {
       data: items.map((saved) => ({ ...saved.job, savedAt: saved.savedAt })),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: createPaginationMeta(total, page, limit),
     };
   }
 

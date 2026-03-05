@@ -46,7 +46,7 @@ export class JobsController {
     data: Job[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
-    return this.jobsService.findAll(query);
+    return this.jobsService.findAll({ ...query, status: JobStatus.APPROVED });
   }
 
   @Get('saved')

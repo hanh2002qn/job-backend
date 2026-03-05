@@ -17,6 +17,7 @@ import { UserRole } from '../../users/entities/user.entity';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { AuditAction } from '../../../common/decorators/audit-log.decorator';
 
 @ApiTags('admin/jobs')
 @ApiBearerAuth()
@@ -44,6 +45,7 @@ export class AdminJobsController {
   }
 
   @Patch(':id')
+  @AuditAction({ action: 'MODERATE_JOB', module: 'JOBS' })
   @ApiOperation({ summary: 'Update job' })
   @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Job updated.' })
@@ -53,6 +55,7 @@ export class AdminJobsController {
   }
 
   @Delete(':id')
+  @AuditAction({ action: 'DELETE_JOB', module: 'JOBS' })
   @ApiOperation({ summary: 'Delete job' })
   @ApiParam({ name: 'id', description: 'Job ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Job deleted.' })

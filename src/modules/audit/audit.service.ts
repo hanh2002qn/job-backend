@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditLog } from './entities/audit-log.entity';
+import { createPaginationMeta } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class AuditService {
@@ -54,12 +55,7 @@ export class AuditService {
 
     return {
       items,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: createPaginationMeta(total, page, limit),
     };
   }
 }

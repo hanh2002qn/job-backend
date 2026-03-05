@@ -1,8 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, Like } from 'typeorm';
 import { User } from './entities/user.entity';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { BaseSearchDto } from '../../common/dto/base-search.dto';
+import { createPaginationMeta } from '../../common/utils/pagination.util';
 
 export interface OAuthUserData {
   email: string;
@@ -26,11 +27,14 @@ export class UsersService {
     return this.usersRepository.save(newUser);
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async findAll(searchDto: BaseSearchDto) {
+    const { page = 1, limit = 10, search } = searchDto;
     const skip = (page - 1) * limit;
 
+    const where = search ? { email: Like(`%${search}%`) } : {};
+
     const [items, total] = await this.usersRepository.findAndCount({
+      where,
       skip,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -38,12 +42,7 @@ export class UsersService {
 
     return {
       data: items,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: createPaginationMeta(total, page, limit),
     };
   }
 

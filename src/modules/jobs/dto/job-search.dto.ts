@@ -1,7 +1,7 @@
 import { IsOptional, IsString, IsInt, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { City, Industry, JobLevel, JobType } from '../enums/job.enums';
+import { City, Industry, JobLevel, JobType, JobStatus } from '../enums/job.enums';
 import { BaseSearchDto } from '../../../common/dto/base-search.dto';
 
 export enum JobSortBy {
@@ -12,11 +12,6 @@ export enum JobSortBy {
 }
 
 export class JobSearchDto extends BaseSearchDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  keyword?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -68,6 +63,11 @@ export class JobSearchDto extends BaseSearchDto {
   @IsOptional()
   @IsEnum(JobType)
   jobType?: JobType;
+
+  @ApiPropertyOptional({ enum: JobStatus })
+  @IsOptional()
+  @IsEnum(JobStatus)
+  status?: JobStatus;
 
   @ApiPropertyOptional({ enum: JobSortBy, default: JobSortBy.POSTED_AT })
   @IsOptional()

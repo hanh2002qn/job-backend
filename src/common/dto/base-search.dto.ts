@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum } from 'class-validator';
+import { IsOptional, IsEnum, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from './pagination.dto';
 
@@ -12,4 +12,9 @@ export class BaseSearchDto extends PaginationDto {
   @IsOptional()
   @IsEnum(SortOrder)
   sortOrder?: SortOrder = SortOrder.DESC;
+
+  @ApiPropertyOptional({ description: 'Search term' })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

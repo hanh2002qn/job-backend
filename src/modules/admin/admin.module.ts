@@ -22,11 +22,8 @@ import { AdminPlanService } from './services/admin-plan.service';
 import { AdminPromptController } from './controllers/admin-prompt.controller';
 import { AdminAiController } from './controllers/admin-ai.controller';
 import { AdminPromptService } from './services/admin-prompt.service';
-import { AdminModerationController } from './controllers/admin-moderation.controller';
 import { AdminSupportController } from './controllers/admin-support.controller';
 import { AdminSettingsController } from './controllers/admin-settings.controller';
-
-import { AdminModerationService } from './services/admin-moderation.service';
 
 @Module({
   imports: [
@@ -47,11 +44,10 @@ import { AdminModerationService } from './services/admin-moderation.service';
     AdminPlanController,
     AdminPromptController,
     AdminAiController,
-    AdminModerationController,
     AdminSupportController,
     AdminSettingsController,
   ],
-  providers: [AdminDashboardService, AdminPlanService, AdminPromptService, AdminModerationService],
+  providers: [AdminDashboardService, AdminPlanService, AdminPromptService],
   exports: [],
 })
 export class AdminModule {}

@@ -6,6 +6,7 @@ import { Job } from '../jobs/entities/job.entity';
 import { Profile } from '../profiles/entities/profile.entity';
 import { ExperienceRecord } from '../profiles/interfaces/profile.interface';
 import { CacheService } from '../../common/redis/cache.service';
+import { createPaginationMeta } from '../../common/utils/pagination.util';
 
 interface AIJobRecommendation {
   jobId: string;
@@ -105,12 +106,7 @@ export class MatchingService {
 
     return {
       data: items,
-      meta: {
-        total: combined.length,
-        page,
-        limit,
-        totalPages: Math.ceil(combined.length / limit),
-      },
+      meta: createPaginationMeta(combined.length, page, limit),
     };
   }
 
