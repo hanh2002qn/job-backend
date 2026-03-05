@@ -9,6 +9,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { RefreshTokenRepository } from './refresh-token.repository';
 
 // Partial mock — keep real hash behavior for specific tests
 jest.mock('bcrypt', () => ({
@@ -41,9 +42,11 @@ const mockUser = {
 
 const mockUsersService = {
   findOneByEmail: jest.fn(),
+  findOneWithPasswordByEmail: jest.fn(),
   findOneById: jest.fn(),
   findOneByVerificationToken: jest.fn(),
   findOneByResetToken: jest.fn(),
+  findOneByResetTokenWithExpiry: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
 };
@@ -89,7 +92,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: MailService, useValue: mockMailService },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: getRepositoryToken(RefreshToken), useValue: mockRefreshTokenRepository },
+        { provide: RefreshTokenRepository, useValue: mockRefreshTokenRepository },
       ],
     }).compile();
 
@@ -137,7 +140,7 @@ describe('AuthService', () => {
     const loginDto = { email: 'test@example.com', password: 'Password123!' };
 
     it('should return tokens for valid credentials', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUsersService.findOneWithPasswordByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login(loginDto);
@@ -148,7 +151,7 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUsersService.findOneWithPasswordByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
@@ -156,7 +159,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException if email not verified', async () => {
       const unverifiedUser = { ...mockUser, isVerified: false };
-      mockUsersService.findOneByEmail.mockResolvedValue(unverifiedUser);
+      mockUsersService.findOneWithPasswordByEmail.mockResolvedValue(unverifiedUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
@@ -289,7 +292,7 @@ describe('AuthService', () => {
         resetPasswordToken: 'valid_reset_token',
         resetPasswordExpires: new Date(Date.now() + 3600000),
       };
-      mockUsersService.findOneByResetToken.mockResolvedValue(userWithReset);
+      mockUsersService.findOneByResetTokenWithExpiry.mockResolvedValue(userWithReset);
 
       const result = await service.resetPassword(dto);
 
@@ -314,13 +317,13 @@ describe('AuthService', () => {
         resetPasswordToken: 'expired_token',
         resetPasswordExpires: new Date(Date.now() - 3600000), // past
       };
-      mockUsersService.findOneByResetToken.mockResolvedValue(userWithExpiredToken);
+      mockUsersService.findOneByResetTokenWithExpiry.mockResolvedValue(userWithExpiredToken);
 
       await expect(service.resetPassword(dto)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw for invalid token', async () => {
-      mockUsersService.findOneByResetToken.mockResolvedValue(null);
+      mockUsersService.findOneByResetTokenWithExpiry.mockResolvedValue(null);
 
       await expect(service.resetPassword(dto)).rejects.toThrow(UnauthorizedException);
     });

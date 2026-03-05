@@ -71,7 +71,8 @@ export class AuthService {
   }
 
   async validateUser(email: string, pass: string): Promise<Omit<User, 'passwordHash'> | null> {
-    const user = await this.usersService.findOneByEmail(email);
+    const user = await this.usersService.findOneWithPasswordByEmail(email);
+
     if (user && user.passwordHash && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash: _passwordHash, ...result } = user;
       return result;
@@ -212,7 +213,7 @@ export class AuthService {
   }
 
   async resetPassword(resetDto: ResetPasswordDto) {
-    const user = await this.usersService.findOneByResetToken(resetDto.token);
+    const user = await this.usersService.findOneByResetTokenWithExpiry(resetDto.token);
 
     if (!user) {
       throw new UnauthorizedException('Invalid or expired reset token');

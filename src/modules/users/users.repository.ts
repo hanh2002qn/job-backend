@@ -11,8 +11,29 @@ export class UsersRepository extends BaseRepository<User> {
     super(User, dataSource.createEntityManager());
   }
 
+  async findByIdWithProfile(id: string): Promise<User | null> {
+    return this.findOne({
+      where: { id } as FindOptionsWhere<User>,
+      relations: ['profile'],
+    });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
-    return this.findOne({ where: { email } });
+    return this.findOne({ where: { email } as FindOptionsWhere<User> });
+  }
+
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.findOne({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        isVerified: true,
+        role: true,
+        isBanned: true,
+      },
+    });
   }
 
   async findByVerificationToken(token: string): Promise<User | null> {
@@ -21,6 +42,17 @@ export class UsersRepository extends BaseRepository<User> {
 
   async findByResetToken(token: string): Promise<User | null> {
     return this.findOne({ where: { resetPasswordToken: token } });
+  }
+
+  async findByResetTokenWithExpiry(token: string): Promise<User | null> {
+    return this.findOne({
+      where: { resetPasswordToken: token },
+      select: {
+        id: true,
+        resetPasswordToken: true,
+        resetPasswordExpires: true,
+      },
+    });
   }
 
   async findByGoogleId(googleId: string): Promise<User | null> {

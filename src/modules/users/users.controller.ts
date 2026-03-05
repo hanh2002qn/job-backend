@@ -13,8 +13,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Current user profile returned.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@CurrentUser() user: User): Omit<User, 'passwordHash'> {
-    const { passwordHash: _passwordHash, ...result } = user;
-    return result;
+  getProfile(@CurrentUser() user: User): User {
+    return user;
   }
 }

@@ -19,8 +19,6 @@ import {
 export class AdminAiController {
   constructor(private readonly adminAiService: AdminAiService) {}
 
-  // ============ Feature Config ============
-
   // ============ Usage Analytics ============
 
   @Get('usage')

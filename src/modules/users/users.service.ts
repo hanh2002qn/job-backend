@@ -37,6 +37,14 @@ export class UsersService {
     return this.usersRepository.findByEmail(email);
   }
 
+  async findOneWithPasswordByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findByEmailWithPassword(email);
+  }
+
+  async findOneWithProfile(id: string): Promise<User | null> {
+    return this.usersRepository.findByIdWithProfile(id);
+  }
+
   async findOneById(id: string): Promise<User | null> {
     return this.usersRepository.findById(id);
   }
@@ -47,6 +55,10 @@ export class UsersService {
 
   async findOneByResetToken(token: string): Promise<User | null> {
     return this.usersRepository.findByResetToken(token);
+  }
+
+  async findOneByResetTokenWithExpiry(token: string): Promise<User | null> {
+    return this.usersRepository.findByResetTokenWithExpiry(token);
   }
 
   async update(id: string, updateData: DeepPartial<User>): Promise<void> {
