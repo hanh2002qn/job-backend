@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
+import { Subscription } from '../subscription/entities/subscription.entity';
 import { FollowUp, FollowUpStatus, FollowUpType } from './entities/follow-up.entity';
 import { FollowUpRepository } from './follow-up.repository';
 import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
@@ -21,18 +22,14 @@ export class FollowUpService {
     @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
-  async generate(userId: string, generateDto: GenerateFollowUpDto): Promise<FollowUp> {
-    // Freemium Check
-    const isPremium = await this.subscriptionService.isPremium(userId);
-    if (!isPremium) {
-      const followUpCount = await this.followUpRepository.count({
-        where: { userId },
-      });
-      if (followUpCount >= 1) {
-        throw new ForbiddenException(
-          'Free users are limited to 1 AI Follow-up draft. Please upgrade to Premium for unlimited AI follow-ups.',
-        );
-      }
+  async generate(
+    userId: string,
+    generateDto: GenerateFollowUpDto,
+    subscription?: Subscription,
+  ): Promise<FollowUp> {
+    const sub = subscription || (await this.subscriptionService.getSubscription(userId));
+    if (!sub) {
+      throw new NotFoundException('Subscription not found');
     }
     const job = await this.jobsService.findOne(generateDto.jobId);
     if (!job) {
@@ -80,7 +77,14 @@ export class FollowUpService {
       trackingToken: uuidv4(),
     });
 
-    return this.followUpRepository.save(followUp);
+    const savedFollowUp = await this.followUpRepository.save(followUp);
+
+    // Increment usage after successful generation
+    if (sub) {
+      await this.subscriptionService.incrementUsage(sub.id, 'followUpUsage');
+    }
+
+    return savedFollowUp;
   }
 
   async update(userId: string, id: string, updateDto: UpdateFollowUpDto): Promise<FollowUp> {

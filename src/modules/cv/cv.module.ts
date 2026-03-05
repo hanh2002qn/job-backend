@@ -8,28 +8,20 @@ import { CvRendererService } from './services/cv-renderer.service';
 import { JobsModule } from '../jobs/jobs.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
-import { UserCredits } from '../users/entities/user-credits.entity';
 import { AIModule } from '../ai/ai.module';
 import { CvRepository } from './cv.repository';
 import { CvVersionRepository } from './cv-version.repository';
-import { UserCreditsRepository } from '../users/user-credits.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CV, CvVersion, UserCredits]),
+    TypeOrmModule.forFeature([CV, CvVersion]),
     JobsModule,
     ProfilesModule,
     SubscriptionModule,
     AIModule,
   ],
   controllers: [CvController],
-  providers: [
-    CvService,
-    CvRendererService,
-    CvRepository,
-    CvVersionRepository,
-    UserCreditsRepository,
-  ],
+  providers: [CvService, CvRendererService, CvRepository, CvVersionRepository],
   exports: [CvService, CvRendererService, CvRepository],
 })
 export class CvModule {}

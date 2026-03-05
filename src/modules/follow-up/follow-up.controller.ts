@@ -1,12 +1,15 @@
-import { Controller, Post, Body, UseGuards, Patch, Param, Get, Res } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Patch, Param, Get, Res, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { FollowUpService } from './follow-up.service';
+import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
 import { GenerateFollowUpDto } from './dto/generate-follow-up.dto';
 import { SendFollowUpDto } from './dto/send-follow-up.dto';
 import { UpdateFollowUpDto } from './dto/update-follow-up.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../../common/guards/subscription.guard';
+import { CheckLimit } from '../../common/decorators/subscription.decorator';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -18,15 +21,20 @@ export class FollowUpController {
   constructor(private readonly followUpService: FollowUpService) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @CheckLimit('max_follow_ups')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('generate')
   @ApiOperation({ summary: 'Generate a follow-up email draft' })
   @ApiResponse({ status: 201, description: 'Follow-up email generated.', type: FollowUp })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded.' })
-  generate(@CurrentUser() user: User, @Body() generateDto: GenerateFollowUpDto): Promise<FollowUp> {
-    return this.followUpService.generate(user.id, generateDto);
+  generate(
+    @CurrentUser() user: User,
+    @Body() generateDto: GenerateFollowUpDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<FollowUp> {
+    return this.followUpService.generate(user.id, generateDto, req.subscription);
   }
 
   @ApiBearerAuth()

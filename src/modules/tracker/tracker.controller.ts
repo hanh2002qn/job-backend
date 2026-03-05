@@ -8,6 +8,7 @@ import {
   UseGuards,
   Query,
   Delete,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -30,6 +31,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { InterviewSchedule } from './entities/interview-schedule.entity';
 import { TrackerNote } from './entities/tracker-note.entity';
+import { SubscriptionGuard } from '../../common/guards/subscription.guard';
+import { CheckLimit } from '../../common/decorators/subscription.decorator';
+import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
 
 @ApiTags('tracker')
 @ApiBearerAuth()
@@ -38,6 +42,8 @@ import { TrackerNote } from './entities/tracker-note.entity';
 export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
 
+  @UseGuards(SubscriptionGuard)
+  @CheckLimit('max_tracked_jobs')
   @Post()
   @ApiOperation({ summary: 'Track a new job' })
   @ApiResponse({ status: 201, description: 'Job tracker created.', type: JobTracker })
@@ -45,8 +51,9 @@ export class TrackerController {
   create(
     @CurrentUser() user: User,
     @Body() createTrackerDto: CreateTrackerDto,
+    @Req() req: AuthenticatedRequest,
   ): Promise<JobTracker> {
-    return this.trackerService.create(user.id, createTrackerDto);
+    return this.trackerService.create(user.id, createTrackerDto, req.subscription);
   }
 
   @Get()
@@ -85,19 +92,6 @@ export class TrackerController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getCalendar(@CurrentUser() user: User): Promise<InterviewSchedule[]> {
     return this.trackerService.findAllInterviews(user.id);
-  }
-
-  @Get('interviews/:id/prep-tips')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get AI preparation tips for an interview' })
-  @ApiParam({ name: 'id', description: 'Interview ID (UUID)' })
-  @ApiResponse({ status: 200, description: 'Interview preparation tips returned.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getPrepTips(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-  ): Promise<Record<string, unknown>> {
-    return this.trackerService.getInterviewPrepTips(user.id, id);
   }
 
   @Get('stats')

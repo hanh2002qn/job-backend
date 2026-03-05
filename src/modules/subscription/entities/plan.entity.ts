@@ -3,8 +3,9 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 
 export interface PlanLimits {
   max_cvs: number;
-  monthly_credits: number;
-  ai_access: boolean;
+  max_cover_letters: number;
+  max_follow_ups: number;
+  max_tracked_jobs: number;
   cv_templates: string[];
 }
 

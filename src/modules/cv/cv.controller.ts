@@ -1,12 +1,14 @@
-import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CvService } from './cv.service';
+import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
 import { GenerateCvDto } from './dto/generate-cv.dto';
 import { TailorCvDto } from './dto/tailor-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../../common/guards/subscription.guard';
+import { CheckLimit } from '../../common/decorators/subscription.decorator';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -22,13 +24,18 @@ export class CvController {
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @UseGuards(SubscriptionGuard)
+  @CheckLimit('max_cvs')
   @Post('generate')
   @ApiOperation({ summary: 'Generate a CV for a specific job' })
   @ApiResponse({ status: 201, description: 'CV generated successfully.', type: CV })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Subscription or AI feature limit reached.' })
-  generate(@CurrentUser() user: User, @Body() generateDto: GenerateCvDto): Promise<CV> {
-    return this.cvService.generate(user.id, generateDto);
+  generate(
+    @CurrentUser() user: User,
+    @Body() generateDto: GenerateCvDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<CV> {
+    return this.cvService.generate(user.id, generateDto, req.subscription);
   }
 
   @Get()

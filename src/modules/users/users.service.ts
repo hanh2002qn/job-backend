@@ -4,6 +4,7 @@ import { User } from './entities/user.entity';
 import { UsersRepository } from './users.repository';
 import { UserSearchDto } from './dto/user-search.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 export interface OAuthUserData {
   email: string;
@@ -17,10 +18,15 @@ export interface OAuthUserData {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly subscriptionService: SubscriptionService,
+  ) {}
 
   async create(userData: Partial<User>): Promise<User> {
-    return this.usersRepository.createAndSave(userData as DeepPartial<User>);
+    const user = await this.usersRepository.createAndSave(userData as DeepPartial<User>);
+    await this.subscriptionService.createDefaultSubscription(user.id);
+    return user;
   }
 
   async findAll(searchDto: UserSearchDto): Promise<PaginatedResponseDto<User>> {
@@ -100,7 +106,7 @@ export class UsersService {
     }
 
     // 3. Create new user
-    return this.usersRepository.createAndSave({
+    const newUser = await this.usersRepository.createAndSave({
       email: oauthData.email,
       googleId: oauthData.googleId,
       githubId: oauthData.githubId,
@@ -109,5 +115,8 @@ export class UsersService {
       isVerified: true,
       passwordHash: null,
     });
+
+    await this.subscriptionService.createDefaultSubscription(newUser.id);
+    return newUser;
   }
 }

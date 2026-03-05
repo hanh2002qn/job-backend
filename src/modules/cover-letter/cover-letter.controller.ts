@@ -1,10 +1,13 @@
-import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Param, Patch, Delete, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CoverLetterService } from './cover-letter.service';
+import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
 import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../../common/guards/subscription.guard';
+import { CheckLimit } from '../../common/decorators/subscription.decorator';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -18,7 +21,8 @@ export class CoverLetterController {
   constructor(private readonly coverLetterService: CoverLetterService) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @CheckLimit('max_cover_letters')
   @Post('generate')
   @ApiOperation({ summary: 'Generate a Cover Letter' })
   @ApiResponse({ status: 201, description: 'Cover letter generated.', type: CoverLetter })
@@ -27,8 +31,9 @@ export class CoverLetterController {
   generate(
     @CurrentUser() user: User,
     @Body() generateDto: GenerateCoverLetterDto,
+    @Req() req: AuthenticatedRequest,
   ): Promise<CoverLetter> {
-    return this.coverLetterService.generate(user.id, generateDto);
+    return this.coverLetterService.generate(user.id, generateDto, req.subscription);
   }
 
   @Get()

@@ -3,13 +3,13 @@ import { CV } from './entities/cv.entity';
 import { GenerateCvDto } from './dto/generate-cv.dto';
 import { CvRepository } from './cv.repository';
 import { CvVersionRepository } from './cv-version.repository';
-import { UserCreditsRepository } from '../users/user-credits.repository';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { CvRendererService } from './services/cv-renderer.service';
+import { Subscription } from '../subscription/entities/subscription.entity';
 import type { CvContent } from './interfaces/cv.interface';
 
 @Injectable()
@@ -17,7 +17,6 @@ export class CvService {
   constructor(
     private cvRepository: CvRepository,
     private cvVersionRepository: CvVersionRepository,
-    private creditsRepository: UserCreditsRepository,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
     private subscriptionService: SubscriptionService,
@@ -25,44 +24,23 @@ export class CvService {
     private cvRendererService: CvRendererService,
   ) {}
 
-  async generate(userId: string, generateDto: GenerateCvDto): Promise<CV> {
-    const subscription = await this.subscriptionService.getSubscription(userId);
-    const plan = subscription?.planDetails; // Assume we will load this relation
-
-    // Default to Free limits if no plan found (should be impossible if seeded correctly, but safe fallback)
-    const _isPremium = await this.subscriptionService.isPremium(userId);
+  async generate(
+    userId: string,
+    generateDto: GenerateCvDto,
+    subscription?: Subscription,
+  ): Promise<CV> {
+    const sub = subscription || (await this.subscriptionService.getSubscription(userId));
+    if (!sub) {
+      throw new ForbiddenException('Subscription not found. Please contact support.');
+    }
+    const plan = sub.planDetails;
     const limits = plan?.limits || {
       max_cvs: 2,
-      monthly_credits: 0,
-      ai_access: false,
+      max_cover_letters: 2,
+      max_follow_ups: 1,
       cv_templates: ['free'],
     };
 
-    const credits = await this.creditsRepository.findOne({ where: { userId } });
-
-    // 1. Max CVs Check
-    if (limits.max_cvs < 9999) {
-      // 9999 as infinity for now
-      const cvCount = await this.cvRepository.count({ where: { userId } });
-      if (cvCount >= limits.max_cvs) {
-        throw new ForbiddenException(
-          `Your current plan is limited to ${limits.max_cvs} CVs. Please upgrade for more.`,
-        );
-      }
-    }
-
-    // 2. Credit Check for AI generation
-    const creditCost = 2;
-    if (!credits || credits.balance < creditCost) {
-      throw new ForbiddenException(
-        `Insufficient credits. This action requires ${creditCost} credits.`,
-      );
-    }
-
-    // 3. Template Check
-    // If template not in allowed list, forbidden.
-    // Simplified logic: if plan has 'premium' in templates, allow all. validation?
-    // Better: plan.limits.cv_templates = ['free'] or ['free', 'premium']
     const templateType = generateDto.template?.startsWith('premium-') ? 'premium' : 'free';
     if (!limits.cv_templates.includes('premium') && templateType === 'premium') {
       throw new ForbiddenException('This template is only available for Premium users.');
@@ -163,12 +141,9 @@ export class CvService {
 
     const savedCv = await this.cvRepository.save(cv);
 
-    // Deduct credits after successful generation
-    if (credits) {
-      // Need to re-fetch or cast because credits was const above, and we want to modify it.
-      // Actually best to update directly or use save with modified object.
-      credits.balance -= creditCost;
-      await this.creditsRepository.save(credits);
+    // Increment usage after successful generation
+    if (sub) {
+      await this.subscriptionService.incrementUsage(sub.id, 'cvUsage');
     }
 
     return savedCv;

@@ -9,7 +9,6 @@ import { StripeService } from './stripe.service';
 import Stripe from 'stripe';
 import { SubscriptionRepository } from './subscription.repository';
 import { PlanRepository } from './plan.repository';
-import { UserCreditsRepository } from '../users/user-credits.repository';
 
 interface StripeSubscriptionEvent {
   id: string;
@@ -24,7 +23,6 @@ export class SubscriptionService {
 
   constructor(
     private subscriptionRepository: SubscriptionRepository,
-    private creditsRepository: UserCreditsRepository,
     private planRepository: PlanRepository,
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
@@ -126,25 +124,14 @@ export class SubscriptionService {
     sub.status = SubscriptionStatus.ACTIVE;
     sub.planId = plan?.id || null; // Save relation
 
-    // Legacy support: drop setting sub.plan as it is removed
+    // Reset usage counters
+    sub.cvUsage = 0;
+    sub.coverLetterUsage = 0;
+    sub.followUpUsage = 0;
 
     await this.subscriptionRepository.save(sub);
 
-    // Refill credits based on Plan Limits
-    let credits = await this.creditsRepository.findOne({ where: { userId } });
-    if (!credits) {
-      credits = this.creditsRepository.create({ userId });
-    }
-
-    // Dynamic Refill
-    const monthlyCredits = plan?.limits?.monthly_credits || 0;
-    credits.balance = monthlyCredits;
-    credits.lastRefillDate = new Date();
-    await this.creditsRepository.save(credits);
-
-    this.logger.log(
-      `Subscription activated and credits refilled for user ${userId} with ${monthlyCredits} credits`,
-    );
+    this.logger.log(`Subscription activated and usage counters reset for user ${userId}`);
   }
 
   private async handleSubscriptionUpdated(stripeSub: StripeSubscriptionEvent) {
@@ -197,14 +184,25 @@ export class SubscriptionService {
     });
   }
 
-  async isPremium(userId: string): Promise<boolean> {
-    const sub = await this.getSubscription(userId);
-    if (!sub) return false;
+  async incrementUsage(id: string, field: keyof SubscriptionEntity) {
+    await this.subscriptionRepository.increment({ id }, field, 1);
+  }
 
-    return (
-      sub.isPremiumPlan &&
-      sub.status === SubscriptionStatus.ACTIVE &&
-      (!sub.expiresAt || sub.expiresAt > new Date())
-    );
+  async createDefaultSubscription(userId: string): Promise<SubscriptionEntity> {
+    const freePlan = await this.planRepository.findOne({
+      where: { slug: 'free' },
+    });
+
+    const sub = this.subscriptionRepository.create({
+      userId,
+      planId: freePlan?.id || null,
+      status: SubscriptionStatus.ACTIVE,
+      cvUsage: 0,
+      coverLetterUsage: 0,
+      followUpUsage: 0,
+      trackedJobsUsage: 0,
+    });
+
+    return this.subscriptionRepository.save(sub);
   }
 }

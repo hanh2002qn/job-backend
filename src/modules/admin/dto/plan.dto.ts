@@ -18,14 +18,20 @@ class PlanLimitsDto {
   @Min(0)
   max_cvs: number;
 
-  @ApiProperty({ example: 100, description: '0 = no credits (free plan)' })
+  @ApiProperty({ example: 3 })
   @IsInt()
   @Min(0)
-  monthly_credits: number;
+  max_cover_letters: number;
 
-  @ApiProperty({ example: false })
-  @IsBoolean()
-  ai_access: boolean;
+  @ApiProperty({ example: 5 })
+  @IsInt()
+  @Min(0)
+  max_follow_ups: number;
+
+  @ApiProperty({ example: 33, description: 'Limit for job tracking' })
+  @IsInt()
+  @Min(0)
+  max_tracked_jobs: number;
 
   @ApiProperty({ example: ['basic', 'modern'] })
   @IsString({ each: true })

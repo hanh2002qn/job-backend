@@ -6,6 +6,8 @@ import { JobsService } from '../jobs/jobs.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { LLM_SERVICE, type LlmService } from '../ai/llm.interface';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
+import { Subscription } from '../subscription/entities/subscription.entity';
 
 @Injectable()
 export class CoverLetterService {
@@ -13,10 +15,21 @@ export class CoverLetterService {
     private coverLettersRepository: CoverLetterRepository,
     private jobsService: JobsService,
     private profilesService: ProfilesService,
+    private subscriptionService: SubscriptionService,
     @Inject(LLM_SERVICE) private llmService: LlmService,
   ) {}
 
-  async generate(userId: string, generateDto: GenerateCoverLetterDto): Promise<CoverLetter> {
+  async generate(
+    userId: string,
+    generateDto: GenerateCoverLetterDto,
+    subscription?: Subscription,
+  ): Promise<CoverLetter> {
+    // 1. Check Subscription
+    const sub = subscription || (await this.subscriptionService.getSubscription(userId));
+    if (!sub) {
+      throw new NotFoundException('Subscription not found');
+    }
+
     const job = await this.jobsService.findOne(generateDto.jobId);
     if (!job) {
       throw new NotFoundException('Job not found');
@@ -86,7 +99,14 @@ export class CoverLetterService {
       language,
     });
 
-    return this.coverLettersRepository.save(coverLetter);
+    const savedCoverLetter = await this.coverLettersRepository.save(coverLetter);
+
+    // Increment usage after successful generation
+    if (sub) {
+      await this.subscriptionService.incrementUsage(sub.id, 'coverLetterUsage');
+    }
+
+    return savedCoverLetter;
   }
 
   async findAll(userId: string): Promise<CoverLetter[]> {

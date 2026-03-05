@@ -46,6 +46,18 @@ export class Subscription extends BaseEntity {
   @Column({ default: false })
   cancelAtPeriodEnd: boolean;
 
+  @Column({ default: 0 })
+  cvUsage: number;
+
+  @Column({ default: 0 })
+  coverLetterUsage: number;
+
+  @Column({ default: 0 })
+  followUpUsage: number;
+
+  @Column({ default: 0 })
+  trackedJobsUsage: number;
+
   /**
    * Helper: get the plan slug (e.g., 'free', 'premium_monthly', 'premium_yearly')
    */

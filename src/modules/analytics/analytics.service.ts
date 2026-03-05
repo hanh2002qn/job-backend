@@ -20,7 +20,6 @@ interface FunnelData {
 }
 
 export interface AnalyticsOverview {
-  isPremium: boolean;
   isDemo: boolean;
   demoMessage?: string;
   summary: {
@@ -73,8 +72,6 @@ export class AnalyticsService {
     userId: string,
     period: AnalyticsPeriod,
   ): Promise<AnalyticsOverview> {
-    const isPremium = await this.subscriptionService.isPremium(userId);
-
     // 1. Funnel — SQL aggregation instead of loading all records
     const funnelRaw = await this.trackerRepository
       .createQueryBuilder('t')
@@ -111,32 +108,26 @@ export class AnalyticsService {
 
     // 3. Check if user has data
     if (totalTracked === 0 && cvTotal === 0) {
-      return this.getDemoOverview(isPremium);
+      return this.getDemoOverview();
     }
 
-    // 4. Template usage (premium only, small dataset — OK to load)
-    let templateUsage: Record<string, number> | null = null;
-    if (isPremium) {
-      const templates = await this.cvRepository
-        .createQueryBuilder('cv')
-        .select("COALESCE(cv.template, 'Default')", 'template')
-        .addSelect('COUNT(*)::int', 'count')
-        .where('cv.userId = :userId', { userId })
-        .groupBy('cv.template')
-        .getRawMany<{ template: string; count: number }>();
+    // 4. Template usage (small dataset — OK to load)
+    const templates = await this.cvRepository
+      .createQueryBuilder('cv')
+      .select("COALESCE(cv.template, 'Default')", 'template')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('cv.userId = :userId', { userId })
+      .groupBy('cv.template')
+      .getRawMany<{ template: string; count: number }>();
 
-      templateUsage = {};
-      for (const row of templates) {
-        templateUsage[row.template] = Number(row.count);
-      }
+    const templateUsage: Record<string, number> = {};
+    for (const row of templates) {
+      templateUsage[row.template] = Number(row.count);
     }
 
     // 5. Timeline — SQL aggregation with configurable period
-    let timeline: Array<{ date: string; count: number }> | null = null;
-    if (isPremium) {
-      const days = this.periodToDays(period);
-      timeline = await this.getTimelineData(userId, days);
-    }
+    const days = this.periodToDays(period);
+    const timeline = await this.getTimelineData(userId, days);
 
     // 6. Follow-up stats — SQL aggregation
     const followUpRaw = await this.followUpRepository
@@ -167,7 +158,6 @@ export class AnalyticsService {
     };
 
     return {
-      isPremium,
       isDemo: false,
       summary: {
         totalTracked,
@@ -188,19 +178,15 @@ export class AnalyticsService {
         total: followUpTotal,
         sent: followUpSent,
         scheduled: followUpScheduled,
-        responseRate: isPremium ? this.calculateResponseRate(followUpSent, followUpOpened) : null,
+        responseRate: this.calculateResponseRate(followUpSent, followUpOpened),
       },
-      conversionRate: isPremium
-        ? totalApplications > 0
-          ? ((interview / totalApplications) * 100).toFixed(1) + '%'
-          : '0%'
-        : null,
+      conversionRate:
+        totalApplications > 0 ? ((interview / totalApplications) * 100).toFixed(1) + '%' : '0%',
     };
   }
 
-  private getDemoOverview(isPremium: boolean): AnalyticsOverview {
+  private getDemoOverview(): AnalyticsOverview {
     return {
-      isPremium,
       isDemo: true,
       demoMessage: 'Đây là dữ liệu mẫu. Hãy bắt đầu tìm việc để xem phân tích thực tế!',
       summary: {
@@ -222,26 +208,24 @@ export class AnalyticsService {
       cvStats: {
         total: 4,
         avgScore: 78,
-        templates: isPremium ? { 'ATS-friendly': 2, modern: 1, 'premium-elegant': 1 } : null,
+        templates: { 'ATS-friendly': 2, modern: 1, 'premium-elegant': 1 },
       },
-      timeline: isPremium
-        ? [
-            { date: this.getDateString(-6), count: 1 },
-            { date: this.getDateString(-5), count: 0 },
-            { date: this.getDateString(-4), count: 2 },
-            { date: this.getDateString(-3), count: 3 },
-            { date: this.getDateString(-2), count: 1 },
-            { date: this.getDateString(-1), count: 2 },
-            { date: this.getDateString(0), count: 3 },
-          ]
-        : null,
+      timeline: [
+        { date: this.getDateString(-6), count: 1 },
+        { date: this.getDateString(-5), count: 0 },
+        { date: this.getDateString(-4), count: 2 },
+        { date: this.getDateString(-3), count: 3 },
+        { date: this.getDateString(-2), count: 1 },
+        { date: this.getDateString(-1), count: 2 },
+        { date: this.getDateString(0), count: 3 },
+      ],
       followUp: {
         total: 5,
         sent: 3,
         scheduled: 2,
-        responseRate: isPremium ? '40%' : null,
+        responseRate: '40%',
       },
-      conversionRate: isPremium ? '42.9%' : null,
+      conversionRate: '42.9%',
     };
   }
 

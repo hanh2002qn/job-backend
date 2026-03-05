@@ -9,9 +9,9 @@ export class SeedPlans1770482284562 implements MigrationInterface {
     await queryRunner.query(`
       INSERT INTO "plans" ("slug", "name", "description", "price", "currency", "interval", "limits", "isActive")
       VALUES
-        ('free', 'Free Plan', 'Basic features for job seekers', 0, 'USD', NULL, '{"max_cvs": 2, "monthly_credits": 0, "ai_access": false, "cv_templates": ["free"]}', true),
-        ('premium_monthly', 'Premium Monthly', 'Unlock full potential with monthly subscription', 9.99, 'USD', 'month', '{"max_cvs": 9999, "monthly_credits": 200, "ai_access": true, "cv_templates": ["free", "premium"]}', true),
-        ('premium_yearly', 'Premium Yearly', 'Best value for long-term career growth', 99.99, 'USD', 'year', '{"max_cvs": 9999, "monthly_credits": 200, "ai_access": true, "cv_templates": ["free", "premium"]}', true);
+        ('free', 'Free Plan', 'Basic features for job seekers', 0, 'USD', NULL, '{"max_cvs": 2, "max_cover_letters": 2, "max_follow_ups": 1, "max_tracked_jobs": 5, "cv_templates": ["free"]}', true),
+        ('premium_monthly', 'Premium Monthly', 'Unlock full potential with monthly subscription', 9.99, 'USD', 'month', '{"max_cvs": 9999, "max_cover_letters": 9999, "max_follow_ups": 9999, "max_tracked_jobs": 9999, "cv_templates": ["free", "premium"]}', true),
+        ('premium_yearly', 'Premium Yearly', 'Best value for long-term career growth', 99.99, 'USD', 'year', '{"max_cvs": 9999, "max_cover_letters": 9999, "max_follow_ups": 9999, "max_tracked_jobs": 9999, "cv_templates": ["free", "premium"]}', true);
     `);
   }
 

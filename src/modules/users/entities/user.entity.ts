@@ -5,7 +5,6 @@ import { JobTracker } from '../../tracker/entities/job-tracker.entity';
 import { CV } from '../../cv/entities/cv.entity';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 import { JobAlert } from '../../job-alert/entities/job-alert.entity';
-import { UserCredits } from './user-credits.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 export enum UserRole {
@@ -73,7 +72,4 @@ export class User extends BaseEntity {
 
   @OneToOne(() => JobAlert, (alert) => alert.user)
   jobAlert: JobAlert;
-
-  @OneToOne(() => UserCredits, (credits) => credits.user)
-  credits: UserCredits;
 }
